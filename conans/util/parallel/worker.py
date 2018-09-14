@@ -13,7 +13,7 @@ def _configure_worker_logger(log_queue):
 
 def worker(task_queue, ret_queue, log_queue):
     _configure_worker_logger(log_queue)
-    logger = logging.getLogger()
+    logger = logging.getLogger('conans')
 
     while True:
         task = task_queue.get()

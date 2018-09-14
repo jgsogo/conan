@@ -7,9 +7,9 @@ from conans.util.log import logger, configure_logger
 
 def _threaded_hard_task1(item, logger):
     time.sleep(int(item))
-    print("\t Called _threaded_hard_task1(titem='{}')".format(item))
-    logger.info("--- log from inside threaded titem='{}'".format(item))
-    return {'msg': "_threaded_hard_task1(titem='{}') done!".format(item)}
+    print("\t Called _threaded_hard_task1(item='{}')".format(item))
+    logger.info("--- log from inside threaded item='{}'".format(item))
+    return {'msg': "_threaded_hard_task1(item='{}') done!".format(item)}
 
 
 class MyStateClass(object):
@@ -41,5 +41,4 @@ if __name__ == '__main__':
 
     my_class = MyStateClass()
     with parallel_tasks(2) as executor:
-        for item in ["1", "2"]:
-            my_class.hard_task1(item, executor=executor)
+        my_class.hard_task1("1", executor=executor)
