@@ -74,23 +74,4 @@ class TaskExecutor(object):
 
             except Empty:
                 break
-        """
-        if len(self._ret_data):
-            try:
-                while True:
-                    task_id, ret_kwargs = self._ret_queue.get_nowait()
-                    on_done, on_done_kwargs = self._ret_data.pop(task_id)
 
-                    if isinstance(ret_kwargs, Exception):
-                        # TODO: ??
-                        # print("Exception: {}".format(on_done_kwargs))
-                        continue
-
-                    if on_done:
-                        z = ret_kwargs if ret_kwargs else dict()
-                        if on_done_kwargs:
-                            z.update(on_done_kwargs)
-                        on_done(**z)
-            except Empty:
-                pass
-        """
