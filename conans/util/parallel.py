@@ -1,8 +1,11 @@
 
 import os
 import time
+import logging
 from multiprocessing import Pool, JoinableQueue, Process, freeze_support
 from contextlib import contextmanager
+
+from conans.util.log import configure_logger
 
 
 def task_sleep(msg, secs):
@@ -20,15 +23,36 @@ def run_task(task_queue, func, args):
             task_queue.put((new_func, new_args))
 
 
+def logger_worker(log_queue):
+    configure_logger()
+    while True:
+        try:
+            record = log_queue.get()
+            if record is None:  # We send this as a sentinel to tell the listener to quit.
+                break
+            logger = logging.getLogger(record.name)
+            logger.handle(record)  # No level or filter logic applied - just do it
+        except Exception:
+            import sys, traceback
+            print('Whoops! Problem:', file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
+
+
+def worker_logger_configurer(log_queue):
+    h = logging.handlers.QueueHandler(log_queue)  # Just the one handler needed
+    root = logging.getLogger()
+    root.addHandler(h)
+    # send all messages, for demo; no other level or filter logic applied.
+    root.setLevel(logging.DEBUG)
+
+
 def worker(task_queue):
+    worker_logger_configurer()
     for func, args in iter(task_queue.get, 'STOP'):
-        print("\t{}: {}({})".format(os.getpid(), func.__name__, ', '.join(map(str, args))))
         try:
             run_task(task_queue, func, args)
-            print("--")
         finally:
             task_queue.task_done()
-    print("worker end...")
 
 
 class Executor(object):
