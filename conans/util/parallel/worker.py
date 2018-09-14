@@ -1,19 +1,19 @@
 
 import logging
-# from conans.util.parallel.task import ConanTask
+from logging.handlers import QueueHandler
 
 
 def _configure_worker_logger(log_queue):
-    h = logging.handlers.QueueHandler(log_queue)  # Just the one handler needed
+    h = QueueHandler(log_queue)  # Just the one handler needed
     root = logging.getLogger()
     root.addHandler(h)
     # send all messages, for demo; no other level or filter logic applied.
     root.setLevel(logging.DEBUG)  # TODO: Default to Conan's one
 
 
-def worker(task_queue, ret_queue, log_queue, output_queue):
+def worker(task_queue, ret_queue, log_queue):
     _configure_worker_logger(log_queue)
-    logger = logging.getLogger('conans')
+    logger = logging.getLogger()
 
     while True:
         task = task_queue.get()
@@ -21,12 +21,12 @@ def worker(task_queue, ret_queue, log_queue, output_queue):
             break
         task_id, func, kwargs = task
 
-        ret = None
         try:
             ret = func(logger=logger, **kwargs)
+            ret_queue.put((task_id, ret))
         except Exception as e:
-            import sys, traceback
-            logger.error('Whoops! Problem:\n{}'.format(traceback.format_exc()))
+            import traceback
+            logger.error("Error on task '{}':\n{}".format(task_id, traceback.format_exc()))
+            ret_queue.put((task_id, e))
         finally:
             task_queue.task_done()
-            ret_queue.put((task_id, ret))

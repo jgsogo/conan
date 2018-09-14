@@ -11,8 +11,10 @@ def parallel_tasks(n_threads=os.cpu_count()):
 
     if parallelism_allowed:
         executor = TaskExecutor(n_threads=n_threads)
-        yield executor
-        executor.terminate()
+        try:
+            yield executor
+        finally:
+            executor.terminate()
 
     else:
         class SerialQueue(object):
