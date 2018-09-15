@@ -2,18 +2,20 @@
 import logging
 from logging.handlers import QueueHandler
 
+from conans.util.env_reader import get_env
+
 
 def _configure_worker_logger(log_queue):
     h = QueueHandler(log_queue)  # Just the one handler needed
-    root = logging.getLogger()
+    root = logging.Logger('conans')
     root.addHandler(h)
-    # send all messages, for demo; no other level or filter logic applied.
-    root.setLevel(logging.DEBUG)  # TODO: Default to Conan's one
+    logging_level = get_env('CONAN_LOGGING_LEVEL', logging.CRITICAL)
+    root.setLevel(logging_level)
+    return root
 
 
 def worker(task_queue, ret_queue, log_queue):
-    _configure_worker_logger(log_queue)
-    logger = logging.getLogger('conans')
+    logger = _configure_worker_logger(log_queue)
 
     while True:
         task = task_queue.get()
