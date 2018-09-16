@@ -31,7 +31,7 @@ def configure_logger():
     else:
         hdlr = StreamHandler(sys.stderr)
 
-    formatter = MultiLineFormatter('%(levelname)-6s:%(filename)-15s[%(lineno)d]: '
+    formatter = MultiLineFormatter('[%(process)6d] %(levelname)-6s:%(filename)-15s[%(lineno)d]: '
                                    '%(message)s [%(asctime)s]')
     hdlr.setFormatter(formatter)
     for hand in logger.handlers:

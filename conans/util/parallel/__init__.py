@@ -6,7 +6,7 @@ from conans.util.parallel.executor import TaskExecutor
 
 
 @contextmanager
-def parallel_tasks(n_threads=os.cpu_count()):
+def spawn_processes(n_threads=os.cpu_count()):
     parallelism_allowed = True
 
     if parallelism_allowed:
@@ -14,7 +14,7 @@ def parallel_tasks(n_threads=os.cpu_count()):
         try:
             yield executor
         finally:
-            executor.terminate()
+            executor._terminate()
 
     else:
         class SerialQueue(object):
