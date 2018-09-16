@@ -32,11 +32,10 @@ if __name__ == '__main__':
 
     my_class = MyStateClass()
     with spawn_processes(2) as processes:
-        output = {}
-        with processes.task_group(output) as tasks:
+        with processes.task_group():
             for item in reversed(["1", "2"]):
-                my_class.hard_task1(item, tasks=tasks)
+                my_class.hard_task1(item, tasks=processes)
 
             # Add more tasks
             for item in reversed(["3", "4"]):
-                my_class.hard_task1(item, tasks=tasks)
+                my_class.hard_task1(item, tasks=processes)

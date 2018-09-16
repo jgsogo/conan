@@ -12,7 +12,8 @@ def spawn_processes(n_threads=os.cpu_count()):
     if parallelism_allowed:
         executor = TaskExecutor(n_threads=n_threads)
         try:
-            yield executor
+            with executor.task_group(id='root'):
+                yield executor
         finally:
             executor._terminate()
 

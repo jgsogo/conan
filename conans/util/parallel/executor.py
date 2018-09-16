@@ -10,6 +10,27 @@ from conans.util.parallel.worker import worker
 from conans.util.log import logger
 
 
+class Future(object):
+    def __init__(self, task_id, task_group, executor):
+        self._task_id = task_id
+        self._task_group = task_group
+        self._executor = executor
+
+    def __str__(self):
+        return '/'.join([str(self._task_group), self._task_id])
+
+    @property
+    def task_id(self):
+        return self._task_id
+
+    @property
+    def task_group(self):
+        return str(self._task_group)
+
+    def result(self):
+        return self._executor.wait_for(self._task_id, self._task_group)
+
+
 class TaskGroupExecutor(object):
     def __init__(self, task_queue, ret_queue, ret_data, id):
         self._task_queue = task_queue
@@ -27,60 +48,65 @@ class TaskGroupExecutor(object):
         Add task for multithreading execution
         :param func: function to execute in thread
         :param kwargs: kwargs in the call to 'func' (must be pickleable)
-        :param on_done: function to execute in main thread afterwards
-        :param on_done_kwargs: kwargs for 'on_done' function.
+        :param on_done: function to execute in main thread afterwards. Must accept, as arguments,
+                the return values from 'func' if any.
+        :param on_done_kwargs: kwargs for 'on_done' function
         :return:
         """
         task_id = task_id or uuid1()
         assert task_id not in self._ret_data
-        self._ret_data[task_id] = (on_done, on_done_kwargs)
+        self._ret_data[task_id] = (on_done, on_done_kwargs or {})
         self._task_queue.put((task_id, func, kwargs))
         self._my_tasks.add(task_id)
         return task_id
 
+    def wait_for(self, task_id):
+        if task_id not in self._output:
+            assert task_id in self._my_tasks
+            self._consume_tasks(block=True, list_to_consume={task_id, })
+        return self._output[task_id]
+
     def _terminate(self, already_finished):
-        # Consume all my tasks
-        my_tasks = self._my_tasks.copy()
+        # Consume all my remaining tasks
         self._my_tasks.difference_update(already_finished)
-        my_tasks_consumed = self._consume_ret_task(block=True)
-        assert self._done()
-        my_tasks.update(my_tasks_consumed)
-        return my_tasks, self._output
+        self._consume_tasks(block=True)
+        assert len(self._my_tasks) == 0
+        return self._output
 
-    def _consume_ret_task(self, block=False):
-        my_tasks_consumed = set()
-        while not self._done():
+    def _consume_tasks(self, block=False, list_to_consume=None):
+        list_to_consume = list_to_consume or self._my_tasks
+        assert all([it not in self._output.keys() for it in list_to_consume])
+        tasks_consumed = set()
+        while list_to_consume:
             try:
-                task_id, ret_kwargs = self._ret_queue.get(block=block)
+                task_id, task_ret = self._ret_queue.get(block=block)
                 on_done, on_done_kwargs = self._ret_data.pop(task_id)
-
-                ret = None
-                if isinstance(ret_kwargs, Exception):
-                    # TODO: ??
+                ret = task_ret
+                if isinstance(task_ret, Exception):
+                    # TODO: Task output is an exception, anything to do?
                     pass
                 elif on_done:
-                    z = ret_kwargs if ret_kwargs else dict()
-                    if on_done_kwargs:
-                        z.update(on_done_kwargs)
+                    on_done_args = list()
+                    if isinstance(ret, dict):
+                        on_done_kwargs.update(ret)
+                    elif isinstance(ret, (list, tuple)):
+                        on_done_args = ret
+                    else:
+                        on_done_args = (ret, )
 
                     try:
-                        ret = on_done(**z)  # This can add new tasks at this task-group level!
+                        ret = on_done(*on_done_args, **on_done_kwargs)
                     except Exception as e:
                         ret = e
-
                 self._output[task_id] = ret
-                try:
-                    self._my_tasks.remove(task_id)
-                    my_tasks_consumed.add(task_id)
-                except KeyError:
-                    pass
 
+                list_to_consume.discard(task_id)
+                tasks_consumed.add(task_id)
             except Empty:
                 break
-        return my_tasks_consumed
 
-    def _done(self):
-        return len(self._my_tasks) == 0
+        self._my_tasks.difference_update(tasks_consumed)
+        return tasks_consumed
 
 
 class TaskExecutor(object):
@@ -104,38 +130,52 @@ class TaskExecutor(object):
             p.start()
             self._processes.append(p)
 
-        # Stack of task groups (and 'my' group)
-        self._outermost_task_group = TaskGroupExecutor(task_queue=self._task_queue,
-                                                       ret_queue=self._ret_queue,
-                                                       ret_data=self._ret_data,
-                                                       id="Outermost")
-        self._task_group_stack = list()
+        # Storage for outputs
         self._task_outputs = {}
 
+        # Stack of task groups
+        self._task_group_stack = list()
+        self._current_task_group = None
+        self._current_tasks = set()
+
     def add_task(self, *args, **kwargs):
-        return self._outermost_task_group.add_task(*args, **kwargs)
+        task_id = self._current_task_group.add_task(*args, **kwargs)
+        self._current_tasks.add(task_id)
+        return Future(task_id=task_id, task_group=self._current_task_group, executor=self)
+
+    def wait_for(self, task_id, task_group):
+        if task_id not in self._task_outputs:
+            return task_group.wait_for(task_id=task_id)
+        else:
+            return self._task_outputs[task_id]
 
     @contextmanager
-    def task_group(self, output=None, id=None):
-        task_group = TaskGroupExecutor(task_queue=self._task_queue, ret_queue=self._ret_queue,
-                                       ret_data=self._ret_data, id=id)
-        self._task_group_stack.append(task_group)
+    def task_group(self, id=None):
+        self._task_group_stack.append((self._current_task_group, self._current_tasks))
         try:
-            yield task_group
-        finally:
-            task_group = self._task_group_stack.pop()
-            tasks, outputs = task_group._terminate(already_finished=self._task_outputs.keys())
+            if self._current_task_group:
+                id = '/'.join([str(self._current_task_group), id or ''])
+
+            self._current_tasks = set()
+            self._current_task_group = TaskGroupExecutor(task_queue=self._task_queue,
+                                                         ret_queue=self._ret_queue,
+                                                         ret_data=self._ret_data, id=id)
+
+            yield
+
+            outputs = self._current_task_group._terminate(already_finished=self._task_outputs.keys())
             self._task_outputs.update(outputs)
-            this_outputs = {task: self._task_outputs.pop(task) for task in tasks}
-            if output is not None:
-                output.update(this_outputs)
+            # If we delete items in this dict, then futures won't get valid values from outside
+            #   their context, yay or nay?
+            # for t in self._current_tasks:  # Not really needed if we let _task_outputs to grow
+            #     del self._task_outputs[t]
+        finally:
+            self._current_task_group, self._current_tasks = self._task_group_stack.pop()
 
     def _terminate(self):
+        assert self._current_task_group is None
         assert len(self._task_group_stack) == 0
-
-        # Consume the remaining tasks
-        self._outermost_task_group._terminate(already_finished=self._task_outputs.keys())
-        assert len(self._task_outputs) == 0
+        # assert len(self._task_outputs) == 0
 
         # Stop all workers
         self._task_queue.join()

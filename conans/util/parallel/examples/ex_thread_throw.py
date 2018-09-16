@@ -31,6 +31,5 @@ if __name__ == '__main__':
 
     my_class = MyStateClass()
     with spawn_processes(2) as processes:
-        with processes.task_group() as tasks:
-            for item in ["ok", "throw"]:
-                my_class.hard_task1(item, tasks=tasks)
+        for item in ["ok", "throw"]:
+            my_class.hard_task1(item, tasks=processes)

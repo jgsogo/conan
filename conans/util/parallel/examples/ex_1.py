@@ -30,19 +30,34 @@ def handle_result(operation, r):
 
 
 if __name__ == '__main__':
-    os.environ['CONAN_LOGGING_LEVEL'] = '10'
+    os.environ['CONAN_LOGGING_LEVEL'] = '50'
     logger = configure_logger()
 
+    t = None
     with spawn_processes(3) as processes:
-        # Let's sum
-        output = {}
-        with processes.task_group(output=output) as sums:
-            for item in range(10):
-                sums.add_task(_sum, {'a': 10, 'b': item},
-                              on_done=handle_result,
-                              on_done_kwargs={'operation': 'sum(10, {})'.format(item)},
-                              task_id='sum-{}'.format(item))
-        print("After the context scope:")
-        for it, value in output.items():
-            print("\t{}: {}".format(it, value))
+        # Adding tasks and returning func
+        tasks = [processes.add_task(_sum, {'a': 2, 'b': it}) for it in range(4)]
+        for it in tasks:
+            print(it.result())
+
+        # Adding tasks using a context function
+        for item in range(2):
+
+            def on_done(r):
+                handle_result("sum(10, {})".format(item), r)
+                return r
+
+            t = processes.add_task(_sum, {'a': 10, 'b': item},
+                                   on_done=on_done,
+                                   task_id='sum-{}'.format(item))
+            print(t.result())  # Will wait for execution!
+
+        # Adding tasks with on_done_kwargs
+        for item in range(2):
+            processes.add_task(_sum, {'a': 5, 'b': item},
+                               on_done=handle_result,
+                               on_done_kwargs={'operation': "sum(5, {})".format(item)})
+
+    print("After it all")
+
 
