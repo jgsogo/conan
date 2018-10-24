@@ -107,6 +107,10 @@ set(CONAN_CMD_C_FLAGS ${CONAN_C_FLAGS})
 
 
 _target_template = """
+    message(STATUS ">>>> unset from CACHE {pkg_name}_DIR")
+    unset({pkg_name}_DIR CACHE)
+    # TODO: Do the same for non-targets.
+
     conan_package_library_targets("${{CONAN_LIBS_{uname}}}" "${{CONAN_LIB_DIRS_{uname}}}"
                                   CONAN_PACKAGE_TARGETS_{uname} "{deps}" "" {pkg_name})
     conan_package_library_targets("${{CONAN_LIBS_{uname}_DEBUG}}" "${{CONAN_LIB_DIRS_{uname}_DEBUG}}"
@@ -185,6 +189,7 @@ endfunction()
 
 function(conan_package_library_targets libraries package_libdir libraries_abs_path deps build_type package_name)
     foreach(_LIBRARY_NAME ${libraries})
+        
         unset(CONAN_FOUND_LIBRARY CACHE)
         find_library(CONAN_FOUND_LIBRARY NAME ${_LIBRARY_NAME} PATHS ${package_libdir}
                      NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
