@@ -30,9 +30,13 @@ else:
         pass
 
 
+def get_reference_base_folder(store_folder, conan_reference):
+    return os.path.normpath(os.path.join(store_folder, '/'.join(conan_reference)))
+
+
 def get_package_layout(store_folder, conan_reference, short_paths=False):
     assert isinstance(conan_reference, ConanFileReference)
-    base_folder = os.path.normpath(os.path.join(store_folder, "/".join(conan_reference)))
+    base_folder = get_reference_base_folder(store_folder, conan_reference)
 
     linked_package_file = os.path.join(base_folder, LINKED_FOLDER_SENTINEL)
     if os.path.exists(linked_package_file):

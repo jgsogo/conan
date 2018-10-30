@@ -4,7 +4,7 @@ import os
 import platform
 
 from conans.paths import CONANFILE, SYSTEM_REQS, EXPORT_FOLDER, EXPORT_SRC_FOLDER, SRC_FOLDER, \
-    BUILD_FOLDER, PACKAGES_FOLDER, SYSTEM_REQS_FOLDER, SCM_FOLDER
+    BUILD_FOLDER, PACKAGES_FOLDER, SYSTEM_REQS_FOLDER, SCM_FOLDER, LINKED_FOLDER_SENTINEL
 from conans.model.ref import PackageReference
 from conans.paths.package_layouts.package_base_layout import PackageBaseLayout
 
@@ -68,3 +68,6 @@ class PackageCacheLayout(PackageBaseLayout):
 
     def scm_folder(self):
         return os.path.join(self.conan(), SCM_FOLDER)
+
+    def editable_link_file(self):
+        return os.path.join(self.conan(), LINKED_FOLDER_SENTINEL)

@@ -43,7 +43,7 @@ from conans.client.cmd.profile import cmd_profile_update, cmd_profile_get,\
 from conans.client.cmd.search import Search
 from conans.client.cmd.user import users_clean, users_list, user_set
 from conans.client.importer import undo_imports, run_imports
-from conans.client.cmd.export import cmd_export, export_alias, export_source, export_recipe
+from conans.client.cmd.export import cmd_export, export_alias, export_source, export_recipe, cmd_editable
 from conans.unicode import get_cwd
 from conans.client.remover import ConanRemover
 from conans.client.cmd.download import download
@@ -452,6 +452,29 @@ class ConanAPIV1(object):
                      self._hook_manager)
         else:
             raise ConanException("Provide a valid full reference without wildcards.")
+
+    @api_method
+    def install_editable(self, reference, package_path, cwd=None):
+        recorder = ActionRecorder()
+
+        cwd = cwd or os.getcwd()
+        package_path = _make_abs_path(package_path, cwd)
+
+        # Look for the package layout file
+        from conans.paths.package_layouts.package_user_layout import CONAN_PACKAGE_LAYOUT_FILE
+
+        package_layout_file = os.path.join(package_path, CONAN_PACKAGE_LAYOUT_FILE)
+        if not os.path.exists(package_layout_file):
+            raise ConanException("Provide a '{}' file in your package".format(package_layout_file))
+
+        print("*"*20)
+        print("conan_api::install_editable")
+        print(" - reference: {}".format(reference))
+        print(" - package_path: {}".format(package_path))
+
+        cmd_editable(package_path, reference, self._user_io, self._client_cache, self._hook_manager,
+                     self._registry)
+        return recorder.get_info()
 
     @api_method
     def install_reference(self, reference, settings=None, options=None, env=None,

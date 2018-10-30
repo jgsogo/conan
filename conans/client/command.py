@@ -331,6 +331,29 @@ class Command(object):
         return self._conan.download(reference=args.reference, package=args.package,
                                     remote_name=args.remote, recipe=args.recipe)
 
+    def editable(self, *args):
+        """Install a reference in editable mode
+
+        Just a POC
+        """
+        # TODO: This is just an entry point for the POC of editable packages
+
+        parser = argparse.ArgumentParser(description=self.editable.__doc__, prog="conan editable")
+        parser.add_argument("path_to_package", help="Path to an existing conanfile. It should "
+                                                    "contain the magic file with package structure "
+                                                    "described")
+        parser.add_argument("reference", help="Full reference")
+
+        args = parser.parse_args(*args)
+
+        try:
+            reference = ConanFileReference.loads(args.reference)
+        except ConanException:
+            raise
+        else:
+            info = self._conan.install_editable(reference, args.path_to_package)
+            print(info)
+
     def install(self, *args):
         """Installs the requirements specified in a recipe (conanfile.py or conanfile.txt).
 
@@ -1336,7 +1359,7 @@ class Command(object):
     def _show_help(self):
         """Prints a summary of all commands
         """
-        grps = [("Consumer commands", ("install", "config", "get", "info", "search")),
+        grps = [("Consumer commands", ("editable", "install", "config", "get", "info", "search")),
                 ("Creator commands", ("new", "create", "upload", "export", "export-pkg", "test")),
                 ("Package development commands", ("source", "build", "package")),
                 ("Misc commands", ("profile", "remote", "user", "imports", "copy", "remove",

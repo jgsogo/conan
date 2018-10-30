@@ -62,6 +62,36 @@ def cmd_export(conanfile_path, conanfile, reference, keep_source, output, client
                            reference=reference)
 
 
+def cmd_editable(package_path, reference, output, client_cache, hook_manager, registry):
+    print(">>> cmd_editable(", package_path, reference, ", ...)")
+    conan_ref_str = str(reference)
+    refs = search_recipes(client_cache, conan_ref_str, ignorecase=True)
+    if refs and reference not in refs:
+        raise ConanException("Cannot export package with same name but different case\n"
+                             "You exported '%s' but already existing '%s'"
+                             % (conan_ref_str, " ".join(str(s) for s in refs)))
+
+    from conans.paths.package_layouts.package_cache_layout import PackageCacheLayout
+    from conans.paths.package_layouts.package_user_layout import CONAN_PACKAGE_LAYOUT_FILE
+    from conans.paths.package_layouts import get_reference_base_folder
+
+    base_folder = get_reference_base_folder(client_cache.store, reference)
+    package_layout = PackageCacheLayout(base_folder=base_folder, conan_ref=reference)
+    link_sentinel = package_layout.editable_link_file()
+    if os.path.exists(link_sentinel):
+        print("Remove existing link sentinel")
+        os.unlink(link_sentinel)
+
+    with client_cache.conanfile_write_lock(reference):
+        linked_package_file = os.path.join(package_path, CONAN_PACKAGE_LAYOUT_FILE)
+        save(link_sentinel, content=linked_package_file)
+
+    print("*"*20)
+    print("cmd_editable")
+    print(" - link_sentinel: {}".format(link_sentinel))
+    print(" - linked_package_file: {}".format(linked_package_file))
+
+
 def _capture_export_scm_data(conanfile, conanfile_dir, destination_folder, output, paths, conan_ref):
 
     scm_src_file = paths.scm_folder(conan_ref)
