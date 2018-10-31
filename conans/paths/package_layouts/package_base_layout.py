@@ -17,3 +17,6 @@ class PackageBaseLayout(object):
     def conan(self):
         """ Returns the base folder for this package reference """
         return self._base_folder
+
+    def installed_as_editable(self):
+        return False

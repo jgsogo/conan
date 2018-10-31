@@ -2,7 +2,7 @@ import os
 
 from conans.client.graph.graph import (BINARY_BUILD, BINARY_UPDATE, BINARY_CACHE,
                                        BINARY_DOWNLOAD, BINARY_MISSING, BINARY_SKIP,
-                                       BINARY_WORKSPACE)
+                                       BINARY_WORKSPACE, RECIPE_EDITABLE, BINARY_EDITABLE)
 from conans.client.output import ScopedOutput
 from conans.errors import NotFoundException, NoRemoteAvailable
 from conans.model.info import ConanInfo
@@ -76,7 +76,8 @@ class GraphBinariesAnalyzer(object):
         with self._client_cache.package_lock(package_ref):
             if is_dirty(package_folder):
                 output.warn("Package is corrupted, removing folder: %s" % package_folder)
-                rmdir(package_folder)
+                if not node.recipe == RECIPE_EDITABLE:
+                    rmdir(package_folder)  # TODO: Do not remove if it is EDITABLE!!!!
 
         if remote_name:
             remote = self._registry.remotes.get(remote_name)
@@ -96,8 +97,11 @@ class GraphBinariesAnalyzer(object):
                 else:
                     output.warn("Can't update, no remote defined")
             if not node.binary:
-                node.binary = BINARY_CACHE
-                package_hash = ConanInfo.load_from_package(package_folder).recipe_hash
+                if node.recipe == RECIPE_EDITABLE:
+                    node.binary = BINARY_EDITABLE
+                else:
+                    node.binary = BINARY_CACHE
+                    package_hash = ConanInfo.load_from_package(package_folder).recipe_hash
         else:  # Binary does NOT exist locally
             remote_info = None
             if remote:

@@ -17,6 +17,9 @@ class SimplePaths(object):
         package_layout = get_package_layout(self.store, conan_reference, short_paths=short_paths)
         return package_layout
 
+    def is_editable(self, conan_reference):
+        return self.package_layout(conan_reference).installed_as_editable()
+
     def conan(self, conan_reference):
         """ the base folder for this package reference, for each ConanFileReference
         """

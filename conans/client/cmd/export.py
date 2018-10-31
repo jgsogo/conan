@@ -84,7 +84,8 @@ def cmd_editable(package_path, reference, output, client_cache, hook_manager, re
 
     with client_cache.conanfile_write_lock(reference):
         linked_package_file = os.path.join(package_path, CONAN_PACKAGE_LAYOUT_FILE)
-        save(link_sentinel, content=linked_package_file)
+        # save(link_sentinel, content=linked_package_file)  # Add full path to .linked_package_file
+        save(link_sentinel, content=package_path)
 
     print("*"*20)
     print("cmd_editable")
