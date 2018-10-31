@@ -72,7 +72,7 @@ class GraphBinariesAnalyzer(object):
             assert isinstance(conanfile, ConanFileEditable)
             from conans.model.build_info import CppInfo
             cpp_info_editable = CppInfo(root_folder=package_folder)
-            cpp_info_editable.includedirs.append("src/include")
+            cpp_info_editable.includedirs.append("src/include") # TODO: Read editable params
             conanfile.set_cpp_info(cpp_info_editable)
 
         # Check if dirty, to remove it
