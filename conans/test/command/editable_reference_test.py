@@ -10,57 +10,58 @@ from conans.client.tools.files import load
 from conans.test import CONAN_TEST_FOLDER
 
 
-class EditableReferenceTest(unittest.TestCase):
+class HeaderOnlyLibTestClient(TestClient):
     header = """
-#include <iostream>
+        #include <iostream>
 
-void hello() {{
-    std::cout << "Hello {word}!" << std::endl;
-}} 
-            """
+        void hello() {{
+            std::cout << "Hello {word}!" << std::endl;
+        }}
+        """
 
-    def _create_editable_package(self, base_folder):
-        client = TestClient(base_folder=base_folder)
-
-        conanfile = """
+    conanfile = """
 import os
 from conans import ConanFile, tools
 
 class Pkg(ConanFile):
     name = "MyLib"
     version = "0.1"
-    
+
     exports_sources = "*"
-        
+
     def package(self):
         self.copy("*.hpp", dst="include", src="src/include")
-        
+
     def package_info(self):
         self.cpp_info.libs = ["MyLib", "otra", ]
         self.cpp_info.defines = ["MyLibDEFINES",]
         self.cpp_info.libdirs = ["MyLib-libdirs", ]
         self.cpp_info.includedirs = ["MyLib-includedirs", "include", ]
-        
-"""
 
-        conan_package_layout = """
-        """
+    """
+    conan_package_layout = """"""
 
-        client.save({"conanfile.py": conanfile,
-                     CONAN_PACKAGE_LAYOUT_FILE: conan_package_layout,
-                     "src/include/hello.hpp": self.header.format(word="EDITABLE")})
+    def __init__(self, *args, **kwargs):
+        super(HeaderOnlyLibTestClient, self).__init__(*args, **kwargs)
+        self.save({"conanfile.py": self.conanfile,
+                   CONAN_PACKAGE_LAYOUT_FILE: self.conan_package_layout,
+                   "src/include/hello.hpp": self.header.format(word="EDITABLE")})
 
-        client.run("editable . MyLib/0.1@user/editable")
-        print(client.out)
-        print("*"*200)
-        return client
+    def update_hello_word(self, hello_word):
+        self.save({"src/include/hello.hpp": self.header.format(word=hello_word)})
 
-    def test_dev(self):
+
+class EditableReferenceTest(unittest.TestCase):
+
+    def test_header_only(self):
+        # We need two clients sharing the same Conan cache
         base_folder = tempfile.mkdtemp(suffix='conans', dir=CONAN_TEST_FOLDER)
 
-        client_editable = self._create_editable_package(base_folder=base_folder)
+        # Editable project
+        client_editable = HeaderOnlyLibTestClient(base_folder=base_folder)
+        client_editable.run("editable . MyLib/0.1@user/editable")  # 'Install' as editable
 
-        ### Now, consume the installed-as-editable package (keep base_folder, it is the cache!!!)
+        # Consumer project
         client = TestClient(base_folder=base_folder)
         conanfile_txt = """
 import os
@@ -105,6 +106,7 @@ int main() {
                      "src/CMakeLists.txt": cmakelists,
                      "src/main.cpp": main_cpp})
 
+        """
         client.run("install . -g txt -g cmake")
 
         text = load(os.path.join(client.current_folder, "conanbuildinfo.txt"))
@@ -112,18 +114,13 @@ int main() {
         #self.assertNotIn("[libs];MyLib", txt)
         cmake = load(os.path.join(client.current_folder, "conanbuildinfo.cmake"))
         #self.assertIn("set(CONAN_LIBS MyLib ${CONAN_LIBS})", cmake)
+        """
 
-        ## Now, build and run this project
+        # Build consumer project
         client.run("create . pkg/0.0@user/testing")
         self.assertIn("Hello EDITABLE!", client.out)
-        print(client.out)
-        print("^"*200)
 
-
-        ### Modify the editable package:
-        client_editable.save(
-            {"src/include/hello.hpp": self.header.format(word="EDITED!!!")})
+        # Modify editable and build again
+        client_editable.update_hello_word(hello_word="EDITED")
         client.run("create . pkg/0.0@user/testing")
-        self.assertIn("Hello EDITED!!!!", client.out)
-        print(client.out)
-
+        self.assertIn("Hello EDITED!", client.out)
