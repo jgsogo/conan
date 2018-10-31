@@ -281,3 +281,28 @@ class ConanFile(object):
             return "%s/%s@PROJECT" % (self.name, self.version)
         else:
             return "PROJECT"
+
+
+class ConanFileEditable(object):
+    """ Wrapper over a ConanFile object to handle an editable package """
+
+    def __init__(self, conanfile):
+        assert isinstance(conanfile, ConanFile)
+        self._conanfile = conanfile
+        self._cpp_info_editable = None
+
+    def __getattr__(self, item):
+        if item == 'package_info':
+            def package_info():
+                self._conanfile.cpp_info = self._cpp_info_editable
+            return package_info
+        return getattr(self._conanfile, item)
+
+    def __setattr__(self, key, value):
+        if key == '_conanfile' or key == '_cpp_info_editable':
+            self.__dict__[key] = value
+            return
+        setattr(self._conanfile, key, value)
+
+    def set_cpp_info(self, cpp_info):
+        self._cpp_info_editable = cpp_info

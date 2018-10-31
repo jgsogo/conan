@@ -92,7 +92,8 @@ class ConanFileLoader(object):
             raise ConanException("%s: %s" % (conanfile_path, str(e)))
 
     def load_conanfile(self, conanfile_path, output, processed_profile,
-                       consumer=False, reference=None, local=False):
+                       consumer=False, reference=None, local=False,
+                       editable=False):
         """ loads a ConanFile object from the given file
         """
         conanfile = self.load_basic(conanfile_path, output, reference)

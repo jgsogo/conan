@@ -9,6 +9,7 @@ from conans.model.info import ConanInfo
 from conans.model.manifest import FileTreeManifest
 from conans.model.ref import PackageReference
 from conans.util.files import rmdir, is_dirty
+from conans.model.conan_file import ConanFileEditable
 
 
 class GraphBinariesAnalyzer(object):
@@ -66,6 +67,13 @@ class GraphBinariesAnalyzer(object):
 
         package_folder = self._client_cache.package(package_ref,
                                                     short_paths=conanfile.short_paths)
+
+        if self._client_cache.is_editable(conan_ref):
+            assert isinstance(conanfile, ConanFileEditable)
+            from conans.model.build_info import CppInfo
+            cpp_info_editable = CppInfo(root_folder=package_folder)
+            cpp_info_editable.includedirs.append("src/include")
+            conanfile.set_cpp_info(cpp_info_editable)
 
         # Check if dirty, to remove it
         local_project = self._workspace[conan_ref] if self._workspace else None
