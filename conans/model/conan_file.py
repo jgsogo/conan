@@ -300,6 +300,7 @@ class ConanFileEditable(object):
                 # Replace directories with those in '_cpp_info_directories'
                 for key, items in self._cpp_info_directories.items():
                     items = [p.format(settings=self.settings, options=self.options) for p in items]
+                    # TODO: with f-string instead of format we can put more logic here
                     setattr(cpp_info, key, items)
 
             return package_info
