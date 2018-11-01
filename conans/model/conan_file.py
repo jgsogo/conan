@@ -294,13 +294,14 @@ class ConanFileEditable(object):
     def __getattr__(self, item):
         if item == 'package_info':
             def package_info():
-                # TODO: we have settings and options, use them!
-                print("*"*200)
-                print(self.settings.os)
-                print(self.options.values)
-                print(self._cpp_info_directories)
-                print(self._conanfile.cpp_info)
-                # self._conanfile.cpp_info = self._cpp_info_editable
+                self._conanfile.package_info()
+                cpp_info = self._conanfile.cpp_info
+
+                # Replace directories with those in '_cpp_info_directories'
+                for key, items in self._cpp_info_directories.items():
+                    items = [p.format(settings=self.settings, options=self.options) for p in items]
+                    setattr(cpp_info, key, items)
+
             return package_info
         return getattr(self._conanfile, item)
 
