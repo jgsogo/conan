@@ -8,8 +8,9 @@ from conans.errors import NotFoundException, NoRemoteAvailable
 from conans.model.info import ConanInfo
 from conans.model.manifest import FileTreeManifest
 from conans.model.ref import PackageReference
-from conans.util.files import rmdir, is_dirty
+from conans.util.files import rmdir, is_dirty, load
 from conans.model.conan_file import ConanFileEditable
+from conans.paths.package_layouts.package_user_layout import parse_package_layout_content
 
 
 class GraphBinariesAnalyzer(object):
@@ -70,10 +71,11 @@ class GraphBinariesAnalyzer(object):
 
         if self._client_cache.is_editable(conan_ref):
             assert isinstance(conanfile, ConanFileEditable)
-            from conans.model.build_info import CppInfo
-            cpp_info_editable = CppInfo(root_folder=package_folder)
-            cpp_info_editable.includedirs.append("src/include") # TODO: Read editable params
-            conanfile.set_cpp_info(cpp_info_editable)
+            # Gather directories from CONAN_PACKAGE_LAYOUT_FILE
+            package_layout_file = self._client_cache.editable_package_layout_file(conan_ref)
+            data = parse_package_layout_content(content=load(package_layout_file),
+                                                base_path=os.path.dirname(package_layout_file))
+            conanfile.set_cpp_info_directories(data)
 
         # Check if dirty, to remove it
         local_project = self._workspace[conan_ref] if self._workspace else None

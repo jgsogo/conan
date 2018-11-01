@@ -20,3 +20,6 @@ class PackageBaseLayout(object):
 
     def installed_as_editable(self):
         return False
+
+    def editable_package_layout_file(self):
+        raise RuntimeError("Non editable package")

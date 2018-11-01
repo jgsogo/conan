@@ -289,20 +289,26 @@ class ConanFileEditable(object):
     def __init__(self, conanfile):
         assert isinstance(conanfile, ConanFile)
         self._conanfile = conanfile
-        self._cpp_info_editable = None
+        self._cpp_info_directories = None
 
     def __getattr__(self, item):
         if item == 'package_info':
             def package_info():
-                self._conanfile.cpp_info = self._cpp_info_editable
+                # TODO: we have settings and options, use them!
+                print("*"*200)
+                print(self.settings.os)
+                print(self.options.values)
+                print(self._cpp_info_directories)
+                print(self._conanfile.cpp_info)
+                # self._conanfile.cpp_info = self._cpp_info_editable
             return package_info
         return getattr(self._conanfile, item)
 
     def __setattr__(self, key, value):
-        if key == '_conanfile' or key == '_cpp_info_editable':
+        if key == '_conanfile' or key == '_cpp_info_directories':
             self.__dict__[key] = value
             return
         setattr(self._conanfile, key, value)
 
-    def set_cpp_info(self, cpp_info):
-        self._cpp_info_editable = cpp_info
+    def set_cpp_info_directories(self, cpp_info_directories):
+        self._cpp_info_directories = cpp_info_directories

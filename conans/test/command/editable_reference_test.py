@@ -39,7 +39,11 @@ class Pkg(ConanFile):
         self.cpp_info.includedirs = ["MyLib-includedirs", "include", ]
 
     """
-    conan_package_layout = """"""
+
+    conan_package_layout = """
+[includedirs]
+src/include
+"""
 
     def __init__(self, *args, **kwargs):
         super(HeaderOnlyLibTestClient, self).__init__(*args, **kwargs)

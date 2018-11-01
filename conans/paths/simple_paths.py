@@ -20,6 +20,9 @@ class SimplePaths(object):
     def is_editable(self, conan_reference):
         return self.package_layout(conan_reference).installed_as_editable()
 
+    def editable_package_layout_file(self, conan_reference):
+        return self.package_layout(conan_reference).editable_package_layout_file()
+
     def conan(self, conan_reference):
         """ the base folder for this package reference, for each ConanFileReference
         """
