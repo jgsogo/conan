@@ -1,12 +1,10 @@
 # coding=utf-8
 
-import os
 import unittest
 import tempfile
 
 from conans.test.utils.tools import TestClient
 from conans.paths.package_layouts.package_user_layout import CONAN_PACKAGE_LAYOUT_FILE
-from conans.client.tools.files import load
 from conans.test import CONAN_TEST_FOLDER
 
 
