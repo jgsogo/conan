@@ -464,3 +464,48 @@ class TestConan(ConanFile):
         client.run("install . --build=missing")
         self.assertIn("Hello/0.2", client.user_io.out)
         self.assertNotIn("Hello/0.1", client.user_io.out)
+
+    def test_update_alias_nested(self):
+        test_server = TestServer()
+        servers = {"default": test_server}
+        client = TestClient(servers=servers, users={"default": [("jgsogo", "mypass")]})
+
+        libA = """from conans import ConanFile
+class libA(ConanFile):
+    def configure(self):
+        self.output.info("me-libA >{}<".format(self.version))
+        """
+        libB = """from conans import ConanFile
+class libB(ConanFile):
+    requires = "libA/1.latest@user/testing"
+    def configure(self):
+        self.output.info("me-libB >{}<".format(self.version))
+        """
+        project = """from conans import ConanFile
+class Project(ConanFile):
+    requires = "libB/1.latest@user/testing"
+        """
+
+        client.save({"conanfile.py": libA})
+        client.run("create . libA/1.0@user/testing")
+        client.run("create . libA/1.1@user/testing")
+        client.run("alias libA/1.latest@user/testing libA/1.0@user/testing")
+
+        client.save({"conanfile.py": libB}, clean_first=True)
+        client.run("create . libB/1.0@user/testing")
+        client.run("create . libB/1.1@user/testing")
+        client.run("alias libB/1.latest@user/testing libB/1.0@user/testing")
+
+        client.save({"conanfile.py": project})
+        client.run("install .")
+        self.assertIn("me-libA >1.0<", client.user_io.out)
+        self.assertIn("me-libB >1.0<", client.user_io.out)
+
+        # Update aliases
+        client.run("alias libA/1.latest@user/testing libA/1.1@user/testing")
+        client.run("alias libB/1.latest@user/testing libB/1.1@user/testing")
+        client.run("install . -u")
+        self.assertIn("me-libA >1.1<", client.user_io.out)
+        self.assertIn("me-libB >1.1<", client.user_io.out)
+
+
