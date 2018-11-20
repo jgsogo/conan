@@ -1,3 +1,4 @@
+import time
 import unittest
 from conans.test.utils.tools import TestClient, TestServer
 from conans.util.files import load
@@ -505,6 +506,7 @@ class Project(ConanFile):
         self.assertIn("me-libB >1.0<", client2.user_io.out)
 
         # Update aliases in remote
+        time.sleep(1)
         client.run("alias libA/1.latest@lasote/testing libA/1.1@lasote/testing")
         client.run("upload libA* --all --confirm -r=myserver")
         client.run("alias libB/1.latest@lasote/testing libB/1.1@lasote/testing")
