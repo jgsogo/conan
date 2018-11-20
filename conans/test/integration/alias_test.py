@@ -512,6 +512,5 @@ class Project(ConanFile):
 
         # Install project again, updated alias
         client2.run("install . -u")
-        self.assertIn("me-libA >1.1<", client.user_io.out)
-        self.assertIn("me-libB >1.1<", client.user_io.out)
-
+        self.assertIn("me-libA >1.1<", client2.user_io.out)
+        self.assertIn("me-libB >1.1<", client2.user_io.out)
