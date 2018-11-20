@@ -480,12 +480,7 @@ servers["r2"] = TestServer()
                 registry.remotes.add(name, server)
 
         for name, server in self.servers.items():
-            if name == "default":
-                add_server_to_registry(name, server)
-
-        for name, server in self.servers.items():
-            if name != "default":
-                add_server_to_registry(name, server)
+            add_server_to_registry(name, server)
 
     @property
     def remote_registry(self):

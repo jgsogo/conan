@@ -466,9 +466,9 @@ class TestConan(ConanFile):
         self.assertNotIn("Hello/0.1", client.user_io.out)
 
     def test_update_alias_nested(self):
-        test_server = TestServer()
-        servers = {"default": test_server}
-        client = TestClient(servers=servers, users={"default": [("jgsogo", "mypass")]})
+        servers = {"myserver": TestServer(), }
+        client = TestClient(servers=servers, users={"myserver": [("lasote", "mypass")], })
+        client2 = TestClient(servers=servers, users={"myserver": [("lasote", "mypass")]})
 
         libA = """from conans import ConanFile
 class libA(ConanFile):
@@ -477,35 +477,41 @@ class libA(ConanFile):
         """
         libB = """from conans import ConanFile
 class libB(ConanFile):
-    requires = "libA/1.latest@user/testing"
+    requires = "libA/1.latest@lasote/testing"
     def configure(self):
         self.output.info("me-libB >{}<".format(self.version))
         """
         project = """from conans import ConanFile
 class Project(ConanFile):
-    requires = "libB/1.latest@user/testing"
+    requires = "libB/1.latest@lasote/testing"
         """
 
         client.save({"conanfile.py": libA})
-        client.run("create . libA/1.0@user/testing")
-        client.run("create . libA/1.1@user/testing")
-        client.run("alias libA/1.latest@user/testing libA/1.0@user/testing")
+        client.run("create . libA/1.0@lasote/testing")
+        client.run("create . libA/1.1@lasote/testing")
+        client.run("alias libA/1.latest@lasote/testing libA/1.0@lasote/testing")
+        client.run("upload libA* --all --confirm -r=myserver")
 
         client.save({"conanfile.py": libB}, clean_first=True)
-        client.run("create . libB/1.0@user/testing")
-        client.run("create . libB/1.1@user/testing")
-        client.run("alias libB/1.latest@user/testing libB/1.0@user/testing")
+        client.run("create . libB/1.0@lasote/testing")
+        client.run("create . libB/1.1@lasote/testing")
+        client.run("alias libB/1.latest@lasote/testing libB/1.0@lasote/testing")
+        client.run("upload libB* --all --confirm -r=myserver")
 
-        client.save({"conanfile.py": project})
-        client.run("install .")
-        self.assertIn("me-libA >1.0<", client.user_io.out)
-        self.assertIn("me-libB >1.0<", client.user_io.out)
+        # Install project using aliased packages
+        client2.save({"conanfile.py": project})
+        client2.run("install .")
+        self.assertIn("me-libA >1.0<", client2.user_io.out)
+        self.assertIn("me-libB >1.0<", client2.user_io.out)
 
-        # Update aliases
-        client.run("alias libA/1.latest@user/testing libA/1.1@user/testing")
-        client.run("alias libB/1.latest@user/testing libB/1.1@user/testing")
-        client.run("install . -u")
+        # Update aliases in remote
+        client.run("alias libA/1.latest@lasote/testing libA/1.1@lasote/testing")
+        client.run("upload libA* --all --confirm -r=myserver")
+        client.run("alias libB/1.latest@lasote/testing libB/1.1@lasote/testing")
+        client.run("upload libB* --all --confirm -r=myserver")
+
+        # Install project again, updated alias
+        client2.run("install . -u")
         self.assertIn("me-libA >1.1<", client.user_io.out)
         self.assertIn("me-libB >1.1<", client.user_io.out)
-
 
