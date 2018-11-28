@@ -5,8 +5,10 @@ import unittest
 import platform
 import os
 from nose.plugins.attrib import attr
-from conans.tools import PkgConfig, fill_cppinfo_from_pc_file, environment_append
+
 from conans.test.utils.conanfile import MockConanfile, MockSettings
+from conans.client.tools.env import environment_append
+from conans.client.tools.pkg_config import PkgConfig, fill_cppinfo_from_pc_file
 from conans.test.utils.test_files import temp_folder
 from conans.errors import ConanException
 
