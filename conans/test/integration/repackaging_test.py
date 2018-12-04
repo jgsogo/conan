@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import unittest
+from parameterized import parameterized
 from conans.test.utils.tools import TestClient, TestServer
 
 
@@ -23,20 +24,21 @@ class BasePck(ConanFile):
         self.assertIn(">>> BasePck 'my_conanfile_base/1.0'", self.client.out)
         self.assertIn("Package '5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9' created", self.client.out)
 
-    def test_build_requires(self):
+    @parameterized.expand([("package", ), ("my_conanfile_base", )])
+    def test_build_requires(self, pck_name):
         br = """from conans import ConanFile
 
 class BrPck(ConanFile):
-    name = "package"
-    version = "1.0"
+    name = "%s"
+    version = "1.0.23"
     build_requires = "my_conanfile_base/1.0@lasote/testing"
 
     def build(self):
         self.output.info(">>> BrPck '{}/{}'".format(self.name, self.version))
-"""
+""" % pck_name
         self.client.save({"conanfile.py": br}, clean_first=True)
         self.client.run("create . lasote/testing")
-        self.assertIn(">>> BrPck 'package/1.0'", self.client.out)
+        self.assertIn(">>> BrPck '{}/1.0.23'".format(pck_name), self.client.out)
         self.assertNotIn(">>> BasePck 'my_conanfile_base/1.0'", self.client.out)
         self.assertIn("    my_conanfile_base/1.0@lasote/testing:5ab84d6acfe1f23c"
                       "4fae0ab88f26e3a396351ac9 - Cache", self.client.out)
