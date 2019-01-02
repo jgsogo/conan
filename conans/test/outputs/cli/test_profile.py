@@ -1,13 +1,12 @@
 # coding=utf-8
 
-import re
-import textwrap
+import os
 import unittest
 
-from conans.test.utils.tools import TestClient
-import os
-from conans.util.files import save
 from six.moves.configparser import ConfigParser
+
+from conans.test.utils.tools import TestClient
+from conans.util.files import save
 
 
 class CLIProfileOutputTest(unittest.TestCase):
