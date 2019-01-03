@@ -24,7 +24,6 @@ class CLIUserOutputTest(unittest.TestCase):
             self.assertTrue(line in lines)
 
     def test_set_different_user(self):
-        # from conans.client.conan_api import (Conan
         remote_name, prev_user, user = "remote_name", "prev_user", "user"
         with patch.object(Conan, "authenticate", return_value=[remote_name, prev_user, user]):
             self.client.run("user -p password -r {} username".format(self.remote_names[0]))
@@ -33,7 +32,6 @@ class CLIUserOutputTest(unittest.TestCase):
                                                                                     prev_user, user))
 
     def test_set_same_user(self):
-        # from conans.client.conan_api import (Conan
         remote_name, prev_user, user = "remote_name", "user", "user"
         with patch.object(Conan, "authenticate", return_value=[remote_name, prev_user, user]):
             self.client.run("user -p password -r {} username".format(self.remote_names[0]))
