@@ -24,7 +24,7 @@ def html_binary_graph(search_info, reference, table_filename):
 
 </script>
 <h1>%s</h1>
-    """ % str(reference)]
+""" % str(reference)]
 
     for remote_info in search_info:
         if remote_info["remote"] != 'None':

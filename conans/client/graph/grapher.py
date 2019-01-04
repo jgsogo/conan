@@ -12,7 +12,7 @@ class ConanGrapher(object):
     def graph(self):
         graph_lines = ['digraph {\n']
 
-        for node in self._deps_graph.nodes:
+        for node in sorted(self._deps_graph.nodes):
             depends = node.neighbors()
             if depends:
                 depends = " ".join('"%s"' % str(d.conan_ref) for d in depends)
@@ -84,7 +84,7 @@ class ConanHTMLGrapher(object):
         nodes = ",\n".join(nodes)
 
         edges = []
-        for node in self._deps_graph.nodes:
+        for node in sorted(self._deps_graph.nodes):
             for node_to in node.neighbors():
                 src = nodes_map[node]
                 dst = nodes_map[node_to]
