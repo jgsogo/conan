@@ -53,29 +53,37 @@ class CompressSymlinksTest(unittest.TestCase):
 
     @unittest.skipIf(platform.system() == "Windows", "Command line 'tar' not available in Windows")
     def test_symlinks_file(self):
-        file1 = os.path.join(self.tmp_folder, "src", "one_file.txt")
-        symlink = os.path.join(self.tmp_folder, 'src', "symlink.txt")
+        # Prepare the folder with all the files
+        src_folder = os.path.join(self.tmp_folder, 'src_folder')
+        file1 = os.path.join(src_folder, "one_file.txt")
+        symlink = os.path.join(src_folder, "symlink.txt")
 
         save(file1, "Conan")
         os.symlink(file1, symlink)
 
+        # Create the zipped file
         tar_gz_file = os.path.join(self.tmp_folder, PACKAGE_TGZ_NAME)
-        compress_files({'one_file.txt': file1, 'symlink.txt': symlink}, {},
-                       name=tar_gz_file, dest_dir=self.tmp_folder)
+        srcs, symlinks = gather_files(src_folder)
+        compress_files(files=srcs, symlinks=symlinks, name=tar_gz_file, dest_dir=self.tmp_folder)
+
+        # These will be the tests
+        def perform_tests(folder):
+            self.assertTrue(os.path.exists(os.path.join(folder, 'one_file.txt')))
+            self.assertTrue(os.path.exists(os.path.join(folder, 'symlink.txt')))
+            self.assertTrue(os.path.islink(os.path.join(folder, 'symlink.txt')))
 
         # Uncompress using cli tools
-        os.makedirs(os.path.join(self.tmp_folder, 'dest'))
-        os.system('tar xvzf "{}" -C "{}"'.format(tar_gz_file, os.path.join(self.tmp_folder, 'dest')))
-        self.assertTrue(os.path.exists(os.path.join(self.tmp_folder, 'dest', 'one_file.txt')))
-        self.assertTrue(os.path.exists(os.path.join(self.tmp_folder, 'dest', 'symlink.txt')))
-        self.assertTrue(os.path.islink(os.path.join(self.tmp_folder, 'dest', 'symlink.txt')))
+        dest_dir = os.path.join(self.tmp_folder, 'dest_cli')
+        os.makedirs(dest_dir)
+        os.system('tar xvzf "{}" -C "{}"'.format(tar_gz_file, dest_dir))
+
+        perform_tests(dest_dir)
 
         # Uncompress using Conan machinery
-        uncompress_file(tar_gz_file, os.path.join(self.tmp_folder, 'dest2'),
-                        output=TestBufferConanOutput())
-        self.assertTrue(os.path.exists(os.path.join(self.tmp_folder, 'dest2', 'one_file.txt')))
-        self.assertTrue(os.path.exists(os.path.join(self.tmp_folder, 'dest2', 'symlink.txt')))
-        self.assertTrue(os.path.islink(os.path.join(self.tmp_folder, 'dest2', 'symlink.txt')))
+        dest_dir = os.path.join(self.tmp_folder, 'dest_conan')
+        uncompress_file(tar_gz_file, dest_dir, output=TestBufferConanOutput())
+
+        perform_tests(dest_dir)
 
     @unittest.skipIf(platform.system() == "Windows", "Command line 'tar' not available in Windows")
     def test_symlinks_directory(self):
