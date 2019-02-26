@@ -11,7 +11,7 @@ def serialize_cpp_info(cpp_info):
         "sysroot",
         "include_paths", "lib_paths", "bin_paths", "build_paths", "res_paths",
         "libs",
-        "defines", "cflags", "cppflags", "sharedlinkflags", "exelinkflags",
+        "defines", "cflags", "cxxflags", "cppflags", "sharedlinkflags", "exelinkflags",
     ]
     res = {}
     for key in keys:

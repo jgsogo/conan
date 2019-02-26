@@ -23,7 +23,7 @@ class Pkg(ConanFile):
         os.makedirs(os.path.join(self.package_folder, "include"))
     def package_info(self):
         self.cpp_info.libs = ["hello"]
-        self.cpp_info.cppflags = ["-some_cpp_compiler_flag"]
+        self.cpp_info.cxxflags = ["-some_cxx_compiler_flag"]
         self.cpp_info.cflags = ["-some_c_compiler_flag"]
 """})
         client.run("export . Hello/0.1@lasote/stable")

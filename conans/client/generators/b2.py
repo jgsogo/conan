@@ -101,7 +101,7 @@ class B2Generator(Generator):
             self.b2_constant(name, 'includedirs', info.include_paths, True) + \
             self.b2_constant(name, 'libdirs', info.lib_paths, True) + \
             self.b2_constant(name, 'defines', info.defines) + \
-            self.b2_constant(name, 'cppflags', info.cppflags) + \
+            self.b2_constant(name, 'cxxflags', info.cxxflags) + \
             self.b2_constant(name, 'cflags', info.cflags) + \
             self.b2_constant(name, 'sharedlinkflags', info.sharedlinkflags) + \
             self.b2_constant(name, 'exelinkflags', info.exelinkflags) + \
@@ -110,7 +110,7 @@ class B2Generator(Generator):
                 '<include>$(includedirs({name},{variation}))'.format(name=name, variation=self.b2_variation_id),
                 '<define>$(defines({name},{variation}))'.format(name=name, variation=self.b2_variation_id),
                 '<cflags>$(cflags({name},{variation}))'.format(name=name, variation=self.b2_variation_id),
-                '<cxxflags>$(cppflags({name},{variation}))'.format(name=name, variation=self.b2_variation_id),
+                '<cxxflags>$(cxxflags({name},{variation}))'.format(name=name, variation=self.b2_variation_id),
                 '<link>shared:<linkflags>$(sharedlinkflags({name},{variation}))'.format(name=name, variation=self.b2_variation_id)
                 ])
 

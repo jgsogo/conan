@@ -41,7 +41,7 @@ class B2GeneratorTest(unittest.TestCase):
         cpp_info.version = "2.3"
         cpp_info.exelinkflags = ["-exelinkflag"]
         cpp_info.sharedlinkflags = ["-sharedlinkflag"]
-        cpp_info.cppflags = ["-cppflag"]
+        cpp_info.cxxflags = ["-cxxflag"]
         cpp_info.public_deps = ["MyPkg"]
         cpp_info.lib_paths.extend(["Path\\with\\slashes", "regular/path/to/dir"])
         cpp_info.include_paths.extend(["other\\Path\\with\\slashes", "other/regular/path/to/dir"])
@@ -181,7 +181,7 @@ constant-if defines(conan,32,x86,17,gnu,linux,gcc-6.3,release) :
     "MYDEFINE1"
     ;
 
-constant-if cppflags(conan,32,x86,17,gnu,linux,gcc-6.3,release) :
+constant-if cxxflags(conan,32,x86,17,gnu,linux,gcc-6.3,release) :
     "-cppflag"
     ;
 
@@ -211,7 +211,7 @@ constant-if usage-requirements(conan,32,x86,17,gnu,linux,gcc-6.3,release) :
     <include>$(includedirs(conan,32,x86,17,gnu,linux,gcc-6.3,release))
     <define>$(defines(conan,32,x86,17,gnu,linux,gcc-6.3,release))
     <cflags>$(cflags(conan,32,x86,17,gnu,linux,gcc-6.3,release))
-    <cxxflags>$(cppflags(conan,32,x86,17,gnu,linux,gcc-6.3,release))
+    <cxxflags>$(cxxflags(conan,32,x86,17,gnu,linux,gcc-6.3,release))
     <link>shared:<linkflags>$(sharedlinkflags(conan,32,x86,17,gnu,linux,gcc-6.3,release))
     ;
 
@@ -242,7 +242,7 @@ constant-if usage-requirements(mypkg,32,x86,17,gnu,linux,gcc-6.3,release) :
     <include>$(includedirs(mypkg,32,x86,17,gnu,linux,gcc-6.3,release))
     <define>$(defines(mypkg,32,x86,17,gnu,linux,gcc-6.3,release))
     <cflags>$(cflags(mypkg,32,x86,17,gnu,linux,gcc-6.3,release))
-    <cxxflags>$(cppflags(mypkg,32,x86,17,gnu,linux,gcc-6.3,release))
+    <cxxflags>$(cxxflags(mypkg,32,x86,17,gnu,linux,gcc-6.3,release))
     <link>shared:<linkflags>$(sharedlinkflags(mypkg,32,x86,17,gnu,linux,gcc-6.3,release))
     ;
 
@@ -265,7 +265,7 @@ constant-if defines(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release) :
     "MYDEFINE2"
     ;
 
-constant-if cppflags(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release) :
+constant-if cxxflags(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release) :
     "-cppflag"
     ;
 
@@ -291,7 +291,7 @@ constant-if usage-requirements(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release) :
     <include>$(includedirs(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release))
     <define>$(defines(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release))
     <cflags>$(cflags(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release))
-    <cxxflags>$(cppflags(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release))
+    <cxxflags>$(cxxflags(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release))
     <link>shared:<linkflags>$(sharedlinkflags(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release))
     ;
 
