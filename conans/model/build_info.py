@@ -89,10 +89,16 @@ class _CppInfo(object):
     # Compatibility for 'cppflags' (old style property to allow decoration)
     @deprecation.deprecated(deprecated_in="1.13", removed_in="2.0", details="Use 'cxxflags' instead")
     def get_cppflags(self):
+        import traceback
+        traceback.print_exc()
+        raise RuntimeError("GET CPPFLAGS")
         return self.cxxflags
 
     @deprecation.deprecated(deprecated_in="1.13", removed_in="2.0", details="Use 'cxxflags' instead")
     def set_cppflags(self, value):
+        import traceback
+        traceback.print_exc()
+        raise RuntimeError("SET CPPFLAGS")
         self.cxxflags = value
 
     cppflags = property(get_cppflags, set_cppflags)
