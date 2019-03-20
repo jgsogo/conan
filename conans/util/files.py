@@ -1,17 +1,19 @@
-import os
-import shutil
-import tempfile
-from contextlib import contextmanager
-from errno import ENOENT, EEXIST
+import errno
 import hashlib
-import sys
-from os.path import abspath, realpath, join as joinpath
+import os
 import platform
 import re
-import six
-from conans.util.log import logger
-import tarfile
+import shutil
 import stat
+import sys
+import tarfile
+import tempfile
+
+from os.path import abspath, join as joinpath, realpath
+
+import six
+
+from conans.util.log import logger
 
 
 def walk(top, **kwargs):
@@ -60,7 +62,7 @@ def decode_text(text):
             return text.decode(decoder)
         except UnicodeDecodeError:
             continue
-    logger.warn("can't decode %s" % str(text))
+    logger.warning("can't decode %s" % str(text))
     return text.decode("utf-8", "ignore")  # Ignore not compatible characters
 
 
@@ -153,23 +155,6 @@ def mkdir_tmp():
     return tempfile.mkdtemp(suffix='tmp_conan')
 
 
-@contextmanager
-def tmp_file(contents):
-    """ Usage:
-
-    with tmp_file("mycontents") as filepath:
-        # Here exists filepath tmp file with "mycontents" inside
-
-    """
-    try:
-        tmp_dir = mkdir_tmp()
-        path = os.path.join(tmp_dir, "t")
-        save(path, contents)
-        yield path
-    finally:
-        rmdir(tmp_dir)
-
-
 def to_file_bytes(content):
     if six.PY3:
         if not isinstance(content, bytes):
@@ -185,14 +170,14 @@ def save_files(path, files, only_if_modified=False):
 
 
 def load(path, binary=False):
-    '''Loads a file content'''
+    """ Loads a file content """
     with open(path, 'rb') as handle:
         tmp = handle.read()
         return tmp if binary else decode_text(tmp)
 
 
 def relative_dirs(path):
-    ''' Walks a dir and return a list with the relative paths '''
+    """ Walks a dir and return a list with the relative paths """
     ret = []
     for dirpath, _, fnames in walk(path):
         for filename in fnames:
@@ -222,7 +207,19 @@ def rmdir(path):
     try:
         shutil.rmtree(path, onerror=_change_permissions)
     except OSError as err:
-        if err.errno == ENOENT:
+        if err.errno == errno.ENOENT:
+            return
+        raise
+
+
+def remove(path):
+    try:
+        assert os.path.isfile(path)
+        os.remove(path)
+    except (IOError, OSError) as e:  # for py3, handle just PermissionError
+        if e.errno == errno.EPERM or e.errno == errno.EACCES:
+            os.chmod(path, stat.S_IRWXU)
+            os.remove(path)
             return
         raise
 

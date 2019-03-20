@@ -18,10 +18,10 @@ class TestConan(ConanFile):
 
 """
         client.save({CONANFILE: conanfile})
-        error = client.run('create . user/testing -s compiler="gcc" '
-                           '-s compiler.libcxx="libstdc++11" '
-                           '-s compiler.version="4.6" -s cppstd=17', ignore_error=True)
-        self.assertTrue(error)
+        client.run('create . user/testing -s compiler="gcc" '
+                   '-s compiler.libcxx="libstdc++11" '
+                   '-s compiler.version="4.6" -s cppstd=17', assert_error=True)
+
         self.assertIn("The specified 'cppstd=17' is not available for 'gcc 4.6'", client.out)
         self.assertIn("Possible values are ['11', '98', 'gnu11', 'gnu98']", client.out)
 
@@ -68,7 +68,12 @@ class TestConan(ConanFile):
                    '-s compiler.libcxx="libstdc++" '
                    '-s cppstd=gnu14 '
                    '--build missing')
-        self.assertNotIn("BUILDING!", client.out)
+        if client.cache.config.revisions_enabled:
+            self.assertIn("doesn't belong to the installed recipe revision, removing folder",
+                          client.out)
+            self.assertIn("BUILDING!", client.out)
+        else:
+            self.assertNotIn("BUILDING!", client.out)
 
         # Add the setting but with a non-default value, should build again
         client.save({CONANFILE: conanfile % '"cppstd"'})  # With the setting

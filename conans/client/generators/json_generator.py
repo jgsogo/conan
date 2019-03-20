@@ -11,11 +11,12 @@ def serialize_cpp_info(cpp_info):
         "sysroot",
         "include_paths", "lib_paths", "bin_paths", "build_paths", "res_paths",
         "libs",
-        "defines", "cflags", "cppflags", "sharedlinkflags", "exelinkflags",
+        "defines", "cflags", "cxxflags", "sharedlinkflags", "exelinkflags",
     ]
     res = {}
     for key in keys:
         res[key] = getattr(cpp_info, key)
+    res["cppflags"] = cpp_info.cxxflags  # Backwards compatibility
     return res
 
 
@@ -31,7 +32,7 @@ class JsonGenerator(Generator):
         info["deps_user_info"] = self.get_deps_user_info()
         info["dependencies"] = self.get_dependencies_info()
         info["settings"] = self.get_settings()
-        info["options"] = self.get_options()        
+        info["options"] = self.get_options()
         return json.dumps(info, indent=2)
 
     def get_deps_user_info(self):

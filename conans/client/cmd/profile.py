@@ -1,12 +1,12 @@
 import os
 
+from conans.client.conf.detect import detect_defaults_settings
+from conans.client.profile_loader import get_profile_path, read_profile
 from conans.errors import ConanException
-from conans.client.profile_loader import read_profile, get_profile_path
-from conans.util.files import save
 from conans.model.options import OptionsValues
 from conans.model.profile import Profile
-from conans.client.conf.detect import detect_defaults_settings
 from conans.unicode import get_cwd
+from conans.util.files import save
 
 
 def _get_profile_keys(key):
@@ -21,13 +21,18 @@ def _get_profile_keys(key):
 
 
 def cmd_profile_list(cache_profiles_path, output):
-    folder = cache_profiles_path
-    if os.path.exists(folder):
-        return [name for name in os.listdir(folder)
-                if not os.path.isdir(os.path.join(folder, name))]
-    else:
+    profiles = []
+    if os.path.exists(cache_profiles_path):
+        for current_directory, _, files in os.walk(cache_profiles_path, followlinks=True):
+            for filename in files:
+                rel_path = os.path.relpath(os.path.join(current_directory, filename),
+                                           cache_profiles_path)
+                profiles.append(rel_path)
+
+    if not profiles:
         output.info("No profiles defined")
-        return []
+    profiles.sort()
+    return profiles
 
 
 def cmd_profile_create(profile_name, cache_profiles_path, output, detect=False):

@@ -4,15 +4,15 @@ https://packaging.python.org/en/latest/distributing.html
 https://github.com/pypa/sampleproject
 """
 
-# Always prefer setuptools over distutils
-from setuptools import setup, find_packages
+import os
+import platform
+import re
 # To use a consistent encoding
 from codecs import open
 from os import path
-import os
-import re
-import platform
 
+# Always prefer setuptools over distutils
+from setuptools import find_packages, setup
 
 here = path.abspath(path.dirname(__file__))
 
@@ -31,6 +31,10 @@ if platform.system() == "Darwin":
     project_requirements.extend(get_requires("conans/requirements_osx.txt"))
 project_requirements.extend(get_requires("conans/requirements_server.txt"))
 dev_requirements = get_requires("conans/requirements_dev.txt")
+# The tests utils are used by conan-package-tools
+exclude_test_packages = ["conans.test.{}*".format(d)
+                         for d in os.listdir(os.path.join(here, "conans/test"))
+                         if os.path.isdir(os.path.join(here, "conans/test", d)) and d != "utils"]
 
 
 def load_version():
@@ -88,7 +92,7 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=find_packages(),
+    packages=find_packages(exclude=exclude_test_packages),
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:

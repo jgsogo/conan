@@ -1,12 +1,12 @@
-import os
 import fnmatch
+import os
 import shutil
 from collections import defaultdict
 
 from conans.util.files import mkdir, walk
 
 
-def report_copied_files(copied, output):
+def report_copied_files(copied, output, message_suffix="Copied"):
     ext_files = defaultdict(list)
     for f in copied:
         _, ext = os.path.splitext(f)
@@ -16,12 +16,12 @@ def report_copied_files(copied, output):
         return False
 
     for ext, files in ext_files.items():
-        files_str = (", ".join(files)) if len(files) < 5 else ""
+        files_str = (": " + ", ".join(files)) if len(files) < 5 else ""
         file_or_files = "file" if len(files) == 1 else "files"
         if not ext:
-            output.info("Copied %d %s: %s" % (len(files), file_or_files, files_str))
+            output.info("%s %d %s%s" % (message_suffix, len(files), file_or_files, files_str))
         else:
-            output.info("Copied %d '%s' %s: %s" % (len(files), ext, file_or_files, files_str))
+            output.info("%s %d '%s' %s%s" % (message_suffix, len(files), ext, file_or_files, files_str))
     return True
 
 
@@ -153,7 +153,7 @@ class FileCopier(object):
             relpath = os.path.relpath(abs_path, src)
             if relpath.startswith("."):
                 continue
-            
+
             link = os.readlink(src_link)
             # Absoluted path symlinks are a problem, convert it to relative
             if os.path.isabs(link):

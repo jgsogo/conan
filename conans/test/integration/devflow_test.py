@@ -1,11 +1,10 @@
+import os
 import unittest
 
-from conans.test.utils.tools import TestClient
-import os
-from conans.util.files import mkdir, load, rmdir
-from conans.model.ref import ConanFileReference
 from conans.client import tools
-
+from conans.model.ref import ConanFileReference
+from conans.test.utils.tools import TestClient
+from conans.util.files import load, mkdir, rmdir
 
 conanfile = '''
 from conans import ConanFile
@@ -64,7 +63,7 @@ class DevInSourceFlowTest(unittest.TestCase):
         client.run("export-pkg . Pkg/0.1@lasote/testing -bf=../pkg")
 
         ref = ConanFileReference.loads("Pkg/0.1@lasote/testing")
-        cache_package_folder = client.client_cache.packages(ref)
+        cache_package_folder = client.cache.packages(ref)
         cache_package_folder = os.path.join(cache_package_folder,
                                             os.listdir(cache_package_folder)[0])
         self._assert_pkg(cache_package_folder)
@@ -87,7 +86,7 @@ class DevInSourceFlowTest(unittest.TestCase):
         client.run("export-pkg . Pkg/0.1@lasote/testing -bf='%s' -if=." % package_folder)
 
         ref = ConanFileReference.loads("Pkg/0.1@lasote/testing")
-        cache_package_folder = client.client_cache.packages(ref)
+        cache_package_folder = client.cache.packages(ref)
         cache_package_folder = os.path.join(cache_package_folder,
                                             os.listdir(cache_package_folder)[0])
         self._assert_pkg(cache_package_folder)
@@ -115,7 +114,7 @@ class DevInSourceFlowTest(unittest.TestCase):
         client.run("export-pkg .. Pkg/0.1@lasote/testing --source-folder=.. ")
 
         ref = ConanFileReference.loads("Pkg/0.1@lasote/testing")
-        cache_package_folder = client.client_cache.packages(ref)
+        cache_package_folder = client.cache.packages(ref)
         cache_package_folder = os.path.join(cache_package_folder,
                                             os.listdir(cache_package_folder)[0])
         self._assert_pkg(cache_package_folder)
@@ -178,7 +177,7 @@ class DevOutSourceFlowTest(unittest.TestCase):
         client.run("export-pkg . Pkg/0.1@lasote/testing -bf=../build/package")
 
         ref = ConanFileReference.loads("Pkg/0.1@lasote/testing")
-        cache_package_folder = client.client_cache.packages(ref)
+        cache_package_folder = client.cache.packages(ref)
         cache_package_folder = os.path.join(cache_package_folder,
                                             os.listdir(cache_package_folder)[0])
         self._assert_pkg(cache_package_folder)
@@ -201,7 +200,7 @@ class DevOutSourceFlowTest(unittest.TestCase):
         client.run("export-pkg . Pkg/0.1@lasote/testing -bf=./pkg")
 
         ref = ConanFileReference.loads("Pkg/0.1@lasote/testing")
-        cache_package_folder = client.client_cache.packages(ref)
+        cache_package_folder = client.cache.packages(ref)
         cache_package_folder = os.path.join(cache_package_folder,
                                             os.listdir(cache_package_folder)[0])
         self._assert_pkg(cache_package_folder)
@@ -228,7 +227,7 @@ class DevOutSourceFlowTest(unittest.TestCase):
         client.run("export-pkg . Pkg/0.1@lasote/testing -bf=./build")
 
         ref = ConanFileReference.loads("Pkg/0.1@lasote/testing")
-        cache_package_folder = client.client_cache.packages(ref)
+        cache_package_folder = client.cache.packages(ref)
         cache_package_folder = os.path.join(cache_package_folder,
                                             os.listdir(cache_package_folder)[0])
         self._assert_pkg(cache_package_folder)

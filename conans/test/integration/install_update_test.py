@@ -1,15 +1,13 @@
 import os
+import time
 import unittest
 from collections import OrderedDict
-
-import time
 from time import sleep
 
 from conans.model.ref import ConanFileReference, PackageReference
 from conans.paths import CONAN_MANIFEST
 from conans.test.utils.cpp_test_files import cpp_hello_conan_files
-from conans.test.utils.tools import NO_SETTINGS_PACKAGE_ID
-from conans.test.utils.tools import TestClient, TestServer
+from conans.test.utils.tools import NO_SETTINGS_PACKAGE_ID, TestClient, TestServer
 from conans.util.files import load, save
 
 
@@ -169,15 +167,15 @@ class Pkg(ConanFile):
         self.client.run("remote list_ref")
         self.assertIn("Hello0/1.0@lasote/stable", self.client.out)
         self.client.run("remote list_pref Hello0/1.0@lasote/stable")
-        ref = "Hello0/1.0@lasote/stable"
-        pref = "%s:55a3af76272ead64e6f543c12ecece30f94d3eda" % ref
-        self.assertIn(pref, self.client.out)
+        reference = "Hello0/1.0@lasote/stable"
+        package_reference = "%s:55a3af76272ead64e6f543c12ecece30f94d3eda" % reference
+        self.assertIn(package_reference, self.client.out)
 
         ref = ConanFileReference.loads("Hello0/1.0@lasote/stable")
-        package_ref = PackageReference(ref, "55a3af76272ead64e6f543c12ecece30f94d3eda")
-        export_folder = self.client.client_cache.export(ref)
+        pref = PackageReference(ref, "55a3af76272ead64e6f543c12ecece30f94d3eda")
+        export_folder = self.client.cache.export(ref)
         recipe_manifest = os.path.join(export_folder, CONAN_MANIFEST)
-        package_folder = self.client.client_cache.package(package_ref)
+        package_folder = self.client.cache.package(pref)
         package_manifest = os.path.join(package_folder, CONAN_MANIFEST)
 
         def timestamps():
@@ -190,7 +188,7 @@ class Pkg(ConanFile):
         time.sleep(1)
 
         # Change and rebuild package
-        files0["helloHello0.h"] = files0["helloHello0.h"] + " // useless comment"
+        files0["helloHello0.h"] += " // useless comment"
         self.client.save(files0, clean_first=True)
         self.client.run("export . lasote/stable")
         self.client.run("install Hello0/1.0@lasote/stable --build")
@@ -202,7 +200,7 @@ class Pkg(ConanFile):
         self.client.run("remote list_pref Hello0/1.0@lasote/stable")
         # FIXME Conan 2.0 It should be a assertNotIn
         self.assertIn("Hello0/1.0@lasote/stable:55a3af76272ead64e6f543c12ecece30f94d3eda",
-                         self.client.out)
+                      self.client.out)
 
         rebuild_timestamps = timestamps()
         self.assertNotEqual(rebuild_timestamps, initial_timestamps)
@@ -239,7 +237,7 @@ class Pkg(ConanFile):
         client2 = TestClient(servers=self.servers, users={"default": [("lasote", "mypass")]})
         client2.run("install Hello0/1.0@lasote/stable")
 
-        self.assertEquals(str(client2.out).count("Downloading conaninfo.txt"), 1)
+        self.assertEqual(str(client2.out).count("Downloading conaninfo.txt"), 1)
 
         files["helloHello0.h"] = "//EMPTY!"
         self.client.save(files, clean_first=True)
@@ -250,8 +248,8 @@ class Pkg(ConanFile):
 
         client2.run("install Hello0/1.0@lasote/stable --update")
         ref = ConanFileReference.loads("Hello0/1.0@lasote/stable")
-        package_ids = client2.paths.conan_packages(ref)
-        package_path = client2.paths.package(PackageReference(ref, package_ids[0]))
+        package_ids = client2.cache.conan_packages(ref)
+        package_path = client2.cache.package(PackageReference(ref, package_ids[0]))
         header = load(os.path.join(package_path, "include/helloHello0.h"))
         self.assertEqual(header, "//EMPTY!")
 
@@ -279,10 +277,18 @@ class ConanLib(ConanFile):
         upload("mycontent2")
 
         client.run("install Pkg/0.1@lasote/channel -u")
-        self.assertIn("Pkg/0.1@lasote/channel:%s - Update" % NO_SETTINGS_PACKAGE_ID, client.out)
+
+        if client.cache.config.revisions_enabled:
+            # The binary package is not updated but downloaded, because the local one we have
+            # belongs to a different revision and it is removed
+            self.assertIn("Pkg/0.1@lasote/channel:%s - Download" % NO_SETTINGS_PACKAGE_ID,
+                          client.out)
+        else:
+            self.assertIn("Pkg/0.1@lasote/channel:%s - Update" % NO_SETTINGS_PACKAGE_ID,
+                          client.out)
         self.assertIn("Pkg/0.1@lasote/channel: Retrieving package %s" % NO_SETTINGS_PACKAGE_ID,
                       client.out)
-        conan_ref = ConanFileReference.loads("Pkg/0.1@lasote/channel")
-        pkg_ref = PackageReference(conan_ref, NO_SETTINGS_PACKAGE_ID)
-        header = os.path.join(client.client_cache.package(pkg_ref), "header.h")
+        ref = ConanFileReference.loads("Pkg/0.1@lasote/channel")
+        pref = PackageReference(ref, NO_SETTINGS_PACKAGE_ID)
+        header = os.path.join(client.cache.package(pref), "header.h")
         self.assertEqual(load(header), "mycontent2")
