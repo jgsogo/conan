@@ -29,6 +29,21 @@ class ReusingPackageTest(unittest.TestCase):
         self.assertIn(">>> BasePck 'my_conanfile_base/1.0'", self.client.out)
         self.assertIn("Package '5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9' created", self.client.out)
 
+    def test_requires(self):
+        conanfile = textwrap.dedent("""
+            from conans import ConanFile
+            
+            class Lib(ConanFile):
+                name = "my_conanfile_base"
+                version = "aaa"
+                
+                requires = "my_conanfile_base/1.0@lasote/testing"
+            """)
+        self.client.save({"conanfile.py": conanfile}, clean_first=True)
+        self.client.run("create . lasote/testing")
+        print(self.client.out)
+        self.fail("AAA")
+
     @parameterized.expand([("package", ), ("my_conanfile_base", )])
     def test_build_requires(self, pck_name):
         br = textwrap.dedent("""
@@ -44,6 +59,7 @@ class ReusingPackageTest(unittest.TestCase):
             """ % pck_name)
         self.client.save({"conanfile.py": br}, clean_first=True)
         self.client.run("create . lasote/testing")
+        print(self.client.out)
         self.assertIn(">>> BrPck '{}/1.0.23'".format(pck_name), self.client.out)
         self.assertNotIn(">>> BasePck 'my_conanfile_base/1.0'", self.client.out)
         self.assertIn("    my_conanfile_base/1.0@lasote/testing:5ab84d6acfe1f23c"
@@ -56,6 +72,7 @@ class ReusingPackageTest(unittest.TestCase):
             base = python_requires("my_conanfile_base/1.0@lasote/testing")
             
             class PrPck(base.BasePck):
+                name = base.BasePck.name
                 version = "pr"
             
                 def build(self):
@@ -67,6 +84,7 @@ class ReusingPackageTest(unittest.TestCase):
         self.assertNotIn(">>> BasePck 'my_conanfile_base/1.0'", self.client.out)
         self.assertIn("    my_conanfile_base/pr@lasote/testing:5ab84d6acfe1f23c"
                       "4fae0ab88f26e3a396351ac9 - Build", self.client.out)
+        print(self.client.out)
 
     def test_both(self):
         both = textwrap.dedent("""
@@ -76,6 +94,7 @@ class ReusingPackageTest(unittest.TestCase):
             base = python_requires(requirement)
             
             class BothPck(base.BasePck):
+                name = base.BasePck.name
                 version = "both"
                 build_requires = requirement
             
@@ -90,3 +109,4 @@ class ReusingPackageTest(unittest.TestCase):
                       "4fae0ab88f26e3a396351ac9 - Build", self.client.out)
         self.assertIn("    my_conanfile_base/1.0@lasote/testing:5ab84d6acfe1f23c"
                       "4fae0ab88f26e3a396351ac9 - Cache", self.client.out)
+        print(self.client.out)
