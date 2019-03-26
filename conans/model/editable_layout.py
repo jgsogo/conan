@@ -39,8 +39,8 @@ class EditableLayout(object):
     def __init__(self, filepath):
         self._filepath = filepath
 
-    def folder(self, ref, name, settings, options):
-        _, folders = self._load_data(ref, settings=settings, options=options)
+    def folder(self, ref, name, settings, options, **context):
+        _, folders = self._load_data(ref, settings=settings, options=options, **context)
         try:
             path = folders.get(str(ref)) or folders.get(None) or {}
             return path[name]
@@ -52,10 +52,11 @@ class EditableLayout(object):
         value = value.replace('\\', '/')
         return value
 
-    def _parse_layout_file(self, ref, settings, options):
+    def _parse_layout_file(self, ref, settings, options, **context):
         content = load(self._filepath)
         try:
-            content = render_layout_file(content, ref=ref, settings=settings, options=options)
+            content = render_layout_file(content, ref=ref, settings=settings,
+                                         options=options, **context)
 
             parser = configparser.ConfigParser(allow_no_value=True)
             parser.optionxform = str
@@ -69,8 +70,8 @@ class EditableLayout(object):
 
         return parser
 
-    def _load_data(self, ref, settings, options):
-        parser = self._parse_layout_file(ref, settings, options)
+    def _load_data(self, ref, settings, options, **context):
+        parser = self._parse_layout_file(ref, settings, options, **context)
 
         # Build a convenient data structure
         data = OrderedDict()
@@ -101,8 +102,8 @@ class EditableLayout(object):
                 [self._work_on_item(k) for k, _ in parser.items(section)]
         return data, folders
 
-    def apply_to(self, ref, cpp_info, settings=None, options=None):
-        data, _ = self._load_data(ref, settings=settings, options=options)
+    def apply_to(self, ref, cpp_info, settings, options, **context):
+        data, _ = self._load_data(ref, settings=settings, options=options, **context)
 
         # Apply the data to the cpp_info
         data = data.get(str(ref)) or data.get(None) or {}

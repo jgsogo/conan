@@ -58,10 +58,14 @@ class Workspace(object):
                 conanfile = node.conanfile
                 src = build = None
                 if editable:
-                    build = editable.folder(ref, EditableLayout.BUILD_FOLDER, conanfile.settings,
-                                            conanfile.options)
-                    src = editable.folder(ref, EditableLayout.SOURCE_FOLDER, conanfile.settings,
-                                          conanfile.options)
+                    build = editable.folder(ref, EditableLayout.BUILD_FOLDER,
+                                            settings=conanfile.settings,
+                                            options=conanfile.options,
+                                            workspace_folder=self._base_folder)
+                    src = editable.folder(ref, EditableLayout.SOURCE_FOLDER,
+                                          settings=conanfile.settings,
+                                          options=conanfile.options,
+                                          workspace_folder=self._base_folder)
                 if src is not None:
                     src = os.path.join(ws_pkg.root_folder, src).replace("\\", "/")
                     cmake += 'set(PACKAGE_%s_SRC "%s")\n' % (ref.name, src)

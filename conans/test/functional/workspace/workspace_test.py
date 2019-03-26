@@ -380,7 +380,7 @@ class WorkspaceTest(unittest.TestCase):
         self.assertIn("Hello World B Debug!", client.out)
         self.assertIn("Hello World A Debug!", client.out)
 
-    def simple_out_of_source_build_test(self):
+    def test_simple_out_of_source_build_test(self):
         client = TestClient()
 
         def files(name, depend=None):
@@ -419,7 +419,7 @@ class WorkspaceTest(unittest.TestCase):
             src
 
             [libdirs]
-            ../build/{{reference.name}}/{{settings.build_type}}/lib
+            {{ workspace_folder }}/build/{{reference.name}}/{{settings.build_type}}/lib
             """)
 
         client.save({"conanws.yml": project,
@@ -924,3 +924,4 @@ class Pkg(ConanFile):
         for p in ("HelloC", "HelloB", "HelloA"):
             self.assertIn("add_subdirectory(${PACKAGE_%s_SRC} ${PACKAGE_%s_BUILD})" % (p, p),
                           conanws_cmake)
+
