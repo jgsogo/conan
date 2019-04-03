@@ -369,7 +369,7 @@ class ConanAPIV1(object):
                 package_layout = self._cache.package_layout(ref, short_paths=conanfile.short_paths)
                 new_ref = cmd_export(package_layout, conanfile_path, conanfile, keep_source,
                                      self._cache.config.revisions_enabled, self._user_io.out,
-                                     self._hook_manager)
+                                     self._hook_manager, copy_local_scm_srcs=True)
                 # The new_ref contains the revision
                 recorder.recipe_exported(new_ref)
 
@@ -436,7 +436,7 @@ class ConanAPIV1(object):
             package_layout = self._cache.package_layout(ref, short_paths=conanfile.short_paths)
             new_ref = cmd_export(package_layout, conanfile_path, conanfile, False,
                                  self._cache.config.revisions_enabled, self._user_io.out,
-                                 self._hook_manager)
+                                 self._hook_manager, copy_local_scm_srcs=False)
             # new_ref has revision
             recorder.recipe_exported(new_ref)
             recorder.add_recipe_being_developed(ref)
@@ -764,7 +764,7 @@ class ConanAPIV1(object):
         package_layout = self._cache.package_layout(ref, short_paths=conanfile.short_paths)
         cmd_export(package_layout, conanfile_path, conanfile, keep_source,
                    self._cache.config.revisions_enabled, self._user_io.out,
-                   self._hook_manager)
+                   self._hook_manager, copy_local_scm_srcs=False)
 
     @api_method
     def remove(self, pattern, query=None, packages=None, builds=None, src=False, force=False,

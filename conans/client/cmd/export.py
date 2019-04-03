@@ -13,8 +13,9 @@ from conans.model.manifest import FileTreeManifest
 from conans.model.scm import SCM, get_scm_data
 from conans.paths import CONANFILE
 from conans.search.search import search_recipes, search_packages
-from conans.util.files import is_dirty, load, rmdir, save, set_dirty, remove
+from conans.util.files import is_dirty, load, rmdir, save, set_dirty, remove, mkdir
 from conans.util.log import logger
+from conans.client.source import merge_directories
 
 
 def export_alias(package_layout, target_ref, output, revisions_enabled):
@@ -47,18 +48,18 @@ def check_casing_conflict(cache, ref):
                              % (str(ref), " ".join(str(s) for s in refs)))
 
 
-def cmd_export(package_layout, conanfile_path, conanfile, keep_source, revisions_enabled,
-               output, hook_manager):
+def cmd_export(package_layout, ori_conanfile_path, conanfile, keep_source, revisions_enabled,
+               output, hook_manager, copy_local_scm_srcs=False):
     """ Export the recipe
     param conanfile_path: the original source directory of the user containing a
                        conanfile.py
     """
-    hook_manager.execute("pre_export", conanfile=conanfile, conanfile_path=conanfile_path,
+    hook_manager.execute("pre_export", conanfile=conanfile, conanfile_path=ori_conanfile_path,
                          reference=package_layout.ref)
-    logger.debug("EXPORT: %s" % conanfile_path)
+    logger.debug("EXPORT: %s" % ori_conanfile_path)
 
     output.highlight("Exporting package recipe")
-    conan_linter(conanfile_path, output)
+    conan_linter(ori_conanfile_path, output)
     output = conanfile.output
 
     # Get previous digest
@@ -69,16 +70,14 @@ def cmd_export(package_layout, conanfile_path, conanfile, keep_source, revisions
     finally:
         _recreate_folders(package_layout.export(), package_layout.export_sources())
 
-    # Copy sources to target folders
+    # Copy exports and exports_sources to target folders
     with package_layout.conanfile_write_lock(output=output):
-        origin_folder = os.path.dirname(conanfile_path)
-        run_recipe_exports(conanfile, origin_folder, package_layout.export())
-        run_recipe_exports_sources(conanfile, origin_folder, package_layout.export_sources())
-        shutil.copy2(conanfile_path, package_layout.conanfile())
+        run_recipe_exports(conanfile, package_layout, ori_conanfile_path)
+        run_recipe_exports_sources(conanfile, package_layout, ori_conanfile_path)
+        shutil.copy2(ori_conanfile_path, package_layout.conanfile())
 
-        _capture_export_scm_data(conanfile, os.path.dirname(conanfile_path),
-                                 package_layout.export(), output,
-                                 scm_src_file=package_layout.scm_folder())
+        local_srcs_scm = _capture_export_scm_data(conanfile, os.path.dirname(ori_conanfile_path),
+                                                  package_layout.export(), output)
 
         # Execute post-export hook before computing the digest
         hook_manager.execute("post_export", conanfile=conanfile, reference=package_layout.ref,
@@ -99,7 +98,7 @@ def cmd_export(package_layout, conanfile_path, conanfile, keep_source, revisions
     revision = _update_revision_in_metadata(package_layout=package_layout,
                                             revisions_enabled=revisions_enabled,
                                             output=output,
-                                            path=os.path.dirname(conanfile_path),
+                                            path=os.path.dirname(ori_conanfile_path),
                                             digest=digest,
                                             revision_mode=conanfile.revision_mode)
 
@@ -119,6 +118,19 @@ def cmd_export(package_layout, conanfile_path, conanfile, keep_source, revisions
             output.warn(str(e))
             set_dirty(source_folder)
 
+    # If we are using SCM we are copying files now (handle the sentinel file)
+    scm_folder_filepath = package_layout.scm_folder()
+    if os.path.exists(scm_folder_filepath):
+        os.unlink(scm_folder_filepath)
+    if local_srcs_scm and copy_local_scm_srcs:
+        mkdir(source_folder)
+        scm_data = get_scm_data(conanfile)
+        excluded = SCM(scm_data, local_srcs_scm, output).excluded_files
+        output.info("Getting sources from folder: %s" % local_srcs_scm)
+        dest_dir = os.path.normpath(os.path.join(source_folder, scm_data.subfolder))
+        merge_directories(local_srcs_scm, dest_dir, excluded=excluded)
+        save(scm_folder_filepath, "just a sentinel")
+
     # When revisions enabled, remove the packages not matching the revision
     if revisions_enabled:
         packages = search_packages(package_layout, query=None)
@@ -135,11 +147,7 @@ def cmd_export(package_layout, conanfile_path, conanfile, keep_source, revisions
     return package_layout.ref.copy_with_rev(revision)
 
 
-def _capture_export_scm_data(conanfile, conanfile_dir, destination_folder, output, scm_src_file):
-
-    if os.path.exists(scm_src_file):
-        os.unlink(scm_src_file)
-
+def _capture_export_scm_data(conanfile, conanfile_dir, destination_folder, output):
     scm_data = get_scm_data(conanfile)
     if not scm_data:
         return
@@ -166,12 +174,8 @@ def _capture_export_scm_data(conanfile, conanfile_dir, destination_folder, outpu
     _replace_scm_data_in_conanfile(os.path.join(destination_folder, "conanfile.py"), scm_data)
 
     if captured:
-        # Generate the scm_folder.txt file pointing to the src_path
-        src_path = scm.get_local_path_to_url(scm_data.url)
-        if src_path:
-            save(scm_src_file, os.path.normpath(src_path).replace("\\", "/"))
-
-    return scm_data
+        return scm.get_local_path_to_url(scm_data.url)
+    return None
 
 
 def _replace_scm_data_in_conanfile(conanfile_path, scm_data):
@@ -303,12 +307,12 @@ def _classify_patterns(patterns):
     return included, excluded
 
 
-def run_recipe_exports_sources(conanfile, origin_folder, destination_source_folder):
+def run_recipe_exports_sources(conanfile, package_layout, ori_conanfile_path):
     if isinstance(conanfile.exports_sources, str):
         conanfile.exports_sources = (conanfile.exports_sources, )
 
     included_sources, excluded_sources = _classify_patterns(conanfile.exports_sources)
-    copier = FileCopier([origin_folder], destination_source_folder)
+    copier = FileCopier([os.path.dirname(ori_conanfile_path)], package_layout.export_sources())
     for pattern in included_sources:
         copier(pattern, links=True, excludes=excluded_sources)
     output = conanfile.output
@@ -316,18 +320,19 @@ def run_recipe_exports_sources(conanfile, origin_folder, destination_source_fold
     copier.report(package_output)
 
 
-def run_recipe_exports(conanfile, origin_folder, destination_folder):
+def run_recipe_exports(conanfile, package_layout, ori_conanfile_path):
     if isinstance(conanfile.exports, str):
         conanfile.exports = (conanfile.exports, )
 
     included_exports, excluded_exports = _classify_patterns(conanfile.exports)
 
+    origin_folder = os.path.dirname(ori_conanfile_path)
     try:
         os.unlink(os.path.join(origin_folder, CONANFILE + 'c'))
     except OSError:
         pass
 
-    copier = FileCopier([origin_folder], destination_folder)
+    copier = FileCopier([origin_folder], package_layout.export())
     for pattern in included_exports:
         copier(pattern, links=True, excludes=excluded_exports)
     output = conanfile.output
