@@ -72,8 +72,8 @@ def cmd_export(package_layout, conanfile_path, conanfile, keep_source, revisions
     # Copy sources to target folders
     with package_layout.conanfile_write_lock(output=output):
         origin_folder = os.path.dirname(conanfile_path)
-        export_recipe(conanfile, origin_folder, package_layout.export())
-        export_source(conanfile, origin_folder, package_layout.export_sources())
+        run_recipe_exports(conanfile, origin_folder, package_layout.export())
+        run_recipe_exports_sources(conanfile, origin_folder, package_layout.export_sources())
         shutil.copy2(conanfile_path, package_layout.conanfile())
 
         _capture_export_scm_data(conanfile, os.path.dirname(conanfile_path),
@@ -303,7 +303,7 @@ def _classify_patterns(patterns):
     return included, excluded
 
 
-def export_source(conanfile, origin_folder, destination_source_folder):
+def run_recipe_exports_sources(conanfile, origin_folder, destination_source_folder):
     if isinstance(conanfile.exports_sources, str):
         conanfile.exports_sources = (conanfile.exports_sources, )
 
@@ -316,7 +316,7 @@ def export_source(conanfile, origin_folder, destination_source_folder):
     copier.report(package_output)
 
 
-def export_recipe(conanfile, origin_folder, destination_folder):
+def run_recipe_exports(conanfile, origin_folder, destination_folder):
     if isinstance(conanfile.exports, str):
         conanfile.exports = (conanfile.exports, )
 

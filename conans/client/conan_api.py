@@ -11,7 +11,7 @@ from conans.client.cache.cache import ClientCache
 from conans.client.cmd.build import build
 from conans.client.cmd.create import create
 from conans.client.cmd.download import download
-from conans.client.cmd.export import cmd_export, export_alias, export_recipe, export_source, \
+from conans.client.cmd.export import cmd_export, export_alias, run_recipe_exports, run_recipe_exports_sources, \
     check_casing_conflict
 from conans.client.cmd.export_pkg import export_pkg
 from conans.client.cmd.profile import (cmd_profile_create, cmd_profile_delete_key, cmd_profile_get,
@@ -725,8 +725,8 @@ class ConanAPIV1(object):
         conanfile_folder = os.path.dirname(conanfile_path)
         if conanfile_folder != source_folder:
             conanfile.output.info("Executing exports to: %s" % source_folder)
-            export_recipe(conanfile, conanfile_folder, source_folder)
-            export_source(conanfile, conanfile_folder, source_folder)
+            run_recipe_exports(conanfile, conanfile_folder, source_folder)
+            run_recipe_exports_sources(conanfile, conanfile_folder, source_folder)
         config_source_local(source_folder, conanfile, conanfile_path, self._hook_manager)
 
     @api_method
