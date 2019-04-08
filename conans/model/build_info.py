@@ -1,7 +1,10 @@
+# coding=utf-8
 import os
 from collections import OrderedDict
 
 import deprecation
+
+from conans.version import __version__ as client_version
 
 DEFAULT_INCLUDE = "include"
 DEFAULT_LIB = "lib"
@@ -87,11 +90,13 @@ class _CppInfo(object):
         return self._res_paths
 
     # Compatibility for 'cppflags' (old style property to allow decoration)
-    @deprecation.deprecated(deprecated_in="1.13", removed_in="2.0", details="Use 'cxxflags' instead")
+    @deprecation.deprecated(deprecated_in="1.13", removed_in="2.0", current_version=client_version,
+                            details="Use 'cxxflags' instead")
     def get_cppflags(self):
         return self.cxxflags
 
-    @deprecation.deprecated(deprecated_in="1.13", removed_in="2.0", details="Use 'cxxflags' instead")
+    @deprecation.deprecated(deprecated_in="1.13", removed_in="2.0", current_version=client_version,
+                            details="Use 'cxxflags' instead")
     def set_cppflags(self, value):
         self.cxxflags = value
 

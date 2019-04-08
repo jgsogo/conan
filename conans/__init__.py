@@ -10,6 +10,7 @@ from conans.model.conan_file import ConanFile
 from conans.model.options import Options
 from conans.model.settings import Settings
 from conans.util.files import load
+from conans.version import __version__
 
 # complex_search: With ORs and not filtering by not restricted settings
 COMPLEX_SEARCH_CAPABILITY = "complex_search"
@@ -18,5 +19,3 @@ REVISIONS = "revisions"  # Only when enabled in config, not by default look at s
 ONLY_V2 = "only_v2"  # Remotes and virtuals from Artifactory returns this capability
 SERVER_CAPABILITIES = [COMPLEX_SEARCH_CAPABILITY, REVISIONS]  # Server is always with revisions
 DEFAULT_REVISION_V1 = "0"
-
-__version__ = '1.15.0-dev'

@@ -38,9 +38,9 @@ exclude_test_packages = ["conans.test.{}*".format(d)
 
 
 def load_version():
-    '''Loads a file content'''
+    """ Parses version from file (read as string) """
     filename = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                            "conans", "__init__.py"))
+                                            "conans", "version.py"))
     with open(filename, "rt") as version_file:
         conan_init = version_file.read()
         version = re.search("__version__ = '([0-9a-z.-]+)'", conan_init).group(1)

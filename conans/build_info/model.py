@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-import conans
+from conans.version import __version__ as client_version
 
 
 class BuildInfo(object):
@@ -10,7 +10,7 @@ class BuildInfo(object):
 
     def serialize(self):
         return {"modules": [module.serialize() for module in self.modules],
-                "buildAgent": {"name": "Conan", "version": conans.__version__}}
+                "buildAgent": {"name": "Conan", "version": client_version}}
 
 
 class BuildInfoModule(object):

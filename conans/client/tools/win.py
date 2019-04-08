@@ -16,6 +16,7 @@ from conans.unicode import get_cwd
 from conans.util.env_reader import get_env
 from conans.util.fallbacks import default_output
 from conans.util.files import decode_text, mkdir_tmp, save
+from conans.version import __version__ as client_version
 
 
 def _visual_compiler_cygwin(output, version):
@@ -131,7 +132,7 @@ def latest_visual_studio_version_installed(output):
     return None
 
 
-@deprecation.deprecated(deprecated_in="1.2", removed_in="2.0",
+@deprecation.deprecated(deprecated_in="1.2", removed_in="2.0", current_version=client_version,
                         details="Use the MSBuild() build helper instead")
 def msvc_build_command(settings, sln_path, targets=None, upgrade_project=True, build_type=None,
                        arch=None, parallel=True, force_vcvars=False, toolset=None, platforms=None,
@@ -145,7 +146,7 @@ def msvc_build_command(settings, sln_path, targets=None, upgrade_project=True, b
     return command
 
 
-@deprecation.deprecated(deprecated_in="1.2", removed_in="2.0",
+@deprecation.deprecated(deprecated_in="1.2", removed_in="2.0", current_version=client_version,
                         details="Use the MSBuild() build helper instead")
 def build_sln_command(settings, sln_path, targets=None, upgrade_project=True, build_type=None,
                       arch=None, parallel=True, toolset=None, platforms=None, output=None,

@@ -1,6 +1,8 @@
 import os
 from contextlib import contextmanager
 
+import deprecation
+
 from conans.client import tools
 from conans.client.output import Color, ScopedOutput
 from conans.client.tools.env import environment_append, no_op, pythonpath
@@ -12,6 +14,7 @@ from conans.model.options import Options, OptionsValues, PackageOptions
 from conans.model.requires import Requirements
 from conans.model.user_info import DepsUserInfo
 from conans.paths import RUN_LOG_NAME
+from conans.version import __version__ as client_version
 
 
 def create_options(conanfile):
@@ -192,9 +195,9 @@ class ConanFile(object):
                                      "but self.user is used in conanfile")
         return self._conan_user
 
+    @deprecation.deprecated(deprecated_in="0.27", removed_in="2.0", current_version=client_version,
+                            details="use 'tools.collect_libs(self)' instead")
     def collect_libs(self, folder=None):
-        self.output.warn("'self.collect_libs' is deprecated, "
-                         "use 'tools.collect_libs(self)' instead")
         return tools.collect_libs(self, folder=folder)
 
     @property
