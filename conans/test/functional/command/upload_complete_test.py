@@ -240,8 +240,9 @@ class UploadTest(unittest.TestCase):
         self.assertIn("Package is up to date", str(self.client.user_io.out))
 
     def upload_with_no_valid_settings_test(self):
-        '''Check if upload is still working even if the specified setting is not valid.
-        If this test fails, will fail in Linux/OSx'''
+        """Check if upload is still working even if the specified setting is not valid.
+        If this test fails, will fail in Linux/OSx
+        """
         conanfile = """
 from conans import ConanFile
 class TestConan(ConanFile):

@@ -15,6 +15,7 @@ from conans.client.tools.win import build_sln_command
 from conans.errors import ConanException
 from conans.model.settings import Settings
 from conans.test.utils.conanfile import MockSettings
+from conans.test.utils.deprecation import catch_deprecation_warning
 from conans.test.utils.test_files import temp_folder
 from conans.util.files import load, save
 
@@ -36,32 +37,22 @@ class BuildSLNCommandTest(unittest.TestCase):
         path = os.path.join(folder, "dummy.sln")
         save(path, dummy)
 
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-
+        with catch_deprecation_warning(self):
             new_out = StringIO()
             command = build_sln_command(Settings({}), sln_path=path, targets=None, upgrade_project=False,
                                         build_type='Debug', arch="x86", parallel=False,
                                         output=ConanOutput(new_out))
-
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
 
         self.assertIn('/p:Configuration="Debug" /p:Platform="x86"', command)
         self.assertIn("WARN: ***** The configuration Debug|x86 does not exist in this solution *****",
                       new_out.getvalue())
 
         # use platforms
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-
+        with catch_deprecation_warning(self):
             new_out = StringIO()
             command = build_sln_command(Settings({}), sln_path=path, targets=None, upgrade_project=False,
                                         build_type='Debug', arch="x86", parallel=False,
                                         platforms={"x86": "Win32"}, output=ConanOutput(new_out))
-
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
 
         self.assertIn('/p:Configuration="Debug" /p:Platform="Win32"', command)
         self.assertNotIn("WARN", new_out.getvalue())
@@ -69,41 +60,26 @@ class BuildSLNCommandTest(unittest.TestCase):
 
     def no_arch_test(self):
         with self.assertRaises(ConanException):
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-
+            with catch_deprecation_warning(self):
                 new_out = StringIO()
                 build_sln_command(Settings({}), sln_path='dummy.sln', targets=None,
                                   upgrade_project=False, build_type='Debug', arch=None, parallel=False,
                                   output=ConanOutput(new_out))
 
-                self.assertEqual(len(w), 1)
-                self.assertTrue(issubclass(w[0].category, DeprecationWarning))
-
     def no_build_type_test(self):
         with self.assertRaises(ConanException):
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-
+            with catch_deprecation_warning(self):
                 new_out = StringIO()
                 build_sln_command(Settings({}), sln_path='dummy.sln', targets=None,
                                   upgrade_project=False, build_type=None, arch='x86', parallel=False,
                                   output=ConanOutput(new_out))
 
-                self.assertEqual(len(w), 1)
-                self.assertTrue(issubclass(w[0].category, DeprecationWarning))
-
     def positive_test(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-
+        with catch_deprecation_warning(self):
             output = ConanOutput(StringIO())
             command = build_sln_command(Settings({}), sln_path='dummy.sln', targets=None,
                                         upgrade_project=False, build_type='Debug', arch='x86',
                                         parallel=False, output=output)
-
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
 
         self.assertIn('msbuild "dummy.sln"', command)
         self.assertIn('/p:Platform="x86"', command)
@@ -112,16 +88,11 @@ class BuildSLNCommandTest(unittest.TestCase):
         self.assertNotIn('/target:teapot', command)
 
     def upgrade_test(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-
+        with catch_deprecation_warning(self):
             output = ConanOutput(StringIO())
             command = build_sln_command(Settings({}), sln_path='dummy.sln', targets=None,
                                         upgrade_project=True, build_type='Debug', arch='x86_64',
                                         parallel=False, output=output)
-
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
 
         self.assertIn('msbuild "dummy.sln"', command)
         self.assertIn('/p:Platform="x64"', command)
@@ -130,16 +101,11 @@ class BuildSLNCommandTest(unittest.TestCase):
         self.assertNotIn('/target:teapot', command)
 
         with tools.environment_append({"CONAN_SKIP_VS_PROJECTS_UPGRADE": "1"}):
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-
+            with catch_deprecation_warning(self):
                 output = ConanOutput(StringIO())
                 command = build_sln_command(Settings({}), sln_path='dummy.sln', targets=None,
                                             upgrade_project=True, build_type='Debug', arch='x86_64',
                                             parallel=False, output=output)
-
-                self.assertEqual(len(w), 1)
-                self.assertTrue(issubclass(w[0].category, DeprecationWarning))
 
             self.assertIn('msbuild "dummy.sln"', command)
             self.assertIn('/p:Platform="x64"', command)
@@ -148,30 +114,20 @@ class BuildSLNCommandTest(unittest.TestCase):
             self.assertNotIn('/target:teapot', command)
 
         with tools.environment_append({"CONAN_SKIP_VS_PROJECTS_UPGRADE": "False"}):
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-
+            with catch_deprecation_warning(self):
                 output = ConanOutput(StringIO())
                 command = build_sln_command(Settings({}), sln_path='dummy.sln', targets=None,
                                             upgrade_project=True, build_type='Debug', arch='x86_64',
                                             parallel=False, output=output)
 
-                self.assertEqual(len(w), 1)
-                self.assertTrue(issubclass(w[0].category, DeprecationWarning))
-
             self.assertIn('devenv "dummy.sln" /upgrade', command)
 
     def parallel_test(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-
+        with catch_deprecation_warning(self):
             output = ConanOutput(StringIO())
             command = build_sln_command(Settings({}), sln_path='dummy.sln', targets=None,
                                         upgrade_project=True, build_type='Debug', arch='armv7',
                                         parallel=False, output=output)
-
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
 
         self.assertIn('msbuild "dummy.sln"', command)
         self.assertIn('/p:Platform="ARM"', command)
@@ -180,16 +136,11 @@ class BuildSLNCommandTest(unittest.TestCase):
         self.assertNotIn('/target:teapot', command)
 
     def target_test(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-
+        with catch_deprecation_warning(self):
             output = ConanOutput(StringIO())
             command = build_sln_command(Settings({}), sln_path='dummy.sln', targets=['teapot'],
                                         upgrade_project=False, build_type='Debug', arch='armv8',
                                         parallel=False, output=output)
-
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
 
         self.assertIn('msbuild "dummy.sln"', command)
         self.assertIn('/p:Platform="ARM64"', command)
@@ -198,9 +149,7 @@ class BuildSLNCommandTest(unittest.TestCase):
         self.assertIn('/target:teapot', command)
 
     def toolset_test(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-
+        with catch_deprecation_warning(self):
             new_out = StringIO()
             command = build_sln_command(MockSettings({"compiler": "Visual Studio",
                                                       "compiler.version": "17",
@@ -211,9 +160,6 @@ class BuildSLNCommandTest(unittest.TestCase):
                                         upgrade_project=False, build_type='Debug', arch='armv7',
                                         parallel=False, toolset="v110", output=ConanOutput(new_out))
 
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
-
         self.assertTrue(command.startswith('msbuild "dummy.sln" /p:Configuration="Debug" '
                                            '/p:Platform="ARM" '
                                            '/p:PlatformToolset="v110" '
@@ -221,9 +167,7 @@ class BuildSLNCommandTest(unittest.TestCase):
                                            '/p:ForceImportBeforeCppTargets='), command)
 
     def properties_file_test(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-
+        with catch_deprecation_warning(self):
             new_out = StringIO()
             command = build_sln_command(MockSettings({"compiler": "Visual Studio",
                                                       "compiler.version": "17",
@@ -233,9 +177,6 @@ class BuildSLNCommandTest(unittest.TestCase):
                                         sln_path='dummy.sln', targets=None,
                                         upgrade_project=False, build_type='Debug', arch='armv7',
                                         parallel=False, output=ConanOutput(new_out))
-
-            self.assertEqual(len(w), 1)
-            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
 
         self.assertTrue(command.startswith('msbuild "dummy.sln" /p:Configuration="Debug" '
                                            '/p:Platform="ARM" '

@@ -196,7 +196,7 @@ class ConanFile(object):
         return self._conan_user
 
     @deprecation.deprecated(deprecated_in="0.27", removed_in="2.0", current_version=client_version,
-                            details="use 'tools.collect_libs(self)' instead")
+                            details="Use 'tools.collect_libs(self)' instead")
     def collect_libs(self, folder=None):
         return tools.collect_libs(self, folder=folder)
 

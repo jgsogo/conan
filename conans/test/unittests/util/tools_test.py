@@ -39,6 +39,7 @@ from conans.test.utils.tools import SVNLocalRepoTestCase, StoppableThreadBottle,
     TestBufferConanOutput, TestClient, create_local_git_repo, try_remove_readonly
 from conans.tools import get_global_instances
 from conans.util.env_reader import get_env
+from conans.test.utils.deprecation import catch_deprecation_warning
 from conans.util.files import load, md5, mkdir, save
 
 
@@ -697,37 +698,25 @@ class HelloConan(ConanFile):
         settings.compiler.version = "14"
 
         # test build_type and arch override, for multi-config packages
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
+        with catch_deprecation_warning(self, n=2):
             cmd = tools.msvc_build_command(settings, "project.sln", build_type="Debug",
                                            arch="x86", output=self.output)
-            self.assertEqual(len(w), 2)
-            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
         self.assertIn('msbuild "project.sln" /p:Configuration="Debug" /p:Platform="x86"', cmd)
         self.assertIn('vcvarsall.bat', cmd)
 
         # tests errors if args not defined
         with six.assertRaisesRegex(self, ConanException, "Cannot build_sln_command"):
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
+            with catch_deprecation_warning(self, n=2):
                 tools.msvc_build_command(settings, "project.sln", output=self.output)
-                self.assertEqual(len(w), 2)
-                self.assertTrue(issubclass(w[0].category, DeprecationWarning))
         settings.arch = "x86"
         with six.assertRaisesRegex(self, ConanException, "Cannot build_sln_command"):
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
+            with catch_deprecation_warning(self, n=2):
                 tools.msvc_build_command(settings, "project.sln", output=self.output)
-                self.assertEqual(len(w), 2)
-                self.assertTrue(issubclass(w[0].category, DeprecationWarning))
 
         # successful definition via settings
         settings.build_type = "Debug"
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
+        with catch_deprecation_warning(self, n=2):
             cmd = tools.msvc_build_command(settings, "project.sln", output=self.output)
-            self.assertEqual(len(w), 2)
-            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
         self.assertIn('msbuild "project.sln" /p:Configuration="Debug" /p:Platform="x86"', cmd)
         self.assertIn('vcvarsall.bat', cmd)
 
@@ -2241,42 +2230,51 @@ class CollectLibTestCase(unittest.TestCase):
         self.assertIn("WARN: Lib folder doesn't exist, can't collect libraries: %s"
                       % no_folder_path, conanfile.output)
 
-    def self_collect_libs_test(self):
+    def test_self_collect_libs_test(self):
         conanfile = ConanFileMock()
         # Without package_folder
         conanfile.package_folder = None
-        result = conanfile.collect_libs()
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = conanfile.collect_libs()
+            self.assertEqual(len(w), 1)
+            self.assertTrue(issubclass(w[0].category, DeprecationWarning))
+            self.assertIn("collect_libs is deprecated as of 0.27 and will be removed in 2.0."
+                          " Use 'tools.collect_libs(self)' instead", str(w[0].message))
         self.assertEqual([], result)
-        self.assertIn("'self.collect_libs' is deprecated, use 'tools.collect_libs(self)' instead",
-                      conanfile.output)
 
         # Default behavior
         conanfile.package_folder = temp_folder()
         mylib_path = os.path.join(conanfile.package_folder, "lib", "mylib.lib")
         save(mylib_path, "")
         conanfile.cpp_info = CppInfo("")
-        result = conanfile.collect_libs()
+        with catch_deprecation_warning(self):
+            result = conanfile.collect_libs()
         self.assertEqual(["mylib"], result)
 
         # Custom folder
         customlib_path = os.path.join(conanfile.package_folder, "custom_folder", "customlib.lib")
         save(customlib_path, "")
-        result = conanfile.collect_libs(folder="custom_folder")
+        with catch_deprecation_warning(self):
+            result = conanfile.collect_libs(folder="custom_folder")
         self.assertEqual(["customlib"], result)
 
         # Custom folder doesn't exist
-        result = conanfile.collect_libs(folder="fake_folder")
+        with catch_deprecation_warning(self):
+            result = conanfile.collect_libs(folder="fake_folder")
         self.assertEqual([], result)
         self.assertIn("Lib folder doesn't exist, can't collect libraries:", conanfile.output)
 
         # Use cpp_info.libdirs
         conanfile.cpp_info.libdirs = ["lib", "custom_folder"]
-        result = conanfile.collect_libs()
+        with catch_deprecation_warning(self):
+            result = conanfile.collect_libs()
         self.assertEqual(["customlib", "mylib"], result)
 
         # Custom folder with multiple libdirs should only collect from custom folder
         self.assertEqual(["lib", "custom_folder"], conanfile.cpp_info.libdirs)
-        result = conanfile.collect_libs(folder="custom_folder")
+        with catch_deprecation_warning(self):
+            result = conanfile.collect_libs(folder="custom_folder")
         self.assertEqual(["customlib"], result)
 
         # Warn same lib different folders
@@ -2288,7 +2286,8 @@ class CollectLibTestCase(unittest.TestCase):
         save(custom_mylib_path, "")
         save(lib_mylib_path, "")
         conanfile.cpp_info.libdirs = ["lib", "custom_folder"]
-        result = conanfile.collect_libs()
+        with catch_deprecation_warning(self):
+            result = conanfile.collect_libs()
         self.assertEqual(["mylib"], result)
         self.assertIn("Library 'mylib' was either already found in a previous "
                       "'conanfile.cpp_info.libdirs' folder or appears several times with a "
@@ -2302,7 +2301,8 @@ class CollectLibTestCase(unittest.TestCase):
         save(lib_mylib_path, "")
         no_folder_path = os.path.join(conanfile.package_folder, "no_folder")
         conanfile.cpp_info.libdirs = ["no_folder", "lib"]  # 'no_folder' does NOT exist
-        result = conanfile.collect_libs()
+        with catch_deprecation_warning(self):
+            result = conanfile.collect_libs()
         self.assertEqual(["mylib"], result)
         self.assertIn("WARN: Lib folder doesn't exist, can't collect libraries: %s"
                       % no_folder_path, conanfile.output)
