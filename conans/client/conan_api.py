@@ -747,8 +747,8 @@ class ConanAPIV1(object):
         conanfile_folder = os.path.dirname(conanfile_path)
         if conanfile_folder != source_folder:
             conanfile.output.info("Executing exports to: %s" % source_folder)
-            run_recipe_exports(conanfile, conanfile_folder, source_folder)
-            run_recipe_exports_sources(conanfile, conanfile_folder, source_folder)
+            run_recipe_exports(conanfile, source_folder, conanfile_path)
+            run_recipe_exports_sources(conanfile, source_folder, conanfile_path)
         config_source_local(source_folder, conanfile, conanfile_path, self._hook_manager)
 
     @api_method

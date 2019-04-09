@@ -15,7 +15,7 @@ from conans.paths import CONANFILE
 from conans.search.search import search_recipes, search_packages
 from conans.util.files import is_dirty, load, rmdir, save, set_dirty, remove, mkdir
 from conans.util.log import logger
-from conans.client.source import merge_directories
+from conans.client.source import merge_directories, _clean_source_folder
 
 
 def export_alias(package_layout, target_ref, output, revisions_enabled):
@@ -72,8 +72,8 @@ def cmd_export(package_layout, ori_conanfile_path, conanfile, keep_source, revis
 
     # Copy exports and exports_sources to target folders
     with package_layout.conanfile_write_lock(output=output):
-        run_recipe_exports(conanfile, package_layout, ori_conanfile_path)
-        run_recipe_exports_sources(conanfile, package_layout, ori_conanfile_path)
+        run_recipe_exports(conanfile, package_layout.export(), ori_conanfile_path)
+        run_recipe_exports_sources(conanfile, package_layout.export_sources(), ori_conanfile_path)
         shutil.copy2(ori_conanfile_path, package_layout.conanfile())
 
         local_srcs_scm = _capture_export_scm_data(conanfile, os.path.dirname(ori_conanfile_path),
@@ -129,6 +129,7 @@ def cmd_export(package_layout, ori_conanfile_path, conanfile, keep_source, revis
         output.info("Getting sources from folder: %s" % local_srcs_scm)
         dest_dir = os.path.normpath(os.path.join(source_folder, scm_data.subfolder))
         merge_directories(local_srcs_scm, dest_dir, excluded=excluded)
+        # _clean_source_folder(dest_dir)  TODO: Why was needed?
         save(scm_folder_filepath, "just a sentinel")
 
     # When revisions enabled, remove the packages not matching the revision
@@ -307,12 +308,12 @@ def _classify_patterns(patterns):
     return included, excluded
 
 
-def run_recipe_exports_sources(conanfile, package_layout, ori_conanfile_path):
+def run_recipe_exports_sources(conanfile, exports_sources_folder, ori_conanfile_path):
     if isinstance(conanfile.exports_sources, str):
         conanfile.exports_sources = (conanfile.exports_sources, )
 
     included_sources, excluded_sources = _classify_patterns(conanfile.exports_sources)
-    copier = FileCopier([os.path.dirname(ori_conanfile_path)], package_layout.export_sources())
+    copier = FileCopier([os.path.dirname(ori_conanfile_path)], exports_sources_folder)
     for pattern in included_sources:
         copier(pattern, links=True, excludes=excluded_sources)
     output = conanfile.output
@@ -320,7 +321,7 @@ def run_recipe_exports_sources(conanfile, package_layout, ori_conanfile_path):
     copier.report(package_output)
 
 
-def run_recipe_exports(conanfile, package_layout, ori_conanfile_path):
+def run_recipe_exports(conanfile, export_folder, ori_conanfile_path):
     if isinstance(conanfile.exports, str):
         conanfile.exports = (conanfile.exports, )
 
@@ -332,7 +333,7 @@ def run_recipe_exports(conanfile, package_layout, ori_conanfile_path):
     except OSError:
         pass
 
-    copier = FileCopier([origin_folder], package_layout.export())
+    copier = FileCopier([origin_folder], export_folder)
     for pattern in included_exports:
         copier(pattern, links=True, excludes=excluded_exports)
     output = conanfile.output
