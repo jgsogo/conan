@@ -825,13 +825,20 @@ class Command(object):
                                               "and version are not declared in the conanfile.py")
         parser.add_argument('-k', '-ks', '--keep-source', default=False, action='store_true',
                             help=_KEEP_SOURCE_HELP)
+        parser.add_argument('--export-sources', default=False, action='store_true',
+                            help="Export also sources from local path")
 
         args = parser.parse_args(*args)
         self._warn_python2()
+
+        if args.export_sources and args.keep_source:
+            raise ConanException("Arguments '--export-sources' and '--keep-source'")
+
         name, version, user, channel = get_reference_fields(args.reference)
         return self._conan.export(path=args.path,
                                   name=name, version=version, user=user, channel=channel,
-                                  keep_source=args.keep_source)
+                                  keep_source=args.keep_source,
+                                  copy_local_scm_srcs=args.export_sources)
 
     def remove(self, *args):
         """Removes packages or binaries matching pattern from local cache or remote.

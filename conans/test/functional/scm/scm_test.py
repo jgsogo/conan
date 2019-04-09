@@ -115,7 +115,7 @@ class ConanLib(ConanFile):
         self.client.runner("git add .", cwd=repo)
         self.client.runner('git commit -m  "commiting"', cwd=repo)
         self.client.runner('git clone "%s" .' % repo.replace('\\', '/'), cwd=self.client.current_folder)
-        self.client.run("export . user/channel")
+        self.client.run("export . user/channel --export-sources")
         self.assertIn("WARN: Repo origin looks like a local path", self.client.out)
         os.remove(self.client.cache.scm_folder(self.ref))
         self.client.run("install lib/0.1@user/channel --build")
@@ -134,7 +134,7 @@ class ConanLib(ConanFile):
         # Create the package, will copy the sources from the local folder
         self.client.run("create . user/channel")
         sources_dir = self.client.cache.scm_folder(self.ref)
-        self.assertEqual(load(sources_dir), curdir)
+        self.assertTrue(os.path.exists(sources_dir))
         self.assertIn("Repo origin deduced by 'auto': https://myrepo.com.git", self.client.out)
         self.assertIn("Revision deduced by 'auto'", self.client.out)
         self.assertIn("Getting sources from folder: %s" % curdir, self.client.out)
@@ -185,8 +185,7 @@ class ConanLib(ConanFile):
 
         # Create the package
         self.client.run("create conan/ user/channel")
-        sources_dir = self.client.cache.scm_folder(self.ref)
-        self.assertEqual(load(sources_dir), curdir.replace('\\', '/'))  # Root of git is 'curdir'
+        self.assertTrue(os.path.exists(self.client.cache.scm_folder(self.ref)))
 
     def test_deleted_source_folder(self):
         path, _ = create_local_git_repo({"myfile": "contents"}, branch="my_release")
@@ -333,7 +332,7 @@ class ConanLib(ConanFile):
         self.client.save({"myfile": "Contents 2"})
         self.client.run("create . lib/1.0@user/channel")
         self.assertIn("Contents: Contents 2", self.client.out)
-        self.assertIn("Detected 'scm' auto in conanfile, trying to remove source folder",
+        self.assertIn("Non existing sources from previous 'export' (no sentinel file)",
                       self.client.out)
 
     def test_submodule(self):

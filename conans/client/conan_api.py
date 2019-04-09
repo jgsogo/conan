@@ -777,7 +777,8 @@ class ConanAPIV1(object):
         undo_imports(manifest_path, self._user_io.out)
 
     @api_method
-    def export(self, path, name, version, user, channel, keep_source=False, cwd=None):
+    def export(self, path, name, version, user, channel, keep_source=False, cwd=None,
+               copy_local_scm_srcs=False):
         conanfile_path = _get_conanfile_path(path, cwd, py=True)
         remotes = self._cache.registry.load_remotes()
         self.python_requires.enable_remotes(remotes=remotes)
@@ -788,7 +789,7 @@ class ConanAPIV1(object):
         package_layout = self._cache.package_layout(ref, short_paths=conanfile.short_paths)
         cmd_export(package_layout, conanfile_path, conanfile, keep_source,
                    self._cache.config.revisions_enabled, self._user_io.out,
-                   self._hook_manager, copy_local_scm_srcs=False)
+                   self._hook_manager, copy_local_scm_srcs=copy_local_scm_srcs)
 
     @api_method
     def remove(self, pattern, query=None, packages=None, builds=None, src=False, force=False,

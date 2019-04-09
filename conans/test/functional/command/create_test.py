@@ -65,8 +65,8 @@ class HelloTestConan(ConanFile):
         self.assertNotIn("HelloBar/0.1@lasote/testing: WARN: Forced build from source",
                          client.user_io.out)
 
-    @parameterized.expand([(True, ), (False, )])
-    def keep_build_test(self, with_test):
+    #@parameterized.expand([(True, ), (False, )])
+    def test_keep_build_test(self, with_test=True):
         client = TestClient()
         conanfile = """from conans import ConanFile
 class MyPkg(ConanFile):
@@ -96,6 +96,7 @@ class MyPkg(ConanFile):
         self.assertIn("Pkg/0.1@lasote/testing: mybuild!!", client.out)
         self.assertIn("Pkg/0.1@lasote/testing: mypackage!!", client.out)
         self.assertIn("Pkg/0.1@lasote/testing package(): Packaged 1 '.h' file: header.h", client.out)
+
         # keep the source
         client.save({"conanfile.py": conanfile + " "})
         client.run("create . Pkg/0.1@lasote/testing --keep-source")
@@ -104,6 +105,7 @@ class MyPkg(ConanFile):
         self.assertIn("Pkg/0.1@lasote/testing: mybuild!!", client.out)
         self.assertIn("Pkg/0.1@lasote/testing: mypackage!!", client.out)
         self.assertIn("Pkg/0.1@lasote/testing package(): Packaged 1 '.h' file: header.h", client.out)
+
         # keep build
         client.run("create . Pkg/0.1@lasote/testing --keep-build")
         self.assertIn("Pkg/0.1@lasote/testing: Won't be built as specified by --keep-build",

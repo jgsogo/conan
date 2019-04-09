@@ -128,9 +128,10 @@ def cmd_export(package_layout, ori_conanfile_path, conanfile, keep_source, revis
         excluded = SCM(scm_data, local_srcs_scm, output).excluded_files
         output.info("Getting sources from folder: %s" % local_srcs_scm)
         dest_dir = os.path.normpath(os.path.join(source_folder, scm_data.subfolder))
-        merge_directories(local_srcs_scm, dest_dir, excluded=excluded)
+        merge_directories(local_srcs_scm, dest_dir, excluded=excluded + [".git", ".svn", ])
         # _clean_source_folder(dest_dir)  TODO: Why was needed?
         save(scm_folder_filepath, "just a sentinel")
+        _clean_source_folder(dest_dir)
 
     # When revisions enabled, remove the packages not matching the revision
     if revisions_enabled:

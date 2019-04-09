@@ -79,7 +79,7 @@ def config_source_local(src_folder, conanfile, conanfile_path, hook_manager):
     conanfile_folder = os.path.dirname(conanfile_path)
     _run_source(conanfile, conanfile_path, src_folder, hook_manager, reference=None,
                 cache=None, export_folder=None, export_source_folder=None,
-                sources_scm_sentinel=None)
+                sources_scm_sentinel=False)
 
 
 def config_source(export_folder, export_source_folder, src_folder, conanfile, output,
@@ -102,13 +102,16 @@ def config_source(export_folder, export_source_folder, src_folder, conanfile, ou
             if raise_error or isinstance(e_rm, KeyboardInterrupt):
                 raise ConanException("Unable to remove source folder")
 
-    sources_scm_sentinel = cache.scm_folder(reference)
+    sources_scm_sentinel = os.path.exists(cache.scm_folder(reference))
     # local_sources_path = load(sources_pointer) if os.path.exists(sources_pointer) else None
     if is_dirty(src_folder):
         output.warn("Trying to remove corrupted source folder")
         remove_source()
     elif conanfile.build_policy_always:
         output.warn("Detected build_policy 'always', trying to remove source folder")
+        remove_source()
+    elif not sources_scm_sentinel:
+        output.warn("Non existing sources from previous 'export' (no sentinel file)")
         remove_source()
     #elif local_sources_path and os.path.exists(local_sources_path):
     #    output.warn("Detected 'scm' auto in conanfile, trying to remove source folder")
@@ -143,7 +146,8 @@ def _run_source(conanfile, conanfile_path, src_folder, hook_manager, reference,
                                      reference=reference)
                 output = conanfile.output
                 output.info('Configuring sources in %s' % src_folder)
-                _run_scm(conanfile, src_folder, sources_scm_sentinel, output, cache=cache)
+                _run_scm(conanfile, src_folder, sources_scm_sentinel, output, cache=cache,
+                         conanfile_path=conanfile_path)
 
                 if cache:
                     _get_sources_from_exports(src_folder, export_folder, export_source_folder)
@@ -180,17 +184,36 @@ def _clean_source_folder(folder):
         pass
 
 
-def _run_scm(conanfile, src_folder, sources_scm_sentinel, output, cache):
+def _run_scm(conanfile, src_folder, sources_scm_sentinel, output, cache, conanfile_path):
     scm_data = get_scm_data(conanfile)
     if not scm_data:
         return
 
-    if cache and sources_scm_sentinel:
-        # Sources already copied during previous export command
-        return
+    dest_dir = os.path.normpath(os.path.join(src_folder, scm_data.subfolder))
+    if cache:
+        if sources_scm_sentinel:
+            # Sources already copied during previous export command
+            return
+        else:
+            # Sources not copied, run SCM checkout (scm_data already computed)
+            output.info("Getting sources from url: '%s'" % scm_data.url)
+            scm = SCM(scm_data, dest_dir, output)
+            scm.checkout()
+            _clean_source_folder(dest_dir)  # TODO: Why?
     else:
-        # Run scm to get sources
-        output.info("Getting sources from url: '%s'" % scm_data.url)
-        dest_dir = os.path.normpath(os.path.join(src_folder, scm_data.subfolder))
-        scm = SCM(scm_data, dest_dir, output)
-        scm.checkout()  # TODO: Need to _clean_source_folder(dest_dir)?
+        captured_scm = scm_data.capture_origin or scm_data.capture_revision
+        if captured_scm:
+            # In local workflow, capturing SCM, copy to subfolder
+            scm = SCM(scm_data, os.path.dirname(conanfile_path), output)
+            scm_url = scm_data.url if scm_data.url != "auto" else \
+                scm.get_qualified_remote_url(remove_credentials=True)
+            src_path = scm.get_local_path_to_url(url=scm_url)
+
+            output.info("Getting sources from folder: %s" % src_path)
+            merge_directories(src_path, dest_dir, excluded=scm.excluded_files)
+        else:
+            output.info("Getting sources from url: '%s'" % scm_data.url)
+            scm = SCM(scm_data, dest_dir, output)
+            scm.checkout()  # TODO: Need to _clean_source_folder(dest_dir)?
+
+
