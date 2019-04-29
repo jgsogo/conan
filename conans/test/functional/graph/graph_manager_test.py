@@ -769,7 +769,7 @@ class TransitiveGraphTest(GraphManagerTest):
         self._check_node(liba2, "liba/0.2@user/testing#123", deps=[], build_deps=[],
                          dependents=[libc], closure=[])
 
-    def consecutive_private(self):
+    def test_consecutive_private(self):
         liba_ref = "liba/0.1@user/testing"
         libb_ref = "libb/0.1@user/testing"
         libc_ref = "libc/0.1@user/testing"
@@ -797,3 +797,58 @@ class TransitiveGraphTest(GraphManagerTest):
                          dependents=[libc], closure=[liba])
         self._check_node(liba, "liba/0.1@user/testing#123", deps=[], build_deps=[],
                          dependents=[libb], closure=[])
+
+    def test_build_requires_diamond(self):
+        # https://github.com/conan-io/conan/issues/5043
+        # libc -- (br) -> libb -> liba
+        #    \----(br)------------/
+        liba_ref = "liba/0.1@user/testing"
+        libb_ref = "libb/0.1@user/testing"
+        libc_ref = "libc/0.1@user/testing"
+
+        self._cache_recipe(liba_ref, TestConanFile("liba", "0.1"))
+        self._cache_recipe(libb_ref, TestConanFile("libb", "0.1", requires=[liba_ref]))
+        deps_graph = self.build_graph(TestConanFile("libc", "0.1", build_requires=[liba_ref, libb_ref]))
+
+        self.assertEqual(3, len(deps_graph.nodes))
+        app = deps_graph.root
+        libb = app.dependencies[0].dst
+        liba = libb.dependencies[0].dst
+        self.fail("It doesn't call to what I need")
+
+    def test_build_requires_diamond(self):
+        import textwrap
+        from conans.test.utils.tools import NO_SETTINGS_PACKAGE_ID, TestClient
+
+        t =TestClient()
+        t.save({"conanfile.py": textwrap.dedent("""
+            from conans import ConanFile
+            
+            class LibA(ConanFile):
+                name = "libA"
+                version = "0.1"
+            """)})
+        t.run("create . libA/0.1@user/testing")
+
+        t.save({"conanfile.py": textwrap.dedent("""
+            from conans import ConanFile
+
+            class LibB(ConanFile):
+                name = "libB"
+                version = "0.1"
+
+                requires = "libA/0.1@user/testing"
+        """)})
+        t.run("create . libB/0.1@user/testing")
+
+        t.save({"conanfile.py": textwrap.dedent("""
+            from conans import ConanFile
+
+            class LibC(ConanFile):
+                name = "libC"
+                version = "0.1"
+
+                build_requires = "libB/0.1@user/testing", "libA/0.1@user/testing", 
+        """)})
+        t.run("create . libC/0.1@user/testing")
+        print(t.out)

@@ -198,6 +198,8 @@ class DepsGraphBuilder(object):
             dep_graph.add_edge(node, previous, require.private, require.build_require)
             # Update the closure of each dependent
             for name, n in previous.public_closure.items():
+                # FIXME: build_require/private is not a property of the node itself, it depends
+                #   on how each of the consumers is declaring it.
                 if n.build_require or n.private:
                     continue
                 node.public_closure[name] = n
