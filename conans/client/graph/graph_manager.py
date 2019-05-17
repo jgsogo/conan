@@ -141,11 +141,9 @@ class GraphManager(object):
             root_node = Node(ref, conanfile, recipe=RECIPE_CONSUMER)
 
         build_mode = BuildMode(build_mode, self._output)
-        deps_graph = self._load_graph(root_node, check_updates, update,
-                                      build_mode=build_mode, remotes=remotes,
+        deps_graph = self._load_graph(root_node, check_updates, update, build_mode=build_mode, remotes=remotes,
                                       profile_build_requires=profile.build_requires,
-                                      recorder=recorder,
-                                      processed_profile=processed_profile,
+                                      recorder=recorder, processed_profile=processed_profile,
                                       apply_build_requires=apply_build_requires)
 
         # THIS IS NECESSARY to store dependencies options in profile, for consumer
@@ -172,7 +170,7 @@ class GraphManager(object):
 
         return conanfile.build_requires
 
-    def _recurse_build_requires(self, graph, builder, binaries_analyzer, check_updates, update,
+    def _recurse_build_requires(self, graph, builder, binaries_analyzer, update,
                                 build_mode, remotes, profile_build_requires, recorder,
                                 processed_profile, apply_build_requires=True):
 
@@ -207,37 +205,30 @@ class GraphManager(object):
 
             if package_build_requires:
                 subgraph = builder.extend_build_requires(graph, node,
-                                                         package_build_requires.values(),
-                                                         check_updates, update, remotes,
+                                                         package_build_requires.values(), remotes,
                                                          processed_profile)
-                self._recurse_build_requires(subgraph, builder, binaries_analyzer, check_updates,
-                                             update, build_mode,
-                                             remotes, profile_build_requires, recorder,
+                self._recurse_build_requires(subgraph, builder, binaries_analyzer, update,
+                                             build_mode, remotes, profile_build_requires, recorder,
                                              processed_profile)
                 graph.nodes.update(subgraph.nodes)
 
             if new_profile_build_requires:
                 subgraph = builder.extend_build_requires(graph, node, new_profile_build_requires,
-                                                         check_updates, update, remotes,
-                                                         processed_profile)
-                self._recurse_build_requires(subgraph, builder, binaries_analyzer, check_updates,
-                                             update, build_mode,
-                                             remotes, {}, recorder,
-                                             processed_profile)
+                                                         remotes, processed_profile)
+                self._recurse_build_requires(subgraph, builder, binaries_analyzer, update,
+                                             build_mode, remotes, {}, recorder, processed_profile)
                 graph.nodes.update(subgraph.nodes)
 
-    def _load_graph(self, root_node, check_updates, update, build_mode, remotes,
-                    profile_build_requires, recorder, processed_profile, apply_build_requires):
+    def _load_graph(self, root_node, check_updates, update, build_mode, remotes, profile_build_requires, recorder,
+                    processed_profile, apply_build_requires):
 
         assert isinstance(build_mode, BuildMode)
         builder = DepsGraphBuilder(self._proxy, self._output, self._loader, self._resolver,
-                                   recorder)
-        graph = builder.load_graph(root_node, check_updates, update, remotes, processed_profile)
-        binaries_analyzer = GraphBinariesAnalyzer(self._cache, self._output,
-                                                  self._remote_manager)
+                                   recorder, check_updates, update)
+        graph = builder.load_graph(root_node, remotes, processed_profile)
+        binaries_analyzer = GraphBinariesAnalyzer(self._cache, self._output, self._remote_manager)
 
-        self._recurse_build_requires(graph, builder, binaries_analyzer, check_updates, update,
-                                     build_mode, remotes,
+        self._recurse_build_requires(graph, builder, binaries_analyzer, update, build_mode, remotes,
                                      profile_build_requires, recorder, processed_profile,
                                      apply_build_requires=apply_build_requires)
 

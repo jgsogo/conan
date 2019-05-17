@@ -1,5 +1,4 @@
 import time
-from collections import OrderedDict
 
 from conans.client.graph.graph import DepsGraph, Node, RECIPE_EDITABLE
 from conans.errors import (ConanException, ConanExceptionInUserConanfileMethod,
@@ -9,22 +8,22 @@ from conans.model.ref import ConanFileReference
 from conans.model.requires import Requirements, Requirement
 from conans.util.log import logger
 
-
 REFERENCE_CONFLICT, REVISION_CONFLICT = 1, 2
 
 
 class DepsGraphBuilder(object):
     """ Responsible for computing the dependencies graph DepsGraph
     """
-    def __init__(self, proxy, output, loader, resolver, recorder):
+    def __init__(self, proxy, output, loader, resolver, recorder, check_updates, update):
         self._proxy = proxy
         self._output = output
         self._loader = loader
         self._resolver = resolver
         self._recorder = recorder
+        self._update = update
+        self._check_updates = check_updates or update
 
-    def load_graph(self, root_node, check_updates, update, remotes, processed_profile):
-        check_updates = check_updates or update
+    def load_graph(self, root_node, remotes, processed_profile):
         dep_graph = DepsGraph()
         # compute the conanfile entry point for this dependency graph
         root_node.public_closure = root_node
@@ -35,13 +34,11 @@ class DepsGraphBuilder(object):
         # enter recursive computation
         t1 = time.time()
         self._load_deps(dep_graph, root_node, Requirements(), None, None,
-                        check_updates, update, remotes,
-                        processed_profile)
+                        remotes, processed_profile)
         logger.debug("GRAPH: Time to load deps %s" % (time.time() - t1))
         return dep_graph
 
-    def extend_build_requires(self, graph, node, build_requires_refs, check_updates, update,
-                              remotes, processed_profile):
+    def extend_build_requires(self, graph, node, build_requires_refs, remotes, processed_profile):
 
         # The options that will be defined in the node will be the real options values that have
         # been already propagated downstream from the dependency graph. This will override any
@@ -53,11 +50,11 @@ class DepsGraphBuilder(object):
 
         scope = node.conanfile.display_name
         requires = [Requirement(ref) for ref in build_requires_refs]
-        self._resolve_ranges(graph, requires, scope, update, remotes)
+        self._resolve_ranges(graph, requires, scope, remotes)
 
         for require in requires:
             require.build_require = True
-            self._handle_require(node, require, graph, check_updates, update,
+            self._handle_require(node, require, graph,
                                  remotes, processed_profile, new_reqs, new_options)
 
         new_nodes = set([n for n in graph.nodes if n.package_id is None])
@@ -73,9 +70,9 @@ class DepsGraphBuilder(object):
 
         return subgraph
 
-    def _resolve_ranges(self, graph, requires, scope, update, remotes):
+    def _resolve_ranges(self, graph, requires, scope, remotes):
         for require in requires:
-            self._resolver.resolve(require, scope, update, remotes)
+            self._resolver.resolve(require, scope, self._update, remotes)
 
         # After resolving ranges,
         for require in requires:
@@ -83,13 +80,13 @@ class DepsGraphBuilder(object):
             if alias:
                 require.ref = alias
 
-    def _resolve_deps(self, graph, node, update, remote_name):
+    def _resolve_deps(self, graph, node, remote_name):
         # Resolve possible version ranges of the current node requirements
         # new_reqs is a shallow copy of what is propagated upstream, so changes done by the
         # RangeResolver are also done in new_reqs, and then propagated!
         conanfile = node.conanfile
         scope = conanfile.display_name
-        self._resolve_ranges(graph, conanfile.requires.values(), scope, update, remote_name)
+        self._resolve_ranges(graph, conanfile.requires.values(), scope, remote_name)
 
         if not hasattr(conanfile, "_conan_evaluated_requires"):
             conanfile._conan_evaluated_requires = conanfile.requires.copy()
@@ -102,7 +99,7 @@ class DepsGraphBuilder(object):
                                     list(conanfile.requires.values())))
 
     def _load_deps(self, dep_graph, node, down_reqs, down_ref, down_options,
-                   check_updates, update, remotes, processed_profile):
+                   remotes, processed_profile):
         """ expands the dependencies of the node, recursively
 
         param node: Node object to be expanded in this step
@@ -114,16 +111,16 @@ class DepsGraphBuilder(object):
         new_reqs, new_options = self._config_node(dep_graph, node, down_reqs, down_ref, down_options)
 
         # if there are version-ranges, resolve them before expanding each of the requirements
-        self._resolve_deps(dep_graph, node, update, remotes)
+        self._resolve_deps(dep_graph, node, remotes)
 
         # Expand each one of the current requirements
         for require in node.conanfile.requires.values():
             if require.override:
                 continue
-            self._handle_require(node, require, dep_graph, check_updates, update,
-                                 remotes, processed_profile, new_reqs, new_options)
+            self._handle_require(node, require, dep_graph, remotes, processed_profile, new_reqs,
+                                 new_options)
 
-    def _handle_require(self, node, require, dep_graph, check_updates, update,
+    def _handle_require(self, node, require, dep_graph,
                         remotes, processed_profile, new_reqs, new_options):
 
         name = require.ref.name
@@ -136,9 +133,7 @@ class DepsGraphBuilder(object):
         if not previous or ((require.build_require or require.private) and not previous_closure):
             # new node, must be added and expanded
             # node -> new_node
-            new_node = self._create_new_node(node, dep_graph, require,
-                                             check_updates, update, remotes,
-                                             processed_profile)
+            new_node = self._create_new_node(node, dep_graph, require, remotes, processed_profile)
 
             # The closure of a new node starts with just itself
             new_node.public_closure = new_node
@@ -167,7 +162,7 @@ class DepsGraphBuilder(object):
 
             # RECURSION!
             self._load_deps(dep_graph, new_node, new_reqs, node.ref,
-                            new_options, check_updates, update,
+                            new_options,
                             remotes, processed_profile)
         else:  # a public node already exist with this name
             # This is closing a diamond, the node is existing in the scope
@@ -209,7 +204,7 @@ class DepsGraphBuilder(object):
             # RECURSION!
             if self._recurse(previous.public_closure, new_reqs, new_options):
                 self._load_deps(dep_graph, previous, new_reqs, node.ref,
-                                new_options, check_updates, update,
+                                new_options,
                                 remotes, processed_profile)
 
     @staticmethod
@@ -300,18 +295,17 @@ class DepsGraphBuilder(object):
         return new_down_reqs, new_options
 
     def _create_new_node(self, current_node, dep_graph, requirement,
-                         check_updates, update, remotes, processed_profile, alias_ref=None):
+                         remotes, processed_profile, alias_ref=None):
         """ creates and adds a new node to the dependency graph
         """
 
         try:
-            result = self._proxy.get_recipe(requirement.ref, check_updates, update,
+            result = self._proxy.get_recipe(requirement.ref, self._check_updates, self._update,
                                             remotes, self._recorder)
         except ConanException as e:
             if current_node.ref:
                 self._output.error("Failed requirement '%s' from '%s'"
-                                   % (requirement.ref,
-                                      current_node.conanfile.display_name))
+                                   % (requirement.ref, current_node.conanfile.display_name))
             raise e
         conanfile_path, recipe_status, remote, new_ref = result
 
@@ -323,7 +317,6 @@ class DepsGraphBuilder(object):
             requirement.ref = ConanFileReference.loads(dep_conanfile.alias)
             dep_graph.aliased[alias_ref] = requirement.ref
             return self._create_new_node(current_node, dep_graph, requirement,
-                                         check_updates, update,
                                          remotes, processed_profile,
                                          alias_ref=alias_ref)
 

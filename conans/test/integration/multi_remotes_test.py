@@ -24,8 +24,8 @@ class MultiRemotesTest(unittest.TestCase):
         if export:
             client.run("export . lasote/stable")
 
-    def conan_test_test(self):
-        '''Checks --build in test command'''
+    def test_conan_test_test(self):
+        """ Checks --build in test command """
         client_a = TestClient(servers=self.servers, users={"default": [("lasote", "mypass")],
                                                            "local": [("lasote", "mypass")]})
         client_b = TestClient(servers=self.servers, users={"default": [("lasote", "mypass")],

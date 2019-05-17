@@ -37,6 +37,7 @@ def _clear_revs(requires):
 
 
 class VersionRangesTest(GraphTest):
+    update = True
 
     def setUp(self):
         super(VersionRangesTest, self).setUp()
@@ -46,12 +47,11 @@ class VersionRangesTest(GraphTest):
             say_ref = ConanFileReference.loads("Say/%s@myuser/testing" % v)
             self.retriever.save_recipe(say_ref, say_content)
 
-    def build_graph(self, content, update=False):
+    def build_graph(self, content):
         self.loader.cached_conanfiles = {}
         processed_profile = test_processed_profile()
         root_conan = self.retriever.root(str(content), processed_profile)
-        deps_graph = self.builder.load_graph(root_conan, update, update, self.remotes,
-                                             processed_profile)
+        deps_graph = self.builder.load_graph(root_conan, self.remotes, processed_profile)
         self.output.write("\n".join(self.resolver.output))
         return deps_graph
 
@@ -100,8 +100,7 @@ class VersionRangesTest(GraphTest):
                                ("~=2.1", "2.1"),
                                ]:
             deps_graph = self.build_graph(TestConanFile("Hello", "1.2",
-                                                        requires=["Say/[%s]@myuser/testing" % expr]),
-                                          update=True)
+                                                        requires=["Say/[%s]@myuser/testing" % expr]))
             self.assertEqual(self.remote_manager.count, {'Say/*@myuser/testing': 1})
             self.assertEqual(2, len(deps_graph.nodes))
             hello = _get_nodes(deps_graph, "Hello")[0]
@@ -138,7 +137,7 @@ class HelloConan(ConanFile):
     name = "Hello"
     requires = "Dep1/0.1@myuser/testing", "Dep2/0.1@myuser/testing"
 """
-        deps_graph = self.build_graph(hello_content, update=True)
+        deps_graph = self.build_graph(hello_content)
         self.assertEqual(4, len(deps_graph.nodes))
         hello = _get_nodes(deps_graph, "Hello")[0]
         say = _get_nodes(deps_graph, "Say")[0]

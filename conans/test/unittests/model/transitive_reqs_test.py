@@ -75,6 +75,7 @@ class MockRemoteManager(object):
 
 
 class GraphTest(unittest.TestCase):
+    update = False
 
     def setUp(self):
         self.output = TestBufferConanOutput()
@@ -85,7 +86,7 @@ class GraphTest(unittest.TestCase):
         self.remotes = Remotes()
         self.resolver = RangeResolver(paths, self.remote_manager)
         self.builder = DepsGraphBuilder(self.retriever, self.output, self.loader,
-                                        self.resolver, None)
+                                        self.resolver, None, self.update, self.update)
         cache = Mock()
         cache.config.default_package_id_mode = "semver_direct_mode"
         self.binaries_analyzer = GraphBinariesAnalyzer(cache, self.output, self.remote_manager)
@@ -99,8 +100,7 @@ class GraphTest(unittest.TestCase):
         profile.options = OptionsValues.loads(options)
         processed_profile = test_processed_profile(profile=profile)
         root_conan = self.retriever.root(str(content), processed_profile)
-        deps_graph = self.builder.load_graph(root_conan, False, False, self.remotes,
-                                             processed_profile)
+        deps_graph = self.builder.load_graph(root_conan, self.remotes, processed_profile)
 
         build_mode = BuildMode([], self.output)
         self.binaries_analyzer.evaluate_graph(deps_graph, build_mode=build_mode,
@@ -1096,7 +1096,7 @@ class HelloConan(ConanFile):
         self.retriever.save_recipe(say_ref, say_content)
         self.retriever.save_recipe(hello_ref, hello_content)
 
-        expected = """Say/0.1@user/testing: Incompatible requirements obtained in different evaluations of 'requirements'
+        expected = """Say/0.1@user/testing:     Incompatible requirements obtained in different evaluations of 'requirements'
     Previous requirements: [Base/0.1@user/testing, png/0.1@user/testing]
     New requirements: [Base/0.1@user/testing, Zlib/0.1@user/testing]"""
         try:
@@ -1461,7 +1461,7 @@ class ConsumerConan(ConanFile):
         self.loader = ConanFileLoader(None, self.output, ConanPythonRequire(None, None))
         self.retriever = Retriever(self.loader)
         self.builder = DepsGraphBuilder(self.retriever, self.output, self.loader,
-                                        Mock(), None)
+                                        Mock(), None, False, False)
         liba_ref = ConanFileReference.loads("LibA/0.1@user/testing")
         libb_ref = ConanFileReference.loads("LibB/0.1@user/testing")
         libc_ref = ConanFileReference.loads("LibC/0.1@user/testing")
@@ -1474,7 +1474,7 @@ class ConsumerConan(ConanFile):
     def build_graph(self, content):
         processed_profile = test_processed_profile()
         root_conan = self.retriever.root(content, processed_profile)
-        deps_graph = self.builder.load_graph(root_conan, False, False, None, processed_profile)
+        deps_graph = self.builder.load_graph(root_conan, False, None, processed_profile)
         return deps_graph
 
     def test_avoid_duplicate_expansion(self):
