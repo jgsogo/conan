@@ -36,6 +36,7 @@ cmakelists_template = textwrap.dedent(r"""
 """)
 
 conanfile_template = textwrap.dedent(r"""
+    import os
     from conans import ConanFile, CMake
 
     class {{package.name}}(ConanFile):
@@ -51,9 +52,9 @@ conanfile_template = textwrap.dedent(r"""
         {% endif %}
 
         def requirements(self):
-            {% for require in package.requires %}
+            {%- for require in package.requires %}
             self.requires("{{require.ref}}")
-            {% endfor %}
+            {%- endfor %}
             pass
 
         def build(self):
@@ -68,9 +69,15 @@ conanfile_template = textwrap.dedent(r"""
             self.copy("*.so", dst="lib", keep_path=False)
             self.copy("*.dylib", dst="lib", keep_path=False)
             self.copy("*.a", dst="lib", keep_path=False)
+            {%- for exec in package.executables %}
+            self.copy("{{ exec.name }}", src="bin", dst="bin", keep_path=False)
+            {%- endfor %}
 
         def package_info(self):
             self.cpp_info.libs = ["{{package.libraries|join('", "')}}"]
+            {%- if package.executables %}
+            self.env_info.PATH.append(os.path.join(self.package_folder, "bin"))
+            {%- endif %}
 """)
 
 
@@ -84,7 +91,7 @@ lib_cpp_template = textwrap.dedent(r"""
     {% endfor %}
 
     void {{library.name}}(int tabs) {
-        std::cout << std::string(tabs, '\t') << "> {{library.name}}" << std::endl;
+        std::cout << std::string(tabs, '\t') << "> {{library.name}}: {{ message|default("default") }}" << std::endl;
         {% for require in library.requires %}
         {{require.name}}(tabs+1);
         {% endfor %}
@@ -105,9 +112,19 @@ main_cpp_template = textwrap.dedent(r"""
     {% endfor %}
 
     int main() {
-        std::cout << "> {{executable.name}}" << std::endl;
+        std::cout << "> {{executable.name}}: {{ message|default("default") }}" << std::endl;
         {% for require in executable.requires %}
-        {{require.name}}(1);
+        {{require.name}}(0);
         {% endfor %}
     }
 """)
+
+# Related to WORKSPACES
+layout_template = textwrap.dedent(r"""
+    [source_folder]
+    .
+    
+    [build_folder]
+    .
+""")
+

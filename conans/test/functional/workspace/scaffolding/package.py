@@ -6,7 +6,8 @@ from collections import namedtuple, defaultdict
 from jinja2 import Template
 
 from conans.test.functional.workspace.scaffolding.templates import conanfile_template, \
-    cmakelists_template, lib_cpp_template, lib_h_template, main_cpp_template
+    cmakelists_template, lib_cpp_template, lib_h_template, main_cpp_template, layout_template
+from conans.test.utils.test_files import temp_folder
 
 
 class _Library:
@@ -48,8 +49,13 @@ class Package:
         self._executables = []
         self.shared = False
 
-        # About generators
         self.generators = defaultdict(set)
+
+        self._directory = None
+
+    @property
+    def local_path(self):
+        return self._directory
 
     @property
     def ref(self):
@@ -66,6 +72,10 @@ class Package:
     @property
     def executables(self):
         return self._executables
+
+    @property
+    def layout_file(self):
+        return os.path.join(self.local_path, 'layout')
 
     def add_library(self, **data):
         lib = _Library(package=self, **data)
@@ -90,17 +100,25 @@ class Package:
             f.write(output)
         return output_filename
 
-    def render(self, output_folder):
-        package_dir = os.path.join(output_folder, self.name)
-        os.makedirs(package_dir)
+    def modify_cpp_message(self, message=None):
+        for library in self._libraries:
+            library_dir = os.path.join(self._directory, library.name)
+            self._render_template(lib_cpp_template,
+                                  os.path.join(library_dir, 'lib.cpp'),
+                                  package=self, library=library, message=message)
+
+    def render(self, output_folder=None):
+        self._directory = output_folder or os.path.join(temp_folder(False), self.name)
+        os.makedirs(self._directory)
         self._render_template(conanfile_template,
-                              os.path.join(package_dir, 'conanfile.py'),
+                              os.path.join(self._directory, 'conanfile.py'),
                               package=self)
         self._render_template(cmakelists_template,
-                              os.path.join(package_dir, 'CMakeLists.txt'),
+                              os.path.join(self._directory, 'CMakeLists.txt'),
                               package=self)
+        self._render_template(layout_template, self.layout_file, package=self)
         for library in self._libraries:
-            library_dir = os.path.join(package_dir, library.name)
+            library_dir = os.path.join(self._directory, library.name)
             os.makedirs(library_dir)
             self._render_template(lib_h_template,
                                   os.path.join(library_dir, 'lib.h'),
@@ -109,12 +127,12 @@ class Package:
                                   os.path.join(library_dir, 'lib.cpp'),
                                   package=self, library=library)
         for executable in self._executables:
-            executable_dir = os.path.join(package_dir, executable.name)
+            executable_dir = os.path.join(self._directory, executable.name)
             os.makedirs(executable_dir, exist_ok=True)
             self._render_template(main_cpp_template,
                                   os.path.join(executable_dir, 'main.cpp'),
                                   package=self, executable=executable)
-        return package_dir
+        return self._directory
 
 
 if __name__ == "__main__":
@@ -133,7 +151,7 @@ if __name__ == "__main__":
     lib2.add_link_library(lib1)
     exe1 = pkg1.add_executable(name="exe1")
     exe1.add_link_library(lib1)
-    pkg1.render(output_folder)
+    pkg1.render(os.path.join(output_folder, pkg1.name))
 
     # Package 2
     pkg2 = Package(name="pkg2")
@@ -141,5 +159,5 @@ if __name__ == "__main__":
     pkg2_lib1.add_link_library(lib1, generator='cmake')
     pkg2_exe1 = pkg2.add_executable(name="pkg2_exe1")
     pkg2_exe1.add_link_library(pkg2_lib1)
-    pkg2.render(output_folder)
+    pkg2.render(os.path.join(output_folder, pkg2.name))
 

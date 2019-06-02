@@ -1,11 +1,14 @@
 # coding=utf-8
 
 import unittest
-
+import textwrap
+from jinja2 import Template
 from conans.test.functional.workspace.scaffolding.package import Package
+from conans.test.functional.workspace.scaffolding.ws_templates import workspace_yml_template
 from conans.test.utils.test_files import temp_folder
 from conans.test.utils.tools import NO_SETTINGS_PACKAGE_ID, TestClient
 import os
+import platform
 
 
 class WSTests(unittest.TestCase):
@@ -24,6 +27,11 @@ class WSTests(unittest.TestCase):
            |    +------+   |  +------+
            +----+ pkgE +---+--+ pkgF |
                 +------+      +------+
+                   ^               ^
+                   |               |
+                   |    +------+   |
+                   +----+ pkgG +---+
+                        +------+
 
     """
 
@@ -38,8 +46,8 @@ class WSTests(unittest.TestCase):
         if add_executable:
             exec = pkg.add_executable(name="{}_{}".format(pkg.name, "exe"))
             exec.add_link_library(pkg_lib)
-        pkg_folder = pkg.render(client.current_folder)
-        client.run('export "{}" ws/testing'.format(os.path.join(pkg_folder, 'conanfile.py')))
+        pkg_folder = pkg.render()
+        client.run('create "{}" ws/testing'.format(os.path.join(pkg_folder, 'conanfile.py')))
         return pkg
 
     @classmethod
@@ -53,28 +61,50 @@ class WSTests(unittest.TestCase):
         cls.libD = cls._plain_package(t, pkg="pkgD")
         cls.libB = cls._plain_package(t, pkg="pkgB", lib_requires=[cls.libA, ])
         cls.libC = cls._plain_package(t, pkg="pkgC", lib_requires=[cls.libA, cls.libD])
-        cls.libE = cls._plain_package(t, pkg="pkgE", lib_requires=[cls.libB, cls.libC], add_executable=True)
-        cls.libF = cls._plain_package(t, pkg="pkgF", lib_requires=[cls.libC], add_executable=True)
+        cls.libE = cls._plain_package(t, pkg="pkgE", lib_requires=[cls.libB, cls.libC])
+        cls.libF = cls._plain_package(t, pkg="pkgF", lib_requires=[cls.libC])
+        cls.libG = cls._plain_package(t, pkg="pkgG", lib_requires=[cls.libE, cls.libF], add_executable=True)
 
     def setUp(self):
         # Let's have one _local_ client per package
-        self.pkgA = TestClient(self.base_folder, os.path.join(self.folder, self.libA.name))
-        self.pkgB = TestClient(self.base_folder, os.path.join(self.folder, self.libB.name))
-        self.pkgC = TestClient(self.base_folder, os.path.join(self.folder, self.libC.name))
-        self.pkgD = TestClient(self.base_folder, os.path.join(self.folder, self.libD.name))
-        self.pkgE = TestClient(self.base_folder, os.path.join(self.folder, self.libE.name))
-        self.pkgF = TestClient(self.base_folder, os.path.join(self.folder, self.libF.name))
+        self.pkgA = TestClient(self.base_folder, self.libA.local_path)
+        self.pkgB = TestClient(self.base_folder, self.libB.local_path)
+        self.pkgC = TestClient(self.base_folder, self.libC.local_path)
+        self.pkgD = TestClient(self.base_folder, self.libD.local_path)
+        self.pkgE = TestClient(self.base_folder, self.libE.local_path)
+        self.pkgF = TestClient(self.base_folder, self.libF.local_path)
+        self.pkgG = TestClient(self.base_folder, self.libG.local_path)
 
-        # Working client
-        self.t = TestClient(base_folder=self.base_folder)
+    def run_outside_ws(self):
+        """ This function runs the full project without taking into account the ws,
+            it should only take into account packages in the cache and those in
+            editable mode
+        """
+        t = TestClient(base_folder=self.base_folder)
+        t.save({'conanfile.txt': "[requires]\n{}".format(self.libG.ref)})
+        t.run('install conanfile.txt -g virtualrunenv')
+        for exec in self.libG.executables:
+            if platform.system() != "Windows":
+                t.run_command("bash -c 'source activate_run.sh && {}'".format(exec.name))
+            else:
+                t.run_command("activate_run.bat && {}.exe".format(exec.name))
+            print(t.out)
+            # TODO: Check printed lines (messages)
 
-    def test_somthing(self):
-        # We can build in the cache
-        self.t.run('install "{}" --build={}'.format(self.libA.ref, self.libA.name))
-        print(self.t.out)
+    def test_created_projects(self):
+        self.run_outside_ws()
 
-        # And we can get packages locally
-        self.pkgC.run('info .')
-        print(self.pkgC.out)
+    def test_workspace(self):
+        editables = [self.libA, self.libB, self.libE, self.libG]
+        root = self.libG
 
-        self.fail("AAA")
+        t = TestClient(base_folder=self.base_folder)
+        ws_yml = Template(workspace_yml_template).render(editables=editables, root=root)
+        t.save({'ws.yml': ws_yml}, clean_first=True)
+        t.run("workspace2 install ws.yml")
+        print(t.out)
+
+        print("*"*20)
+        t.run_command('cat conanworkspace.cmake')
+        print(t.out)
+        self.fail("test_workspace")

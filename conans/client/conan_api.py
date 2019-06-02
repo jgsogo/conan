@@ -445,6 +445,30 @@ class ConanAPIV1(object):
             raise ConanException("Provide a valid full reference without wildcards.")
 
     @api_method
+    def workspace2_install(self, path, settings=None, options=None, env=None,
+                          remote_name=None, build=None, profile_name=None,
+                          update=False, cwd=None, install_folder=None):
+        cwd = cwd or get_cwd()
+        abs_path = os.path.normpath(os.path.join(cwd, path))
+
+        remotes = self._cache.registry.load_remotes()
+        remotes.select(remote_name)
+        self._python_requires.enable_remotes(update=update, remotes=remotes)
+
+        from conans.model.workspaces.ws_cmake import WSCMake
+        workspace = WSCMake(abs_path, self._cache)
+        graph_info = get_graph_info(profile_name, settings, options, env, cwd, None,
+                                    self._cache, self._user_io.out)
+
+        self._user_io.out.info("Configuration:")
+        self._user_io.out.writeln(graph_info.profile.dumps())
+
+        recorder = ActionRecorder()
+        workspace.install(graph_manager=self._graph_manager, graph_info=graph_info,
+                          recorder=recorder, install_folder=install_folder)
+
+
+    @api_method
     def workspace_install(self, path, settings=None, options=None, env=None,
                           remote_name=None, build=None, profile_name=None,
                           update=False, cwd=None, install_folder=None):
