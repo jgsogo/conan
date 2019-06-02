@@ -7,6 +7,7 @@ import os
 from collections import OrderedDict
 from jinja2 import Template
 import yaml
+from conans.client.generators import write_generators
 
 from conans.client.graph.graph import RECIPE_EDITABLE
 from conans.errors import ConanException
@@ -14,7 +15,7 @@ from conans.model.editable_layout import get_editable_abs_path, EditableLayout
 from conans.model.ref import ConanFileReference
 from conans.util.files import load, save
 from conans.client.cache.remote_registry import Remotes
-from conans.model.workspaces.templates import conanworkspace_cmake_template
+from conans.model.workspaces.templates import conanworkspace_cmake_template, cmakelists_template
 
 
 class PackageInsideWS(object):
@@ -56,11 +57,13 @@ class PackageOutsideWS(object):
 class WSCMake(object):
     default_filename = "conanws.yml"
     _generator = 'cmake'
-    inner_packages = {}  # Packages in the workspace
-    outter_packages = {}  # Packages out of the workspace
+    inner_packages = {}  # Packages in the workspace (editable ones)
+    outter_packages = {}  # Packages out of the workspace (depends on one 'inner_package')
+    fixed_packages = []  # Packages out of workspace (do not depend on an 'inner_package')
 
-    def __init__(self, path, cache):
+    def __init__(self, path, cache, output):
         self._cache = cache
+        self._output = output
 
         if not os.path.isfile(path):
             path = os.path.join(path, self.default_filename)
@@ -101,10 +104,16 @@ class WSCMake(object):
                                                  check_updates=False, update=False,
                                                  remotes=Remotes(), recorder=recorder)
 
-        self.outter_packages = {it.ref: PackageOutsideWS(it.ref) for it in self.graph.nodes
-                                if it.ref and  # There is a 'None' in the graph
-                                it.ref not in inner_refs and
-                                any([dep.ref in inner_refs for dep in it.public_closure])}
+        #self.outter_packages = {it.ref: PackageOutsideWS(it.ref) for it in self.graph.nodes
+        #                        if it.ref and  # There is a 'None' in the graph
+        #                        it.ref not in inner_refs and
+        #                        any([dep.ref in inner_refs for dep in it.public_closure])}
+
+        for it in self.graph.nodes:
+            if it.ref and it.ref not in inner_refs:
+                self.fixed_packages.append(it.ref)
+                if any([dep.ref in inner_refs for dep in it.public_closure]):
+                    self.outter_packages[it.ref] = PackageOutsideWS(it.ref)
 
     def install(self, graph_manager, graph_info, recorder, install_folder):
         print("> WSCMake::install")
@@ -120,10 +129,28 @@ class WSCMake(object):
                                    [it for it in self.outter_packages.values() if it.ref in [pc.ref for pc in node.public_closure]]
                 ordered_packages.append(pkg_wrapper)
 
+        build_folder = os.path.join(install_folder, 'build')
         t = Template(conanworkspace_cmake_template, lstrip_blocks=True)
         conanworkspace_cmake = t.render(ws=self, ordered_packages=ordered_packages,
-                                        build_folder=os.path.join(install_folder, 'build'))
+                                        build_folder=build_folder)
         save(os.path.join(install_folder, 'conanworkspace.cmake'), conanworkspace_cmake)
+        save(os.path.join(install_folder, 'CMakeLists.txt'), cmakelists_template)
+
+        # For the inner packages, create fake files
+        for ref in self.inner_packages.keys():
+            print(os.path.join(build_folder, ref.name, 'conanbuildinfo.cmake'))
+            save(os.path.join(build_folder, ref.name, 'conanbuildinfo.cmake'), "# Empty file")
+
+        # TODO: I can generate 'cmake' and 'cmake_find_package' files for all outter packages (and include/find all of them)
+        save(os.path.join(install_folder, 'workspace.txt'),
+             "[requires]\n{}".format('\n'.join(map(str, self.fixed_packages))))
+        _, conanfile = graph_manager.load_graph(os.path.join(install_folder, 'workspace.txt'),
+                                                create_reference=None,
+                                                graph_info=graph_info, build_mode=["never", ],
+                                                check_updates=False, update=False,
+                                                remotes=Remotes(), recorder=recorder)
+        conanfile.generators = ['cmake', 'cmake_find_package']
+        write_generators(conanfile, install_folder, self._output)
 
         print("< WSCMake::install")
 

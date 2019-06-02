@@ -49,3 +49,14 @@ conanworkspace_cmake_template = textwrap.dedent(r"""
         {%- endfor %}  
     {% endfor %}
 """)
+
+cmakelists_template = textwrap.dedent(r"""
+    cmake_minimum_required(VERSION 3.10)
+    project(workspace LANGUAGES CXX)
+    
+    include("${CMAKE_CURRENT_SOURCE_DIR}/conanbuildinfo.cmake")
+    conan_basic_setup(TARGETS)
+    
+    include("${CMAKE_CURRENT_SOURCE_DIR}/conanworkspace.cmake")
+    
+""")

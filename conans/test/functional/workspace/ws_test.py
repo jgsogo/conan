@@ -88,7 +88,7 @@ class WSTests(unittest.TestCase):
                 t.run_command("bash -c 'source activate_run.sh && {}'".format(exec.name))
             else:
                 t.run_command("activate_run.bat && {}.exe".format(exec.name))
-            print(t.out)
+            # print(t.out)
             # TODO: Check printed lines (messages)
 
     def test_created_projects(self):
@@ -105,6 +105,25 @@ class WSTests(unittest.TestCase):
         print(t.out)
 
         print("*"*20)
+        t.run_command('ls -la')
+        print(t.out)
+        print("*" * 20)
+
+        print("*"*20)
         t.run_command('cat conanworkspace.cmake')
+        print(t.out)
+        print("*" * 20)
+
+        print("*"*20)
+        t.run_command('cat workspace.txt')
+        print(t.out)
+        print("*" * 20)
+
+        print("*"*20)
+        t.run_command('cat CMakeLists.txt')
+        print(t.out)
+        print("*" * 20)
+
+        t.run_command('cd build && cmake ..')
         print(t.out)
         self.fail("test_workspace")

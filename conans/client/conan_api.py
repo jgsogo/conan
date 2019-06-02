@@ -456,7 +456,7 @@ class ConanAPIV1(object):
         self._python_requires.enable_remotes(update=update, remotes=remotes)
 
         from conans.model.workspaces.ws_cmake import WSCMake
-        workspace = WSCMake(abs_path, self._cache)
+        workspace = WSCMake(abs_path, self._cache, output=self._user_io.out)
         graph_info = get_graph_info(profile_name, settings, options, env, cwd, None,
                                     self._cache, self._user_io.out)
 
