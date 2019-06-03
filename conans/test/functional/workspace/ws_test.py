@@ -125,8 +125,15 @@ class WSTests(unittest.TestCase):
         print(t.out)
         print("*" * 20)
 
+        print("*" * 20)
         t.run_command('cd build && cmake .. -DCMAKE_MODULE_PATH="{}"'.format(t.current_folder))
         print(t.out)
+        print("*" * 20)
+
+        print("*" * 20)
+        t.run_command('cd build && cmake --build .')
+        print(t.out)
+        print("*" * 20)
 
         t.save({'build/CMakeGraphVizOptions.cmake': textwrap.dedent(r"""
             set(GRAPHVIZ_EXTERNAL_LIBS TRUE)

@@ -23,7 +23,7 @@ cmakelists_template = textwrap.dedent(r"""
     add_library({{library.target}} {{library.name}}/lib.cpp)
     target_include_directories({{library.target}}
         PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>)
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
     {% if library.requires %}target_link_libraries({{library.target}} PUBLIC {% for r in library.requires %}{{r.target}} {% endfor %}){% endif%}
     set_target_properties({{library.target}} PROPERTIES OUTPUT_NAME {{library.name}})
     {% endfor %}

@@ -62,11 +62,11 @@ cmakelists_template = textwrap.dedent(r"""
     include("${CMAKE_CURRENT_SOURCE_DIR}/conanbuildinfo.cmake")
     conan_basic_setup(TARGETS)
     
-    {%- for pkg in ws.fixed_packages %}
+    {% for pkg in ws.fixed_packages %}
         find_package({{pkg.name}} REQUIRED)
         set_target_properties({{pkg.name}}::{{pkg.name}} PROPERTIES IMPORTED_GLOBAL TRUE)
         add_library(CONAN_PKG::{{pkg.name}} ALIAS {{pkg.name}}::{{pkg.name}})
-    {%- endfor %}
+    {% endfor %}
     
     include("${CMAKE_CURRENT_SOURCE_DIR}/conanworkspace.cmake")
     
