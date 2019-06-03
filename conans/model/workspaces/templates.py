@@ -5,9 +5,12 @@ import textwrap
 conanworkspace_cmake_template = textwrap.dedent(r"""
     cmake_minimum_required(VERSION 3.10)
     
-    # List of inner packages
+    # List of targets handled by the workspace
     {%- for it in ws.inner_packages.keys() %}
-    list(APPEND inner_targets "{{ it.name }}")
+    list(APPEND ws_targets "{{ it.name }}")
+    {%- endfor %}
+    {%- for it in ws.fixed_packages %}
+    list(APPEND ws_targets "{{ it.name }}")
     {%- endfor %}
     
     # Override functions to avoid importing existing TARGETs 
@@ -16,12 +19,12 @@ conanworkspace_cmake_template = textwrap.dedent(r"""
     endfunction()
     
     function(find_package)
-        if(NOT "${ARG0}" IN_LIST inner_target)
+        if(NOT "${ARG0}" IN_LIST ws_targets)
             # Note.- If it's been already overridden, it will recurse forever
             message("find_package(${ARG0})")
             _find_package(${ARGV})
         else()
-            message("find_package(${ARG0}) ignored, it is already a target")
+            message("find_package(${ARG0}) ignored, it is a target handled by Conan workspace")
         endif()
     endfunction()
     
@@ -40,6 +43,8 @@ conanworkspace_cmake_template = textwrap.dedent(r"""
         {%- if pkg.ref in ws.inner_packages %}
             # Inner: {{ pkg.ref }}
             add_subdirectory("{{pkg.source_folder}}" "{{build_folder}}/{{pkg.ref.name}}")
+            add_library({{pkg.ref.name}}::{{pkg.ref.name}} ALIAS {{pkg.ref.name}})
+            add_library(CONAN_PKG::{{pkg.ref.name}} ALIAS {{pkg.ref.name}})
         {%- else %}
             # Outter: {{ pkg.ref }}
             outer_package({{pkg.target}} {{pkg.ref}})
@@ -56,6 +61,12 @@ cmakelists_template = textwrap.dedent(r"""
     
     include("${CMAKE_CURRENT_SOURCE_DIR}/conanbuildinfo.cmake")
     conan_basic_setup(TARGETS)
+    
+    {%- for pkg in ws.fixed_packages %}
+        find_package({{pkg.name}} REQUIRED)
+        set_target_properties({{pkg.name}}::{{pkg.name}} PROPERTIES IMPORTED_GLOBAL TRUE)
+        add_library(CONAN_PKG::{{pkg.name}} ALIAS {{pkg.name}}::{{pkg.name}})
+    {%- endfor %}
     
     include("${CMAKE_CURRENT_SOURCE_DIR}/conanworkspace.cmake")
     

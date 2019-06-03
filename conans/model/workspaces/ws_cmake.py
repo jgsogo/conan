@@ -7,6 +7,7 @@ import os
 from collections import OrderedDict
 from jinja2 import Template
 import yaml
+from conans.client.installer import BinaryInstaller
 from conans.client.generators import write_generators
 
 from conans.client.graph.graph import RECIPE_EDITABLE
@@ -25,7 +26,7 @@ class PackageInsideWS(object):
     def __init__(self, ref, data):
         self.ref = ConanFileReference.loads(ref, validate=True)
         self.data = data
-        self.layout = EditableLayout(data.get('layout'))
+        self.layout = data.get('layout')
 
     def __str__(self):
         return self.ref.full_repr()
@@ -59,7 +60,7 @@ class WSCMake(object):
     _generator = 'cmake'
     inner_packages = {}  # Packages in the workspace (editable ones)
     outter_packages = {}  # Packages out of the workspace (depends on one 'inner_package')
-    fixed_packages = []  # Packages out of workspace (do not depend on an 'inner_package')
+    fixed_packages = []  # Packages out of workspace
 
     def __init__(self, path, cache, output):
         self._cache = cache
@@ -115,7 +116,17 @@ class WSCMake(object):
                 if any([dep.ref in inner_refs for dep in it.public_closure]):
                     self.outter_packages[it.ref] = PackageOutsideWS(it.ref)
 
-    def install(self, graph_manager, graph_info, recorder, install_folder):
+        print("inner packages:")
+        for it in self.inner_packages:
+            print(" - {}".format(it))
+        print("outter packages:")
+        for it in self.outter_packages:
+            print(" - {}".format(it))
+        print("fixed packages:")
+        for it in self.fixed_packages:
+            print(" - {}".format(it))
+
+    def install(self, graph_manager, graph_info, recorder, install_folder, conan_api):
         print("> WSCMake::install")
         self._build_graph(graph_manager, graph_info, recorder)
 
@@ -130,27 +141,32 @@ class WSCMake(object):
                 ordered_packages.append(pkg_wrapper)
 
         build_folder = os.path.join(install_folder, 'build')
-        t = Template(conanworkspace_cmake_template, lstrip_blocks=True)
+        t = Template(conanworkspace_cmake_template)
         conanworkspace_cmake = t.render(ws=self, ordered_packages=ordered_packages,
                                         build_folder=build_folder)
         save(os.path.join(install_folder, 'conanworkspace.cmake'), conanworkspace_cmake)
-        save(os.path.join(install_folder, 'CMakeLists.txt'), cmakelists_template)
+
+        t = Template(cmakelists_template)
+        cmakelists_txt = t.render(ws=self)
+        save(os.path.join(install_folder, 'CMakeLists.txt'), cmakelists_txt)
 
         # For the inner packages, create fake files
         for ref in self.inner_packages.keys():
-            print(os.path.join(build_folder, ref.name, 'conanbuildinfo.cmake'))
             save(os.path.join(build_folder, ref.name, 'conanbuildinfo.cmake'), "# Empty file")
 
         # TODO: I can generate 'cmake' and 'cmake_find_package' files for all outter packages (and include/find all of them)
-        save(os.path.join(install_folder, 'workspace.txt'),
-             "[requires]\n{}".format('\n'.join(map(str, self.fixed_packages))))
-        _, conanfile = graph_manager.load_graph(os.path.join(install_folder, 'workspace.txt'),
-                                                create_reference=None,
-                                                graph_info=graph_info, build_mode=["never", ],
-                                                check_updates=False, update=False,
-                                                remotes=Remotes(), recorder=recorder)
-        conanfile.generators = ['cmake', 'cmake_find_package']
-        write_generators(conanfile, install_folder, self._output)
+        workspace_txt = os.path.join(install_folder, 'workspace.txt')
+        save(workspace_txt,
+             "[requires]\n{}\n\n[generators]\ncmake_find_package".format('\n'.join(map(str, self.fixed_packages))))
+        conan_api.install(workspace_txt, install_folder=install_folder)
+        # TODO: How can I create only those finds for packages listed?
+
+        # TODO: I need a 'conanbuildinfo.cmake' (or a toolchain file) to do the magic
+        workspace_empty = os.path.join(install_folder, 'workspace_empty.txt')
+        save(workspace_empty, "[requires]\n[generators]\ncmake")
+        conan_api.install(workspace_empty, install_folder=install_folder)
+
+        #write_generators(conanfile, install_folder, self._output)
 
         print("< WSCMake::install")
 

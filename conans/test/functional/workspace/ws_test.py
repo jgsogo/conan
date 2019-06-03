@@ -38,7 +38,8 @@ class WSTests(unittest.TestCase):
     @staticmethod
     def _plain_package(client, pkg, lib_requires=None, add_executable=False):
         pkg = Package(name=pkg)
-        pkg_lib = pkg.add_library(name="{}_{}".format(pkg.name, "lib"))
+        #pkg_lib = pkg.add_library(name="{}_{}".format(pkg.name, "lib"))
+        pkg_lib = pkg.add_library(name=pkg.name)  # TODO: Need Dani components
         if lib_requires:
             for item in lib_requires:
                 library = item.libraries[0]  # There is only one lib per package (wait for Dani)
@@ -53,8 +54,8 @@ class WSTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(WSTests, cls).setUpClass()
-        cls.folder = temp_folder(path_with_spaces=True)
-        cls.base_folder = temp_folder(path_with_spaces=True)
+        cls.folder = temp_folder(path_with_spaces=False)
+        cls.base_folder = temp_folder(path_with_spaces=False)
 
         t = TestClient(current_folder=cls.folder, base_folder=cls.base_folder)
         cls.libA = cls._plain_package(t, pkg="pkgA")
@@ -124,6 +125,16 @@ class WSTests(unittest.TestCase):
         print(t.out)
         print("*" * 20)
 
-        t.run_command('cd build && cmake ..')
+        t.run_command('cd build && cmake .. -DCMAKE_MODULE_PATH="{}"'.format(t.current_folder))
         print(t.out)
+
+        t.save({'build/CMakeGraphVizOptions.cmake': textwrap.dedent(r"""
+            set(GRAPHVIZ_EXTERNAL_LIBS TRUE)
+            set(GRAPHVIZ_GENERATE_PER_TARGET FALSE)
+            set(GRAPHVIZ_GENERATE_DEPENDERS FALSE)
+            set(GRAPHVIZ_CUSTOM_TARGETS TRUE)
+        """)})
+        t.run_command('cd build && cmake --graphviz=test.dot .')
+        print(t.out)
+
         self.fail("test_workspace")

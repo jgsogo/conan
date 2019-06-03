@@ -465,7 +465,8 @@ class ConanAPIV1(object):
 
         recorder = ActionRecorder()
         workspace.install(graph_manager=self._graph_manager, graph_info=graph_info,
-                          recorder=recorder, install_folder=install_folder)
+                          recorder=recorder, install_folder=install_folder,
+                          conan_api=self)
 
 
     @api_method
