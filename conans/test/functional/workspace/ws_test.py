@@ -105,26 +105,6 @@ class WSTests(unittest.TestCase):
         t.run("workspace2 install ws.yml")
         print(t.out)
 
-        print("*"*20)
-        t.run_command('ls -la')
-        print(t.out)
-        print("*" * 20)
-
-        print("*"*20)
-        t.run_command('cat conanworkspace.cmake')
-        print(t.out)
-        print("*" * 20)
-
-        print("*"*20)
-        t.run_command('cat workspace.txt')
-        print(t.out)
-        print("*" * 20)
-
-        print("*"*20)
-        t.run_command('cat CMakeLists.txt')
-        print(t.out)
-        print("*" * 20)
-
         print("*" * 20)
         t.run_command('cd build && cmake .. -DCMAKE_MODULE_PATH="{}"'.format(t.current_folder))
         print(t.out)
@@ -143,5 +123,16 @@ class WSTests(unittest.TestCase):
         #""")})
         # t.run_command('cd build && cmake --graphviz=test.dot .')
         #print(t.out)
+
+
+        print("*" * 20)
+        t.run_command('cd build && ./bin/pkgG_exe')
+        print(t.out)
+        print("*" * 20)
+
+        self.libA.modify_cpp_message("Edited!!!")
+        t.run_command('cd build && cmake --build .')
+        t.run_command('cd build && ./bin/pkgG_exe')
+        print(t.out)
 
         self.fail("test_workspace")
