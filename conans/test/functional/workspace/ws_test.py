@@ -135,13 +135,13 @@ class WSTests(unittest.TestCase):
         print(t.out)
         print("*" * 20)
 
-        t.save({'build/CMakeGraphVizOptions.cmake': textwrap.dedent(r"""
-            set(GRAPHVIZ_EXTERNAL_LIBS TRUE)
-            set(GRAPHVIZ_GENERATE_PER_TARGET FALSE)
-            set(GRAPHVIZ_GENERATE_DEPENDERS FALSE)
-            set(GRAPHVIZ_CUSTOM_TARGETS TRUE)
-        """)})
-        t.run_command('cd build && cmake --graphviz=test.dot .')
-        print(t.out)
+        #t.save({'build/CMakeGraphVizOptions.cmake': textwrap.dedent(r"""
+        #    set(GRAPHVIZ_EXTERNAL_LIBS TRUE)
+        #    set(GRAPHVIZ_GENERATE_PER_TARGET FALSE)
+        #    set(GRAPHVIZ_GENERATE_DEPENDERS FALSE)
+        #    set(GRAPHVIZ_CUSTOM_TARGETS TRUE)
+        #""")})
+        # t.run_command('cd build && cmake --graphviz=test.dot .')
+        #print(t.out)
 
         self.fail("test_workspace")

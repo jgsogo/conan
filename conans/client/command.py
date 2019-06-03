@@ -1551,6 +1551,11 @@ class Command(object):
                                     help="Folder where the workspace files will be created"
                                          " (default to current working directory)")
 
+        build_outter_parser = subparsers.add_parser('build_outter',
+                                                    help='THIS IS HIDDEN')
+        build_outter_parser.add_argument('path', help='the workspace file')
+        build_outter_parser.add_argument('ref', help='the package to build')
+
         args = parser.parse_args(*args)
 
         if args.subcommand == "install":
@@ -1558,7 +1563,8 @@ class Command(object):
                                           args.remote, args.build,
                                           args.profile, args.update,
                                           install_folder=args.install_folder or get_cwd())
-
+        if args.subcommand == "build_outter":
+            self._conan.workspace2_build_outter(args.path, reference=args.ref)
 
     def workspace(self, *args):
         """

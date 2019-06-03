@@ -9,14 +9,14 @@ from jinja2 import Template
 import yaml
 from conans.client.installer import BinaryInstaller
 from conans.client.generators import write_generators
-
+from conans.paths import get_conan_user_home
 from conans.client.graph.graph import RECIPE_EDITABLE
 from conans.errors import ConanException
 from conans.model.editable_layout import get_editable_abs_path, EditableLayout
 from conans.model.ref import ConanFileReference
 from conans.util.files import load, save
 from conans.client.cache.remote_registry import Remotes
-from conans.model.workspaces.templates import conanworkspace_cmake_template, cmakelists_template
+from conans.model.workspaces.templates import conanworkspace_cmake_template, cmakelists_template, build_outter_template
 
 
 class PackageInsideWS(object):
@@ -128,6 +128,7 @@ class WSCMake(object):
 
     def install(self, graph_manager, graph_info, recorder, install_folder, conan_api):
         print("> WSCMake::install")
+        print(" - get_conan_user_home(): {}".format(get_conan_user_home()))
         self._build_graph(graph_manager, graph_info, recorder)
 
         ordered_packages = []
@@ -140,11 +141,17 @@ class WSCMake(object):
                                    [it for it in self.outter_packages.values() if it.ref in [pc.ref for pc in node.public_closure]]
                 ordered_packages.append(pkg_wrapper)
 
+        script_file = os.path.join(install_folder, 'build_outter.sh')
+        t = Template(build_outter_template)
+        build_outter_sh = t.render(ws=self, CONAN_USER_HOME=os.path.dirname(self._cache.cache_folder))
+        save(script_file, build_outter_sh)
+
         build_folder = os.path.join(install_folder, 'build')
         t = Template(conanworkspace_cmake_template)
         conanworkspace_cmake = t.render(ws=self, ordered_packages=ordered_packages,
-                                        build_folder=build_folder)
+                                        build_folder=build_folder, script_file=script_file)
         save(os.path.join(install_folder, 'conanworkspace.cmake'), conanworkspace_cmake)
+
 
         t = Template(cmakelists_template)
         cmakelists_txt = t.render(ws=self)
@@ -170,6 +177,18 @@ class WSCMake(object):
 
         print("< WSCMake::install")
 
-    def remove(self):
-        # TODO: Remove from 'cache/editable_packages' those referring to this WS
-        pass
+    def build_outter(self, graph_manager, graph_info, recorder, conan_api, reference):
+        print("> WSCMake::build_outter(reference='{}')".format(reference))
+        print(" - get_conan_user_home(): {}".format(get_conan_user_home()))
+
+        self._build_graph(graph_manager, graph_info, recorder)
+
+        ref = ConanFileReference.loads(reference, validate=True)
+        outter_refs = [it.copy_with_rev(None) for it in self.outter_packages.keys()]
+        if ref not in outter_refs:
+            raise ConanException("Just intended for outter references")
+
+        # TODO: Run the build for the _cache-editable_ package
+        conan_api.install_reference(ref, build=[ref.name, ])
+
+        print("< WSCMake::build_outter")

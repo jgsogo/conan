@@ -32,7 +32,7 @@ conanworkspace_cmake_template = textwrap.dedent(r"""
     function(outer_package PKG_NAME FULL_REF)
         set(PKG_SENTINEL "{{build_folder}}/${PKG_NAME}.setinel")
         add_custom_command(OUTPUT ${PKG_SENTINEL}
-                           COMMAND "conan workspace2 build_outter ${FULL_REF} --build=${PKG_NAME}"
+                           COMMAND sh "{{script_file}}" ${FULL_REF}
                            WORKING_DIRECTORY "{{build_folder}}"
                            COMMENT "Conan install for outter ${PKG_NAME}")
         add_custom_target(${PKG_NAME} DEPENDS ${PKG_SENTINEL})
@@ -70,4 +70,16 @@ cmakelists_template = textwrap.dedent(r"""
     
     include("${CMAKE_CURRENT_SOURCE_DIR}/conanworkspace.cmake")
     
+""")
+
+
+build_outter_template = textwrap.dedent(r"""
+    #!/usr/bin/env bash
+    set -x  # echo on
+    
+    REFERENCE=${1?Error: no reference given}
+    
+    env CONAN_USER_HOME="{{CONAN_USER_HOME}}" conan search
+    
+    env CONAN_USER_HOME="{{CONAN_USER_HOME}}" conan workspace2 build_outter "{{ws._ws_file}}" $REFERENCE
 """)

@@ -468,6 +468,24 @@ class ConanAPIV1(object):
                           recorder=recorder, install_folder=install_folder,
                           conan_api=self)
 
+    @api_method
+    def workspace2_build_outter(self, path, reference,
+                                settings=None, options=None, env=None, profile_name=None):
+        from conans.model.workspaces.ws_cmake import WSCMake
+        cwd = get_cwd()
+        abs_path = os.path.normpath(os.path.join(cwd, path))
+        workspace = WSCMake(abs_path, self._cache, output=self._user_io.out)
+
+        graph_info = get_graph_info(profile_name, settings, options, env, cwd, None,
+                                    self._cache, self._user_io.out)
+
+        self._user_io.out.info("Configuration:")
+        self._user_io.out.writeln(graph_info.profile.dumps())
+
+        recorder = ActionRecorder()
+        workspace.build_outter(graph_manager=self._graph_manager, graph_info=graph_info,
+                               recorder=recorder,
+                               conan_api=self, reference=reference)
 
     @api_method
     def workspace_install(self, path, settings=None, options=None, env=None,

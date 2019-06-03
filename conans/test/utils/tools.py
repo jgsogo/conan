@@ -663,6 +663,7 @@ class TestClient(object):
             self.users = {"default": [(TESTING_REMOTE_PRIVATE_USER, TESTING_REMOTE_PRIVATE_PASS)]}
 
         self.base_folder = base_folder or temp_folder(path_with_spaces)
+        self.base_folder = os.path.join(self.base_folder, ".conan")
         self.cache = ClientCache(self.base_folder, TestBufferConanOutput())
         self.storage_folder = self.cache.store
 
