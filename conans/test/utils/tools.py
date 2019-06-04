@@ -663,8 +663,8 @@ class TestClient(object):
             self.users = {"default": [(TESTING_REMOTE_PRIVATE_USER, TESTING_REMOTE_PRIVATE_PASS)]}
 
         self.base_folder = base_folder or temp_folder(path_with_spaces)
-        self.base_folder = os.path.join(self.base_folder, ".conan")
-        self.cache = ClientCache(self.base_folder, TestBufferConanOutput())
+        conan_folder = os.path.join(self.base_folder, ".conan")
+        self.cache = ClientCache(conan_folder, TestBufferConanOutput())
         self.storage_folder = self.cache.store
 
         self.requester_class = requester_class
@@ -673,7 +673,7 @@ class TestClient(object):
         if revisions_enabled is None:
             revisions_enabled = get_env("TESTING_REVISIONS_ENABLED", False)
 
-        self.tune_conan_conf(base_folder, cpu_count, revisions_enabled)
+        self.tune_conan_conf(conan_folder, cpu_count, revisions_enabled)
 
         if servers and len(servers) > 1 and not isinstance(servers, OrderedDict):
             raise Exception("""Testing framework error: Servers should be an OrderedDict. e.g:
@@ -794,7 +794,7 @@ servers["r2"] = TestServer()
         # Migration system
         output = TestBufferConanOutput()
         self.user_io = user_io or MockedUserIO(self.users, out=output)
-        self.cache = ClientCache(self.base_folder, output)
+        self.cache = ClientCache(self.cache.cache_folder, output)
 
         # Migration system
         migrator = ClientMigrator(self.cache, Version(__version__), output)
