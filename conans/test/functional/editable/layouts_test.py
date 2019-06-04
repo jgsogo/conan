@@ -120,7 +120,7 @@ class LayoutTest(unittest.TestCase):
             include_{}
             """)
 
-        layout_folder = os.path.join(client.base_folder, LAYOUTS_FOLDER)
+        layout_folder = os.path.join(client.conan_folder, LAYOUTS_FOLDER)
         save_files(layout_folder, {"win/cache": layout_repo.format("win/cache"),
                                    "linux/cache": layout_repo.format("linux/cache")})
         client.save({"conanfile.py": conanfile,

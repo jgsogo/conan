@@ -663,8 +663,8 @@ class TestClient(object):
             self.users = {"default": [(TESTING_REMOTE_PRIVATE_USER, TESTING_REMOTE_PRIVATE_PASS)]}
 
         self.base_folder = base_folder or temp_folder(path_with_spaces)
-        conan_folder = os.path.join(self.base_folder, ".conan")
-        self.cache = ClientCache(conan_folder, TestBufferConanOutput())
+        self.conan_folder = os.path.join(self.base_folder, ".conan")
+        self.cache = ClientCache(self.conan_folder, TestBufferConanOutput())
         self.storage_folder = self.cache.store
 
         self.requester_class = requester_class
@@ -673,7 +673,7 @@ class TestClient(object):
         if revisions_enabled is None:
             revisions_enabled = get_env("TESTING_REVISIONS_ENABLED", False)
 
-        self.tune_conan_conf(conan_folder, cpu_count, revisions_enabled)
+        self.tune_conan_conf(self.conan_folder, cpu_count, revisions_enabled)
 
         if servers and len(servers) > 1 and not isinstance(servers, OrderedDict):
             raise Exception("""Testing framework error: Servers should be an OrderedDict. e.g:
@@ -709,14 +709,14 @@ servers["r2"] = TestServer()
         self._set_revisions("0")
         assert not self.cache.config.revisions_enabled
 
-    def tune_conan_conf(self, base_folder, cpu_count, revisions_enabled):
+    def tune_conan_conf(self, conan_folder, cpu_count, revisions_enabled):
         # Create the default
         self.cache.config
 
         if cpu_count:
             replace_in_file(self.cache.conan_conf_path,
                             "# cpu_count = 1", "cpu_count = %s" % cpu_count,
-                            output=TestBufferConanOutput(), strict=not bool(base_folder))
+                            output=TestBufferConanOutput(), strict=not bool(conan_folder))
 
         current_conf = load(self.cache.conan_conf_path)
         if "revisions_enabled" in current_conf:  # Invalidate any previous value to be sure
