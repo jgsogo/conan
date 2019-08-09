@@ -14,83 +14,53 @@ from conans.util.log import logger
 
 def export_pkg(conanfile, package_id, src_package_folder, package_folder, hook_manager,
                conanfile_path, ref):
-    mkdir(package_folder)
-    conanfile.package_folder = src_package_folder
     output = conanfile.output
     output.info("Exporting to cache existing package from user folder")
-    output.info("Package folder %s" % package_folder)
-    hook_manager.execute("pre_package", conanfile=conanfile, conanfile_path=conanfile_path,
-                         reference=ref, package_id=package_id)
 
-    copier = FileCopier([src_package_folder], package_folder)
-    copier("*", symlinks=True)
+    with packager(conanfile, package_folder, package_id, conanfile_path, ref, hook_manager) as pkger:
+        copier = FileCopier([src_package_folder], package_folder)
+        copier("*", symlinks=True)
 
-    save(os.path.join(package_folder, CONANINFO), conanfile.info.dumps())
-    manifest = FileTreeManifest.create(package_folder)
-    manifest.save(package_folder)
-
-    _report_files_from_manifest(output, manifest)
-
-    output.success("Package '%s' created" % package_id)
-    conanfile.package_folder = package_folder
-    hook_manager.execute("post_package", conanfile=conanfile, conanfile_path=conanfile_path,
-                         reference=ref, package_id=package_id)
-    prev = manifest.summary_hash
-    output.info("Created package revision %s" % prev)
-    return prev
+    return pkger.manifest.summary_hash
 
 
 def create_package(conanfile, package_id, source_folder, build_folder, package_folder,
                    install_folder, hook_manager, conanfile_path, ref, local=False,
                    copy_info=False):
     """ copies built artifacts, libs, headers, data, etc. from build_folder to
-    package folder
+        package folder
     """
-    mkdir(package_folder)
     output = conanfile.output
-    # Make the copy of all the patterns
     output.info("Generating the package")
-    output.info("Package folder %s" % package_folder)
 
-    try:
-        conanfile.package_folder = package_folder
-        conanfile.source_folder = source_folder
-        conanfile.install_folder = install_folder
-        conanfile.build_folder = build_folder
+    conanfile.source_folder = source_folder
+    conanfile.install_folder = install_folder
+    conanfile.build_folder = build_folder
 
-        hook_manager.execute("pre_package", conanfile=conanfile, conanfile_path=conanfile_path,
-                             reference=ref, package_id=package_id)
-
-        package_output = ScopedOutput("%s package()" % output.scope, output)
+    with packager(conanfile, package_folder, package_id, conanfile_path, ref,
+                  hook_manager, copy_info) as pkger:
         output.highlight("Calling package()")
+        pkger.package_output = ScopedOutput("%s package()" % output.scope, output)
 
         folders = [source_folder, build_folder] if source_folder != build_folder else [build_folder]
         conanfile.copy = FileCopier(folders, package_folder)
-        with conanfile_exception_formatter(str(conanfile), "package"):
-            with chdir(build_folder):
-                conanfile.package()
-    except Exception as e:
-        if not local:
-            os.chdir(build_folder)
-            try:
-                rmdir(package_folder)
-            except Exception as e_rm:
-                output.error("Unable to remove package folder %s\n%s" % (package_folder, str(e_rm)))
-                output.warn("**** Please delete it manually ****")
+        try:
+            with conanfile_exception_formatter(str(conanfile), "package"):
+                with chdir(build_folder):
+                    conanfile.package()
+        except Exception as e:
+            if not local:
+                os.chdir(build_folder)
+                try:
+                    rmdir(package_folder)
+                except Exception as e_rm:
+                    output.error("Unable to remove package folder %s\n%s" % (package_folder, str(e_rm)))
+                    output.warn("**** Please delete it manually ****")
+            if isinstance(e, ConanExceptionInUserConanfileMethod):
+                raise
+            raise ConanException(e)
 
-        if isinstance(e, ConanExceptionInUserConanfileMethod):
-            raise
-        raise ConanException(e)
-
-    manifest = _create_aux_files(install_folder, package_folder, conanfile, copy_info)
-    _report_files_from_manifest(package_output, manifest)
-    package_id = package_id or os.path.basename(package_folder)
-    output.success("Package '%s' created" % package_id)
-    hook_manager.execute("post_package", conanfile=conanfile, conanfile_path=conanfile_path,
-                         reference=ref, package_id=package_id)
-    prev = manifest.summary_hash
-    output.info("Created package revision %s" % prev)
-    return prev
+    return pkger.manifest.summary_hash
 
 
 def update_package_metadata(prev, layout, package_id, rrev):
@@ -99,18 +69,56 @@ def update_package_metadata(prev, layout, package_id, rrev):
         metadata.packages[package_id].recipe_revision = rrev
 
 
-def _create_aux_files(install_folder, package_folder, conanfile, copy_info):
+class packager(object):
+    def __init__(self, conanfile, package_folder, package_id, conanfile_path, ref, hook_manager,
+                 copy_info=False):
+        self.conanfile = conanfile
+        self.package_id = package_id or os.path.basename(package_folder)
+        self.conanfile_path = conanfile_path
+        self.ref = ref
+        self.hook_manager = hook_manager
+        self.copy_info = copy_info
+
+        self.output = self.conanfile.output
+        self.package_output = self.output
+        self.conanfile.package_folder = package_folder
+        self.manifest = None
+
+    def __enter__(self):
+        # Before copying files to the package_folder
+        mkdir(self.conanfile.package_folder)
+        self.output.info("Exporting to cache existing package from user folder")
+        self.output.info("Package folder %s" % self.conanfile.package_folder)
+        self.hook_manager.execute("pre_package", conanfile=self.conanfile,
+                                  conanfile_path=self.conanfile_path, reference=self.ref,
+                                  package_id=self.package_id)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # After all files are copied to the package folder
+        self.manifest = _create_aux_files(self.conanfile.package_folder,
+                                          self.conanfile, copy_info=self.copy_info)
+        _report_files_from_manifest(self.package_output, self.manifest)
+
+        self.output.success("Package '%s' created" % self.package_id)
+        self.hook_manager.execute("post_package", conanfile=self.conanfile,
+                                  conanfile_path=self.conanfile_path, reference=self.ref,
+                                  package_id=self.package_id)
+        self.output.info("Created package revision %s" % self.manifest.summary_hash)
+
+
+def _create_aux_files(package_folder, conanfile, copy_info):
     """ auxiliary method that creates CONANINFO and manifest in
     the package_folder
     """
     logger.debug("PACKAGE: Creating config files to %s" % package_folder)
     if copy_info:
         try:
-            shutil.copy(os.path.join(install_folder, CONANINFO), package_folder)
+            shutil.copy(os.path.join(conanfile.install_folder, CONANINFO), package_folder)
         except IOError:
             raise ConanException("%s does not exist inside of your %s folder. "
                                  "Try to re-build it again to solve it."
-                                 % (CONANINFO, install_folder))
+                                 % (CONANINFO, conanfile.install_folder))
     else:
         save(os.path.join(package_folder, CONANINFO), conanfile.info.dumps())
 
