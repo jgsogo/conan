@@ -29,7 +29,7 @@ class SCMData(object):
             self.type = data.get("type")
             self.url = data.get("url")
             self.revision = data.get("revision")
-            self.verify_ssl = data.get("verify_ssl")
+            self._verify_ssl = SCMData._boolean(data.get("verify_ssl"), None)
             self.username = data.get("username")
             self.password = data.get("password")
             self.subfolder = data.get("subfolder")
@@ -56,12 +56,18 @@ class SCMData(object):
     def shallow(self):
         return self._shallow in [None, "True"]
 
+    @property
+    def verify_ssl(self):
+        return self._shallow in [None, "True"]
+
     def __repr__(self):
         d = {"url": self.url, "revision": self.revision, "username": self.username,
-             "password": self.password, "type": self.type, "verify_ssl": self.verify_ssl,
+             "password": self.password, "type": self.type,
              "subfolder": self.subfolder, "submodule": self.submodule}
         if self._shallow is not None:
             d.update({"shallow": self._shallow})
+        if self._verify_ssl is not None:
+            d.update({"verify_ssl": self._verify_ssl})
         d = {k: v for k, v in d.items() if v is not None}
         return json.dumps(d, sort_keys=True)
 
