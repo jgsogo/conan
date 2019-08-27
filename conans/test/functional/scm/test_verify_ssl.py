@@ -2,12 +2,12 @@
 
 import textwrap
 import unittest
-import os
 
 from parameterized.parameterized import parameterized_class
+
 from conans.model.ref import ConanFileReference
 from conans.test.utils.tools import TestClient, create_local_git_repo
-from conans.util.files import load, rmdir
+from conans.util.files import load
 
 
 @parameterized_class([{"verify_ssl": True}, {"verify_ssl": False}, {"verify_ssl": None}, ])
