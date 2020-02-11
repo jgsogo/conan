@@ -774,3 +774,24 @@ class LockFileOptionsTest(unittest.TestCase):
         self.assertIn('"options": "variation=nano"', lockfile)
         client.run("create ffmepg ffmpeg/1.0@ --build --lockfile")
         self.assertIn("ffmpeg/1.0: Requirements: Variation nano!!", client.out)
+
+
+class GraphLockBuildRequiresNotNeeded(unittest.TestCase):
+
+    def test_build_requires_not_needed(self):
+        client = TestClient()
+        ref_br = ConanFileReference.loads("br/version")
+        ref_a = ConanFileReference.loads("libA/version")
+        client.save({'br/conanfile.py': GenConanfile(),
+                     'libA/conanfile.py': GenConanfile().with_build_require(ref_br),
+                     'App/conanfile.py': GenConanfile().with_require(ref_a)})
+        client.run("create br {}@".format(ref_br))
+        client.run("create libA {}@".format(ref_a))
+        client.run("create App app/1.0@")
+
+        # Create the full graph lock
+        client.run("graph lock app/1.0@ --lockfile=release --build")
+        client.run("create libA libA/2.0@ --lockfile=release")
+        client.run("graph build-order ./release --json=bo.json --build=missing")  # FIXME: it loose the build_requires
+        print(client.load("bo.json"))
+        client.run("graph build-order ./release --json=bo.json --build=missing")  # Second time it fails
