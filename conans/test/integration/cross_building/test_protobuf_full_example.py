@@ -36,60 +36,86 @@ def _plain_package(client, pkg, requires=None, build_requires=None, add_executab
         executable.add_link_library(pkg_lib)
     pkg.shared = shared
     pkg_folder = pkg.render(output_folder=os.path.join(client.current_folder, pkg.name))
-    client.run('create "{}" user/testing'.format(os.path.join(pkg_folder, 'conanfile.py')))
+    client.run('export "{}" user/testing'.format(os.path.join(pkg_folder, 'conanfile.py')))
     return pkg
 
 
 class ProtobufFullExampleTestCase(unittest.TestCase):
     """
-        The objective is to generate an application that uses protobuf library. This application will
-        build-require 'protoc' in order to generate the files for the messages and it will also private-require
-        a library 'gtest' for testing (and 'protoc' too in order to generate the files we need to use
-        in the test suite).
+        The objective is to generate an application that uses protobuf library, this application will
+        build-require 'protoc' in order to generate the files for the messages. The application itself
+        will use CMake as a build-require.
 
-        +-------------+                         +--------------+
-        |protobuf|host+<--+                     |protobuf|build|
-        +------+------+   |                     +-------+------+
-               ^          |                             ^
-               |          |                             |
-               |          |                             |
-         +-----+-----+    |   +----------+       +------------+
-         |protoc|host|    |   |gtest|host|       |protoc|build|
-         +-----+-----+    |   +----------+       +------------+
-               ^          |         ^                   ^
-               +----------+---------+-------------------+
-                                    |
-                               +----+---+
-                               |app|host|
-                               +--------+
+        For the test-suite, it needs several tools and libs: an executable 'testtool', the 'protoc' utility
+        to generate some messages for the test suite and the 'gtest' library.
+
+         +------------+      +-------------+                         +--------------+      +--------------+
+         |testlib|host|      |protobuf|host+<--+                     |protobuf|build|      |cmakelib|build|
+         +-----+------+      +------+------+   |                     +-------+------+      +------+-------+
+               ^                    ^          |                             ^                    ^
+               |                    |          |                             |                    |
+               |                    |          |                             |                    |
+        +------+------+       +-----+-----+    |   +----------+       +------------+        +-----------+
+        |testtool|host|       |protoc|host|    |   |gtest|host|       |protoc|build|        |cmake|build|
+        +------+------+       +-----+-----+    |   +----------+       +------------+        +-----------+
+               ^                    ^          |         ^                   ^                    ^
+               +--------------------+----------+-----------------------------+--------------------+
+                                                         |
+                                                    +----+---+
+                                                    |app|host|
+                                                    +--------+
     """
 
     def setUp(self):
-        self.t = TestClient(current_folder="/private/var/folders/fc/6mvcrc952dqcjfhl4c7c11ph0000gn/T/tmpwnt05atdconans/pathwithoutspaces")
+        self.t = TestClient(current_folder="/private/var/folders/fc/6mvcrc952dqcjfhl4c7c11ph0000gn/T/tmpbcfoylyfconans/path with spaces")
         self.t.run("config set log.print_run_commands=True")
         self.gtest = _plain_package(self.t, pkg="gtest")
         self.protobuf = _plain_package(self.t, pkg="protobuf")
         self.protoc = _plain_package(self.t, pkg="protoc", requires=[self.protobuf, ], add_executable=True)
+        self.testlib = _plain_package(self.t, pkg="testlib")
+        self.testtool = _plain_package(self.t, pkg="testtool", requires=[self.testlib], add_executable=True)
+        self.cmakelib = _plain_package(self.t, pkg="cmakelib")
+        self.cmake = _plain_package(self.t, pkg="cmake", requires=[self.cmakelib], add_executable=True)
         self.app = _plain_package(self.t, pkg="app", requires=[self.protobuf, ], add_executable=True,
-                                  build_requires=[(self.protoc, CONTEXT_HOST), (self.protoc, CONTEXT_BUILD),
-                                                  (self.gtest, CONTEXT_HOST)])
+                                  build_requires=[(self.testtool, CONTEXT_HOST), (self.protoc, CONTEXT_HOST),  # Tools for testing
+                                                  (self.protoc, CONTEXT_BUILD), (self.cmake, CONTEXT_BUILD),  # Tools to build
+                                                  (self.gtest, CONTEXT_HOST)])  # Library for testing (somehow private)
 
     def test_protobuf_full_example(self):
         print(self.t.current_folder)
 
-        self.t.run("profile new --detect --force profile_host")
-        self.t.save({"profiles/profile_build": textwrap.dedent("""
-            include(profile_host)
+        self.t.run("profile new --detect --force default")
+        self.t.save({"profiles/profile_host": textwrap.dedent("""
+            include(default)
+
+            [settings]
+            build_type=Release
             
+            [options]
+            *:shared=True
+        """)})
+        self.t.save({"profiles/profile_build": textwrap.dedent("""
+            include(default)
+
             [settings]
             build_type=Debug
+
+            [options]
+            *:shared=True
         """)})
 
-        #self.t.run("install {} --build".format(self.app.ref))
-        #print(self.t.out)
-        #print("*"*100)
+        # Build the application for the 'host_profile' using some tools that would be available to run
+        #   in the 'build_profile'.
+        self.t.run("install {} --build --profile:host=profiles/profile_host --profile:build=profiles/profile_build".format(self.app.ref))
 
-        self.t.run("install {} --build --profile:host=profile_host --profile:build=profiles/profile_build".format(self.app.ref))
+        # Generator 'virtualrunenv', when providing two profiles will propagate information only from the
+        #   build environment ('build_machine'). It doesn't make sense to propagate the environment from the
+        #   'host_machine' is it not going to work here.
+        #self.t.run("install {} -g virtualrunenv --profile:host=profiles/profile_host --profile:build=profiles/profile_build".format(self.app.ref))
+
+        # If we do not provide the 'build_profile', then the environment is populated with all the information
+        #   from the host===build context, and the 'app' will run here too
+        self.t.run("install {} --build -g virtualrunenv".format(self.app.ref))
+
         print(self.t.out)
-
         self.fail("AAAA")
