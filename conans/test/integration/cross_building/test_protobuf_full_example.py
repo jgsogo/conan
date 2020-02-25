@@ -107,6 +107,7 @@ class ProtobufFullExampleTestCase(unittest.TestCase):
         # Build the application for the 'host_profile' using some tools that would be available to run
         #   in the 'build_profile'.
         self.t.run("install {} --build --profile:host=profiles/profile_host --profile:build=profiles/profile_build".format(self.app.ref))
+        print(self.t.out)
 
         # Generator 'virtualrunenv', when providing two profiles will propagate information only from the
         #   build environment ('build_machine'). It doesn't make sense to propagate the environment from the
@@ -116,6 +117,7 @@ class ProtobufFullExampleTestCase(unittest.TestCase):
         # If we do not provide the 'build_profile', then the environment is populated with all the information
         #   from the host===build context, and the 'app' will run here too
         self.t.run("install {} --build -g virtualrunenv".format(self.app.ref))
-
+        self.t.run_command("bash -c 'source activate_run.sh && app_exe'")
+        print("*"*20)
         print(self.t.out)
         self.fail("AAAA")

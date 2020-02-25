@@ -95,7 +95,7 @@ def deps_install(app, ref_or_path, install_folder, graph_info, remotes=None, bui
             tmp = list(conanfile.generators)  # Add the command line specified generators
             tmp.extend([g for g in generators if g not in tmp])
             conanfile.generators = tmp
-            write_generators(conanfile, install_folder, output)
+            write_generators(conanfile, install_folder, output, using_build_profile=bool(graph_info.profile_build))
         if not isinstance(ref_or_path, ConanFileReference) or use_lock:
             # Write conaninfo
             content = normalize(conanfile.info.dumps())

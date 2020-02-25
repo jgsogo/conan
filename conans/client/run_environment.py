@@ -12,6 +12,7 @@ class RunEnvironment(object):
         :param conanfile: ConanFile instance
         """
         self.conanfile = conanfile
+        self.using_build_profile = False  # FIXME: Should be populated using in the constructor
 
     @property
     def vars(self):
@@ -19,11 +20,18 @@ class RunEnvironment(object):
         bin_paths = []
         framework_paths = []
         path_envvar = []
-        for dep in self.conanfile.deps_env_info.deps:
-            lib_paths.extend(self.conanfile.deps_env_info[dep].lib_paths)
-            bin_paths.extend(self.conanfile.deps_env_info[dep].bin_paths)
-            framework_paths.extend(self.conanfile.deps_env_info[dep].framework_paths)
-            path_envvar.extend(self.conanfile.deps_env_info[dep].PATH)
+
+        if self.using_build_profile:
+            for dep in self.conanfile.deps_env_info.deps:
+                lib_paths.extend(self.conanfile.deps_env_info[dep].lib_paths)
+                bin_paths.extend(self.conanfile.deps_env_info[dep].bin_paths)
+                framework_paths.extend(self.conanfile.deps_env_info[dep].framework_paths)
+                path_envvar.extend(self.conanfile.deps_env_info[dep].PATH)
+        else:
+            for dep in self.conanfile.deps_cpp_info.deps:
+                lib_paths.extend(self.conanfile.deps_cpp_info[dep].lib_paths)
+                bin_paths.extend(self.conanfile.deps_cpp_info[dep].bin_paths)
+                framework_paths.extend(self.conanfile.deps_cpp_info[dep].framework_paths)
 
         ret = {"DYLD_LIBRARY_PATH": lib_paths,
                "LD_LIBRARY_PATH": lib_paths,

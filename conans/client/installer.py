@@ -105,10 +105,10 @@ class _PackageBuilder(object):
             logger.debug("BUILD: Copied to %s", build_folder)
             logger.debug("BUILD: Files copied %s", ",".join(os.listdir(build_folder)))
 
-    def _build(self, conanfile, pref, build_folder):
+    def _build(self, conanfile, pref, build_folder, using_build_profile):
         # Read generators from conanfile and generate the needed files
         logger.info("GENERATORS: Writing generators")
-        write_generators(conanfile, build_folder, self._output)
+        write_generators(conanfile, build_folder, self._output, using_build_profile=using_build_profile)
 
         # Build step might need DLLs, binaries as protoc to generate source files
         # So execute imports() before build, storing the list of copied_files
@@ -167,7 +167,7 @@ class _PackageBuilder(object):
         # FIXME: Conan 2.0 Clear the registry entry (package ref)
         return prev
 
-    def build_package(self, node, keep_build, recorder, remotes):
+    def build_package(self, node, keep_build, recorder, remotes, using_build_profile):
         t1 = time.time()
 
         conanfile = node.conanfile
@@ -205,7 +205,7 @@ class _PackageBuilder(object):
                             conanfile.package_folder = package_folder
                             # In local cache, install folder always is build_folder
                             conanfile.install_folder = build_folder
-                            self._build(conanfile, pref, build_folder)
+                            self._build(conanfile, pref, build_folder, using_build_profile=using_build_profile)
                         clean_dirty(build_folder)
 
                     prev = self._package(conanfile, pref, package_layout, conanfile_path,
@@ -388,7 +388,8 @@ class BinaryInstaller(object):
                     _handle_system_requirements(conan_file, node.pref, self._cache, output)
                     if node.binary == BINARY_UNKNOWN:
                         self._binaries_analyzer.reevaluate_node(node, remotes, build_mode, update)
-                    self._handle_node_cache(node, keep_build, processed_package_refs, remotes)
+                    self._handle_node_cache(node, keep_build, processed_package_refs, remotes,
+                                            using_build_profile=bool(graph_info.profile_build))
 
         # Finally, propagate information to root node (ref=None)
         self._propagate_info(root_node, using_build_profile)
@@ -414,7 +415,8 @@ class BinaryInstaller(object):
             if build_folder is not None:
                 build_folder = os.path.join(base_path, build_folder)
                 output = node.conanfile.output
-                write_generators(node.conanfile, build_folder, output)
+                write_generators(node.conanfile, build_folder, output,
+                                 using_build_profile=bool(graph_info.profile_build))
                 save(os.path.join(build_folder, CONANINFO), node.conanfile.info.dumps())
                 output.info("Generated %s" % CONANINFO)
                 graph_info_node = GraphInfo(graph_info.profile_host, root_ref=node.ref)
@@ -429,7 +431,7 @@ class BinaryInstaller(object):
                 copied_files = run_imports(node.conanfile, build_folder)
                 report_copied_files(copied_files, output)
 
-    def _handle_node_cache(self, node, keep_build, processed_package_references, remotes):
+    def _handle_node_cache(self, node, keep_build, processed_package_references, remotes, using_build_profile):
         pref = node.pref
         assert pref.id, "Package-ID without value"
         assert pref.id != PACKAGE_ID_UNKNOWN, "Package-ID error: %s" % str(pref)
@@ -445,7 +447,8 @@ class BinaryInstaller(object):
                 if node.binary == BINARY_BUILD:
                     assert node.prev is None, "PREV for %s to be built should be None" % str(pref)
                     with set_dirty_context_manager(package_folder):
-                        pref = self._build_package(node, output, keep_build, remotes)
+                        pref = self._build_package(node, output, keep_build, remotes,
+                                                   using_build_profile=using_build_profile)
                     assert node.prev, "Node PREV shouldn't be empty"
                     assert node.pref.revision, "Node PREF revision shouldn't be empty"
                     assert pref.revision is not None, "PREV for %s to be built is None" % str(pref)
@@ -459,7 +462,7 @@ class BinaryInstaller(object):
             self._call_package_info(conanfile, package_folder, ref=pref.ref)
             self._recorder.package_cpp_info(pref, conanfile.cpp_info)
 
-    def _build_package(self, node, output, keep_build, remotes):
+    def _build_package(self, node, output, keep_build, remotes, using_build_profile):
         conanfile = node.conanfile
         # It is necessary to complete the sources of python requires, which might be used
         # Only the legacy python_requires allow this
@@ -472,7 +475,7 @@ class BinaryInstaller(object):
                                         python_require.conanfile, python_require.ref, remotes)
 
         builder = _PackageBuilder(self._cache, output, self._hook_manager, self._remote_manager)
-        pref = builder.build_package(node, keep_build, self._recorder, remotes)
+        pref = builder.build_package(node, keep_build, self._recorder, remotes, using_build_profile=using_build_profile)
         if node.graph_lock_node:
             node.graph_lock_node.modified = GraphLockNode.MODIFIED_BUILT
         return pref
@@ -483,6 +486,7 @@ class BinaryInstaller(object):
         node_order = [n for n in node.public_closure if n.binary != BINARY_SKIP]
         # List sort is stable, will keep the original order of the closure, but prioritize levels
         conan_file = node.conanfile
+        conan_file._conan_using_build_profile = using_build_profile
         transitive = [it for it in node.transitive_closure.values()]
 
         br_host = []
@@ -506,7 +510,6 @@ class BinaryInstaller(object):
                     env_info = EnvInfo()
                     env_info._values_ = n.conanfile.env_info._values_.copy()
                     # Add cpp_info.bin_paths/lib_paths to env_info (it is needed for runtime)
-                    # TODO: cpp_info.lib_paths is needed for anything?
                     env_info.lib_paths.extend(n.conanfile.cpp_info.lib_paths)
                     env_info.bin_paths.extend(n.conanfile.cpp_info.bin_paths)
                     env_info.framework_paths.extend(n.conanfile.cpp_info.framework_paths)

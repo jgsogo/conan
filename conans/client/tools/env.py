@@ -25,7 +25,10 @@ def pythonpath(conanfile):
 
 @contextmanager
 def run_environment(conanfile):
-    with environment_append(RunEnvironment(conanfile).vars):
+    # TODO: Need to know 'using_build_profile' variable, need to be stored in the 'conanfile'!!!!
+    run_env = RunEnvironment(conanfile)
+    run_env.using_build_profile = conanfile._conan_using_build_profile
+    with environment_append(run_env.vars):
         yield
 
 

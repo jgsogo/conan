@@ -83,7 +83,7 @@ registered_generators.add("make", MakeGenerator)
 registered_generators.add("deploy", DeployGenerator)
 
 
-def write_generators(conanfile, path, output):
+def write_generators(conanfile, path, output, using_build_profile):
     """ produces auxiliary files, required to build a project or a package.
     """
     for generator_name in conanfile.generators:
@@ -101,6 +101,7 @@ def write_generators(conanfile, path, output):
 
         try:
             generator.output_path = path
+            generator.using_build_profile = using_build_profile
             content = generator.content
             if isinstance(content, dict):
                 if generator.filename:

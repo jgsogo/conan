@@ -10,4 +10,5 @@ class VirtualRunEnvGenerator(VirtualEnvGenerator):
     def __init__(self, conanfile):
         super(VirtualRunEnvGenerator, self).__init__(conanfile)
         run_env = RunEnvironment(conanfile)
+        run_env.using_build_profile = self.using_build_profile
         self.env = run_env.vars
