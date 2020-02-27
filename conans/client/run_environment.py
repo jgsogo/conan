@@ -18,10 +18,12 @@ class RunEnvironment(object):
         lib_paths = []
         bin_paths = []
         framework_paths = []
-        for dep in self.conanfile.deps_cpp_info.deps:
-            lib_paths.extend(self.conanfile.deps_cpp_info[dep].lib_paths)
-            bin_paths.extend(self.conanfile.deps_cpp_info[dep].bin_paths)
-            framework_paths.extend(self.conanfile.deps_cpp_info[dep].framework_paths)
+
+        if not self.conanfile._conan_using_build_profile:
+            for dep in self.conanfile.deps_cpp_info.deps:
+                lib_paths.extend(self.conanfile.deps_cpp_info[dep].lib_paths)
+                bin_paths.extend(self.conanfile.deps_cpp_info[dep].bin_paths)
+                framework_paths.extend(self.conanfile.deps_cpp_info[dep].framework_paths)
 
         ret = {"DYLD_LIBRARY_PATH": lib_paths,
                "LD_LIBRARY_PATH": lib_paths,

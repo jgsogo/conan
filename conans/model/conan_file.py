@@ -128,6 +128,7 @@ class ConanFile(object):
         self._conan_channel = channel
 
         self.compatible_packages = []
+        self._conan_using_build_profile = False
 
     def initialize(self, settings, env):
         if isinstance(self.generators, str):
