@@ -67,7 +67,8 @@ class ProtobufFullExampleTestCase(unittest.TestCase):
     """
 
     def setUp(self):
-        self.t = TestClient(current_folder="/private/var/folders/fc/6mvcrc952dqcjfhl4c7c11ph0000gn/T/tmpbcfoylyfconans/path with spaces")
+        #self.t = TestClient(current_folder="/private/var/folders/fc/6mvcrc952dqcjfhl4c7c11ph0000gn/T/tmpbcfoylyfconans/path with spaces")
+        self.t = TestClient(current_folder="/tmp/tmpgi21hvxwconans/path with spaces")
         self.t.run("config set log.print_run_commands=True")
         self.gtest = _plain_package(self.t, pkg="gtest")
         self.protobuf = _plain_package(self.t, pkg="protobuf")
