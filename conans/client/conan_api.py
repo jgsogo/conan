@@ -1305,7 +1305,7 @@ def get_graph_info(profile_host, profile_build, cwd, install_folder, cache, outp
             pbuild = None
 
         root_ref = ConanFileReference(name, version, user, channel, validate=False)
-        graph_info = GraphInfo(profile_host=phost, root_ref=root_ref)  # TODO: Add pbuild when merged with core xbuild feature
+        graph_info = GraphInfo(profile_host=phost, profile_build=pbuild, root_ref=root_ref)
         # Preprocess settings and convert to real settings
     return graph_info
 
