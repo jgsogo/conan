@@ -70,7 +70,7 @@ class ProtobufFullExampleTestCase(unittest.TestCase):
         #self.t = TestClient(current_folder="/private/var/folders/fc/6mvcrc952dqcjfhl4c7c11ph0000gn/T/tmpbcfoylyfconans/path with spaces")
         self.t = TestClient(current_folder="/tmp/tmpgi21hvxwconans/path with spaces")
         self.t.run("config set log.print_run_commands=True")
-        self.gtest = _plain_package(self.t, pkg="gtest")
+        #self.gtest = _plain_package(self.t, pkg="gtest")
         self.protobuf = _plain_package(self.t, pkg="protobuf")
         self.protoc = _plain_package(self.t, pkg="protoc", requires=[self.protobuf, ], add_executable=True)
         self.testlib = _plain_package(self.t, pkg="testlib")
@@ -80,7 +80,8 @@ class ProtobufFullExampleTestCase(unittest.TestCase):
         self.app = _plain_package(self.t, pkg="app", requires=[self.protobuf, ], add_executable=True,
                                   build_requires=[(self.testtool, CONTEXT_HOST), (self.protoc, CONTEXT_HOST),  # Tools for testing
                                                   (self.protoc, CONTEXT_BUILD), (self.cmake, CONTEXT_BUILD),  # Tools to build
-                                                  (self.gtest, CONTEXT_HOST)])  # Library for testing (somehow private)
+                                                  #(self.gtest, CONTEXT_HOST) # Library for testing (somehow private)
+                                                  ])
 
     def test_protobuf_full_example(self):
         print(self.t.current_folder)
@@ -107,17 +108,25 @@ class ProtobufFullExampleTestCase(unittest.TestCase):
 
         # Build the application for the 'host_profile' using some tools that would be available to run
         #   in the 'build_profile'.
-        self.t.run("install {} --build --profile:host=profiles/profile_host --profile:build=profiles/profile_build".format(self.app.ref))
-        print(self.t.out)
+        self.t.run("install {} --build -g virtualrunenv --profile:host=profiles/profile_host --profile:build=profiles/profile_build".format(self.app.ref))
 
-        # Generator 'virtualrunenv', when providing two profiles will propagate information only from the
-        #   build environment ('build_machine'). It doesn't make sense to propagate the environment from the
-        #   'host_machine' is it not going to work here.
+        # - Make sure we use the tools from the build_context:
+        self.assertIn("app/0.1@user/testing: >>>> cmake | cmake_exe", self.t.out)
+        self.assertIn("	> cmakelib (Linux|x86_64|gcc|Debug): default (shared!)", self.t.out)
+        self.assertIn("app/0.1@user/testing: >>>> protoc | protoc_exe", self.t.out)
+        self.assertIn("	> protobuf (Linux|x86_64|gcc|Debug): default (shared!)", self.t.out)
+
+        # - Generator 'virtualrunenv' as implemented now propagates nothing for the xbuild implementation
         #self.t.run("install {} -g virtualrunenv --profile:host=profiles/profile_host --profile:build=profiles/profile_build".format(self.app.ref))
+        content = self.t.load("environment_run.sh.env")
+        self.assertIn("DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH+:$DYLD_LIBRARY_PATH}", content)
+        self.assertIn("LD_LIBRARY_PATH=${LD_LIBRARY_PATH+:$LD_LIBRARY_PATH}", content)
+        self.assertIn("PATH=${PATH+:$PATH}", content)
 
-        # If we do not provide the 'build_profile', then the environment is populated with all the information
-        #   from the host===build context, and the 'app' will run here too
-        self.t.run("install {} --build -g virtualrunenv".format(self.app.ref))
+        # - If we want the path to the application, we need to use the old behavior without profile_build:
+        self.t.run("install {} -g virtualrunenv --profile:host=profiles/profile_host".format(self.app.ref))
+        content = self.t.load("environment_run.sh.env")
+        print(content)
         self.t.run_command("bash -c 'source activate_run.sh && app_exe'")
         print("*"*20)
         print(self.t.out)
