@@ -125,9 +125,12 @@ class ProtobufFullExampleTestCase(unittest.TestCase):
 
         # - If we want the path to the application, we need to use the old behavior without profile_build:
         self.t.run("install {} -g virtualrunenv --profile:host=profiles/profile_host".format(self.app.ref))
-        content = self.t.load("environment_run.sh.env")
-        print(content)
         self.t.run_command("bash -c 'source activate_run.sh && app_exe'")
-        print("*"*20)
-        print(self.t.out)
-        self.fail("AAAA")
+        self.assertIn("> app_exe (Linux|x86_64|gcc|Release): default", self.t.out)
+        self.assertIn("	> protobuf (Linux|x86_64|gcc|Release): default (shared!)", self.t.out)
+
+        # - Or use a new generator that will propagate the app we are installing (it might not run in this 'build_machine', but it is user requested)
+        self.t.run("install {} -g virtualrunenv2 --profile:host=profiles/profile_host --profile:build=profiles/profile_build".format(self.app.ref))
+        self.t.run_command("bash -c 'source activate_run.sh && app_exe'")
+        self.assertIn("> app_exe (Linux|x86_64|gcc|Release): default", self.t.out)
+        self.assertIn("	> protobuf (Linux|x86_64|gcc|Release): default (shared!)", self.t.out)

@@ -120,9 +120,9 @@ class Package:
             self._build_requires_build.add(pkg)
         elif context == CONTEXT_HOST:
             self._build_requires_host.add(pkg)
-            self.generators["cmake_find_package"].add(pkg)
-            for lib in self.libraries:
-                lib.link_to_pkg(pkg)
+            #self.generators["cmake_find_package"].add(pkg)
+            #for lib in self.libraries:
+            #    lib.link_to_pkg(pkg)
 
     @staticmethod
     def _render_template(tpl, output_filename, **context):
