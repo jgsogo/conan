@@ -508,9 +508,10 @@ class BinaryInstaller(object):
                     env_info = EnvInfo()
                     env_info._values_ = n.conanfile.env_info._values_.copy()
                     # Add cpp_info.bin_paths/lib_paths to env_info (it is needed for runtime)
-                    env_info.lib_paths.extend(n.conanfile.cpp_info.lib_paths)
-                    env_info.bin_paths.extend(n.conanfile.cpp_info.bin_paths)
-                    env_info.framework_paths.extend(n.conanfile.cpp_info.framework_paths)
+                    env_info.DYLD_LIBRARY_PATH.extend(n.conanfile.cpp_info.lib_paths)
+                    env_info.DYLD_LIBRARY_PATH.extend(n.conanfile.cpp_info.framework_paths)
+                    env_info.LD_LIBRARY_PATH.extend(n.conanfile.cpp_info.lib_paths)
+                    env_info.PATH.extend(n.conanfile.cpp_info.bin_paths)
                     conan_file.deps_env_info.update(env_info, n.ref.name)
 
         # Update the info but filtering the package values that not apply to the subtree
