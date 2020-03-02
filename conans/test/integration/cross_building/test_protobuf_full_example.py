@@ -106,8 +106,7 @@ class ProtobufFullExampleTestCase(unittest.TestCase):
             *:shared=True
         """)})
 
-        # Build the application for the 'host_profile' using some tools that would be available to run
-        #   in the 'build_profile'.
+        # Build the application for the 'host_profile' using some tools that are available to run in the 'build_profile'.
         self.t.run("install {} --build -g virtualrunenv --profile:host=profiles/profile_host --profile:build=profiles/profile_build".format(self.app.ref))
 
         # - Make sure we use the tools from the build_context:
@@ -117,7 +116,6 @@ class ProtobufFullExampleTestCase(unittest.TestCase):
         self.assertIn("	> protobuf (Linux|x86_64|gcc|Debug): default (shared!)", self.t.out)
 
         # - Generator 'virtualrunenv' as implemented now propagates nothing for the xbuild implementation
-        #self.t.run("install {} -g virtualrunenv --profile:host=profiles/profile_host --profile:build=profiles/profile_build".format(self.app.ref))
         content = self.t.load("environment_run.sh.env")
         self.assertIn("DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH+:$DYLD_LIBRARY_PATH}", content)
         self.assertIn("LD_LIBRARY_PATH=${LD_LIBRARY_PATH+:$LD_LIBRARY_PATH}", content)
@@ -129,7 +127,7 @@ class ProtobufFullExampleTestCase(unittest.TestCase):
         self.assertIn("> app_exe (Linux|x86_64|gcc|Release): default", self.t.out)
         self.assertIn("	> protobuf (Linux|x86_64|gcc|Release): default (shared!)", self.t.out)
 
-        # - Or use a new generator that will propagate the app we are installing (it might not run in this 'build_machine', but it is user requested)
+        # - Or use a new generator that will propagate the app we are installing (it might not run in this 'build_machine', but it is what the user requested)
         self.t.run("install {} -g virtualrunenv2 --profile:host=profiles/profile_host --profile:build=profiles/profile_build".format(self.app.ref))
         self.t.run_command("bash -c 'source activate_run.sh && app_exe'")
         self.assertIn("> app_exe (Linux|x86_64|gcc|Release): default", self.t.out)
