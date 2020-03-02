@@ -1,21 +1,18 @@
 
 
-class BaseRunEnvironment(object):
-    def __init__(self, conanfile):
-        self.conanfile = conanfile
-
-
-class RunEnvironment(BaseRunEnvironment):
+class RunEnvironment(object):
     """
     - PATH: pointing to the bin/ directories of the requires
     - LD_LIBRARY_PATH: requires lib_paths for Linux
     - DYLD_LIBRARY_PATH: requires lib_paths for OSx
     - DYLD_FRAMEWORK_PATH: requires framework_paths for OSX
     """
+    def __init__(self, conanfile):
+        self.conanfile = conanfile
+
     @property
     def vars(self):
         lib_paths = bin_paths = framework_paths = []
-
         for dep in self.conanfile.deps_cpp_info.deps:
             lib_paths.extend(self.conanfile.deps_cpp_info[dep].lib_paths)
             bin_paths.extend(self.conanfile.deps_cpp_info[dep].bin_paths)
@@ -29,7 +26,10 @@ class RunEnvironment(BaseRunEnvironment):
         return ret
 
 
-class RunBuildEnvironment(BaseRunEnvironment):
+class RunBuildEnvironment(object):
+    def __init__(self, conanfile):
+        self.conanfile = conanfile
+
     @property
     def vars(self):
         return self.conanfile.deps_env_info.vars
