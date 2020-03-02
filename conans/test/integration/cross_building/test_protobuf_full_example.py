@@ -116,18 +116,21 @@ class ProtobufFullExampleTestCase(unittest.TestCase):
         self.assertIn("	> protobuf (Linux|x86_64|gcc|Debug): default (shared!)", self.t.out)
 
         # - If we want the path to the application, we need to use the old behavior without profile_build:
-        self.t.run("install {} -g virtualrunenv --profile:host=profiles/profile_host".format(self.app.ref))
+        self.t.run("install {} -g virtualrunenv -g virtualenv --profile:host=profiles/profile_host".format(self.app.ref))
         self.t.run_command("bash -c 'source activate_run.sh && app_exe'")
         self.assertIn("> app_exe (Linux|x86_64|gcc|Release): default", self.t.out)
         self.assertIn("	> protobuf (Linux|x86_64|gcc|Release): default (shared!)", self.t.out)
-        content_no_xbuild = self.t.load("environment_run.sh.env")
+        virtualrunenv_no_xbuild = self.t.load("environment_run.sh.env")
+        virtualenv_no_xbuild = self.t.load("environment.sh.env")
 
         # - Or use both profiles
-        self.t.run("install {} -g virtualrunenv --profile:host=profiles/profile_host --profile:build=profiles/profile_build".format(self.app.ref))
+        self.t.run("install {} -g virtualrunenv -g virtualenv --profile:host=profiles/profile_host --profile:build=profiles/profile_build".format(self.app.ref))
         self.t.run_command("bash -c 'source activate_run.sh && app_exe'")
         self.assertIn("> app_exe (Linux|x86_64|gcc|Release): default", self.t.out)
         self.assertIn("	> protobuf (Linux|x86_64|gcc|Release): default (shared!)", self.t.out)
-        content_xbuild = self.t.load("environment_run.sh.env")
+        virtualrunenv_xbuild = self.t.load("environment_run.sh.env")
+        virtualenv_xbuild = self.t.load("environment.sh.env")
 
         # ...in both cases we get the same result
-        self.assertEqual(content_no_xbuild, content_xbuild)
+        self.assertEqual(virtualrunenv_no_xbuild, virtualrunenv_xbuild)
+        self.assertEqual(virtualenv_no_xbuild, virtualenv_xbuild)  # FIXME: What's the meaning of this generator for xbuilding?
