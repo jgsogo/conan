@@ -120,9 +120,14 @@ class ProtobufFullExampleTestCase(unittest.TestCase):
         self.t.run_command("bash -c 'source activate_run.sh && app_exe'")
         self.assertIn("> app_exe (Linux|x86_64|gcc|Release): default", self.t.out)
         self.assertIn("	> protobuf (Linux|x86_64|gcc|Release): default (shared!)", self.t.out)
+        content_no_xbuild = self.t.load("environment_run.sh.env")
 
         # - Or use both profiles
         self.t.run("install {} -g virtualrunenv --profile:host=profiles/profile_host --profile:build=profiles/profile_build".format(self.app.ref))
         self.t.run_command("bash -c 'source activate_run.sh && app_exe'")
         self.assertIn("> app_exe (Linux|x86_64|gcc|Release): default", self.t.out)
         self.assertIn("	> protobuf (Linux|x86_64|gcc|Release): default (shared!)", self.t.out)
+        content_xbuild = self.t.load("environment_run.sh.env")
+
+        # ...in both cases we get the same result
+        self.assertEqual(content_no_xbuild, content_xbuild)
