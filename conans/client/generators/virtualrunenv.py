@@ -10,4 +10,4 @@ class VirtualRunEnvGenerator(VirtualEnvGenerator):
     def __init__(self, conanfile):
         super(VirtualRunEnvGenerator, self).__init__(conanfile)
         run_env = RunEnvironment(conanfile)
-        self.env = run_env.vars
+        self.env = run_env.vars  # FIXME: This overrides conanfile.env

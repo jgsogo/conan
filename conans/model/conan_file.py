@@ -251,7 +251,8 @@ class ConanFile(object):
             return tools.run_in_windows_bash(self, bashcmd=command, cwd=cwd, subsystem=subsystem,
                                              msys_mingw=msys_mingw, with_login=with_login)
         if run_environment:
-            with tools.run_environment(self):
+            run_env = tools.run_build_environment if self._conan_using_build_profile else tools.run_environment
+            with run_env(self):
                 if OSInfo().is_macos:
                     command = 'DYLD_LIBRARY_PATH="%s" DYLD_FRAMEWORK_PATH="%s" %s' % \
                               (os.environ.get('DYLD_LIBRARY_PATH', ''),
