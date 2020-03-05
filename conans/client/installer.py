@@ -3,6 +3,7 @@ import shutil
 import time
 
 from conans.client import tools
+from conans.client.build.build import run_build_method
 from conans.client.file_copier import report_copied_files
 from conans.client.generators import TXTGenerator, write_generators
 from conans.client.graph.graph import BINARY_BUILD, BINARY_CACHE, BINARY_DOWNLOAD, BINARY_EDITABLE, \
@@ -16,7 +17,6 @@ from conans.client.tools.env import pythonpath
 from conans.errors import (ConanException, ConanExceptionInUserConanfileMethod,
                            conanfile_exception_formatter)
 from conans.model.build_info import CppInfo
-from conans.model.conan_file import get_env_context_manager
 from conans.model.editable_layout import EditableLayout
 from conans.model.env_info import EnvInfo
 from conans.model.graph_info import GraphInfo
@@ -43,6 +43,14 @@ def build_id(conan_file):
         # compute modified ID
         return build_id_info.package_id()
     return None
+
+
+def add_env_conaninfo(conan_file, subtree_libnames):
+    for package_name, env_vars in conan_file._conan_env_values.data.items():
+        for name, value in env_vars.items():
+            if not package_name or package_name in subtree_libnames or \
+                    package_name == conan_file.name:
+                conan_file.info.env_values.add(name, value, package_name)
 
 
 class _PackageBuilder(object):
@@ -111,25 +119,16 @@ class _PackageBuilder(object):
 
         # Build step might need DLLs, binaries as protoc to generate source files
         # So execute imports() before build, storing the list of copied_files
-        copied_files = run_imports(conanfile, build_folder)
+        copied_files = run_imports(conanfile, conanfile.build_folder)
 
         try:
-            self._hook_manager.execute("pre_build", conanfile=conanfile,
-                                       reference=pref.ref, package_id=pref.id)
-            logger.debug("Call conanfile.build() with files in build folder: %s",
-                         os.listdir(build_folder))
-            self._output.highlight("Calling build()")
-            with conanfile_exception_formatter(str(conanfile), "build"):
-                conanfile.build()
-
+            run_build_method(conanfile, self._hook_manager, reference=pref.ref, package_id=pref.id)
             self._output.success("Package '%s' built" % pref.id)
-            self._output.info("Build folder %s" % build_folder)
-            self._hook_manager.execute("post_build", conanfile=conanfile,
-                                       reference=pref.ref, package_id=pref.id)
+            self._output.info("Build folder %s" % conanfile.build_folder)
         except Exception as exc:
             self._output.writeln("")
             self._output.error("Package '%s' build failed" % pref.id)
-            self._output.warn("Build folder %s" % build_folder)
+            self._output.warn("Build folder %s" % conanfile.build_folder)
             if isinstance(exc, ConanExceptionInUserConanfileMethod):
                 raise exc
             raise ConanException(exc)
@@ -199,16 +198,14 @@ class _PackageBuilder(object):
                         conanfile.source_folder = build_folder
 
                     if not skip_build:
-                        with get_env_context_manager(conanfile):
-                            conanfile.build_folder = build_folder
-                            conanfile.package_folder = package_folder
-                            # In local cache, install folder always is build_folder
-                            conanfile.install_folder = build_folder
-                            self._build(conanfile, pref, build_folder, using_build_profile=using_build_profile)
+                        conanfile.build_folder = build_folder
+                        conanfile.package_folder = package_folder
+                        # In local cache, install folder always is build_folder
+                        conanfile.install_folder = build_folder
+                        self._build(conanfile, pref, using_build_profile=using_build_profile)
                         clean_dirty(build_folder)
 
-                    prev = self._package(conanfile, pref, package_layout, conanfile_path,
-                                         build_folder, package_folder)
+                    prev = self._package(conanfile, pref, package_layout, conanfile_path, build_folder, package_folder)
                     assert prev
                     node.prev = prev
                     log_file = os.path.join(build_folder, RUN_LOG_NAME)
@@ -216,8 +213,7 @@ class _PackageBuilder(object):
                     log_package_built(pref, time.time() - t1, log_file)
                     recorder.package_built(pref)
                 except ConanException as exc:
-                    recorder.package_install_error(pref, INSTALL_ERROR_BUILDING,
-                                                   str(exc), remote_name=None)
+                    recorder.package_install_error(pref, INSTALL_ERROR_BUILDING, str(exc), remote_name=None)
                     raise exc
 
             return node.pref
@@ -488,7 +484,7 @@ class BinaryInstaller(object):
         node_order = [n for n in node.public_closure if n.binary != BINARY_SKIP]
         # List sort is stable, will keep the original order of the closure, but prioritize levels
         conan_file = node.conanfile
-        conan_file._conan_using_build_profile = using_build_profile
+        conan_file._conan_using_build_profile = using_build_profile  # FIXME: Not the best place to assign it
         transitive = [it for it in node.transitive_closure.values()]
 
         br_host = []
@@ -500,31 +496,27 @@ class BinaryInstaller(object):
             if n not in transitive:
                 conan_file.output.info("Applying build-requirement: %s" % str(n.ref))
 
-            conan_file.deps_user_info[n.ref.name] = n.conanfile.user_info
             if not using_build_profile:  # Do not touch anything
+                conan_file.deps_user_info[n.ref.name] = n.conanfile.user_info
                 conan_file.deps_cpp_info.update(n.conanfile.cpp_info, n.ref.name)
                 conan_file.deps_env_info.update(n.conanfile.env_info, n.ref.name)
             else:
                 if n in transitive or n in br_host:
                     conan_file.deps_cpp_info.update(n.conanfile.cpp_info, n.ref.name)
-
                 else:
                     env_info = EnvInfo()
                     env_info._values_ = n.conanfile.env_info._values_.copy()
                     # Add cpp_info.bin_paths/lib_paths to env_info (it is needed for runtime)
-                    env_info.lib_paths.extend(n.conanfile.cpp_info.lib_paths)
-                    env_info.bin_paths.extend(n.conanfile.cpp_info.bin_paths)
-                    env_info.framework_paths.extend(n.conanfile.cpp_info.framework_paths)
+                    env_info.DYLD_LIBRARY_PATH.extend(n.conanfile.cpp_info.lib_paths)
+                    env_info.DYLD_LIBRARY_PATH.extend(n.conanfile.cpp_info.framework_paths)
+                    env_info.LD_LIBRARY_PATH.extend(n.conanfile.cpp_info.lib_paths)
+                    env_info.PATH.extend(n.conanfile.cpp_info.bin_paths)
                     conan_file.deps_env_info.update(env_info, n.ref.name)
 
         # Update the info but filtering the package values that not apply to the subtree
         # of this current node and its dependencies.
         subtree_libnames = [node.ref.name for node in node_order]
-        for package_name, env_vars in conan_file._conan_env_values.data.items():
-            for name, value in env_vars.items():
-                if not package_name or package_name in subtree_libnames or \
-                   package_name == conan_file.name:
-                    conan_file.info.env_values.add(name, value, package_name)
+        add_env_conaninfo(conan_file, subtree_libnames)
 
     def _call_package_info(self, conanfile, package_folder, ref):
         conanfile.cpp_info = CppInfo(package_folder)
