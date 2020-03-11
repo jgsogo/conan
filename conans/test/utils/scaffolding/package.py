@@ -1,4 +1,5 @@
 import os
+import platform
 from collections import namedtuple, defaultdict
 
 from conans.test.utils.scaffolding.templates import conanfile_template, \
@@ -126,6 +127,7 @@ class Package:
 
     @staticmethod
     def _render_template(tpl, output_filename, **context):
+        context["windows"] = bool(platform.system() == "Windows")
         output = tpl.render(**context)
         with open(output_filename, 'w') as f:
             f.write(output)

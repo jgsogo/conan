@@ -10,6 +10,7 @@ cmakelists_template = Template(textwrap.dedent(r"""
     cmake_minimum_required(VERSION {{cmake_minimum_version|default("3.10")}})
     project({{package.name}} LANGUAGES CXX)
 
+    include(GenerateExportHeader)
     {% if 'cmake' in package.generators %}
     include(${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake)
     conan_basic_setup({% if use_targets|default(True) %}TARGETS{% endif %})
@@ -25,6 +26,7 @@ cmakelists_template = Template(textwrap.dedent(r"""
 
     {% for library in package.libraries %}
     add_library({{library.target}} {{library.name}}/lib.cpp {{library.name}}/lib.h)
+    generate_export_header({{library.target}})
     target_include_directories({{library.target}}
         PUBLIC
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
@@ -47,8 +49,8 @@ conanfile_template = Template(textwrap.dedent(r"""
         name = "{{ package.name }}"
         version = "{{ package.version }}"
         settings = "os", "arch", "compiler", "build_type"
-        options = {"shared": [True, False], "fPIC": [True, False], "message": "ANY"}
-        default_options = {"shared": {{"True" if package.shared else "False"}}, "fPIC": True, "message": ""}
+        options = {"shared": [True, False], "fPIC": [True, False]}
+        default_options = {"shared": {{"True" if package.shared else "False"}}, "fPIC": True}
         exports = "*"
 
         {% if package.generators %}
@@ -79,16 +81,16 @@ conanfile_template = Template(textwrap.dedent(r"""
             {%- for require in package.build_requires_build %}
             {%- for exec in require.executables %}
             self.output.write(">>>> {{ require.name }} | {{ exec }}")
-            self.run("{{ exec }}", run_environment=True)
+            self.run("echo %PATH%", run_environment=True)
+            self.run("{{ exec }}{% if windows %}.exe{% endif %}", run_environment=True)
             {%- endfor %}
             {%- endfor %}
             
             # Run actual compilation
             cmake = CMake(self)
-            message = str(self.options.message)
-            if not message:
-                message = "|".join(map(str, [self.settings.os, self.settings.arch, self.settings.compiler, self.settings.build_type]))
-            cmake.definitions["MESSAGE:STRING"] = message
+            settings = "|".join(map(str, [self.settings.os, self.settings.arch, self.settings.compiler, self.settings.build_type]))
+            options = "|".join(map(str, ["shared={}".format(self.options.shared)]))
+            cmake.definitions["MESSAGE:STRING"] = "|".join([settings, options])
             cmake.configure()
             cmake.build()
 
@@ -100,7 +102,7 @@ conanfile_template = Template(textwrap.dedent(r"""
             self.copy("*.dylib", dst="lib", keep_path=False)
             self.copy("*.a", dst="lib", keep_path=False)
             {%- for exec in package.executables %}
-            self.copy("{{ exec.name }}", src="bin", dst="bin", keep_path=False)
+            self.copy("{{ exec.name }}.*", src="bin", dst="bin", keep_path=False)
             {%- endfor %}
 
         def package_info(self):
@@ -120,11 +122,7 @@ lib_cpp_template = Template(textwrap.dedent(r"""
     {%- endfor %}
 
     void {{library.name}}(int tabs) {
-        #ifdef {{library.name}}_EXPORTS
-            std::cout << std::string(tabs, '\t') << "> {{library.name}} (" << {{package.name}}_MESSAGE << "): {{ message|default("default") }} (shared!)" << std::endl;
-        #else
-            std::cout << std::string(tabs, '\t') << "> {{library.name}} (" << {{package.name}}_MESSAGE << "): {{ message|default("default") }}" << std::endl;
-        #endif
+        std::cout << std::string(tabs, '\t') << "> {{library.name}}: " << {{package.name}}_MESSAGE << std::endl;
         
         // Requires and build_requires (host)
         {%- for require in library.requires %}
@@ -139,11 +137,12 @@ lib_h_template = Template(textwrap.dedent(r"""
 
     #include <iostream>
     #include "{{ package.name }}.h"
+    #include "{{ package.name }}_export.h"
 
-    void {{library.name}}(int tabs);
+    {{package.name.upper() }}_EXPORT void {{library.name}}(int tabs);
 
     static void {{library.name}}_header(int tabs) {
-        std::cout << std::string(tabs, '\t') << "> {{library.name}}_header (" << {{package.name}}_MESSAGE << "): {{ message|default("default") }}" << std::endl;
+        std::cout << std::string(tabs, '\t') << "> {{library.name}}_header: " << {{package.name}}_MESSAGE << std::endl;
     }
 """))
 
@@ -155,7 +154,7 @@ main_cpp_template = Template(textwrap.dedent(r"""
     {% endfor %}
     
     int main() {
-        std::cout << "> {{executable.name}} (" << {{package.name}}_MESSAGE << "): {{ message|default("default") }}" << std::endl;
+        std::cout << "> {{executable.name}}: " << {{package.name}}_MESSAGE << std::endl;
         {% for require in executable.requires %}
         {{require.name}}_header(0);
         {{require.name}}(0);
