@@ -574,6 +574,37 @@ class Command(object):
                                               source_folder=args.source_folder,
                                               target_folder=args.target_folder)
 
+    def package_id(self, *args):
+        """
+        Returns the package ID of the recipe given the settings/options AND all the
+        compatible package IDs for cppstd values
+        """
+        parser = argparse.ArgumentParser(description=self.info.__doc__,
+                                         prog="conan info",
+                                         formatter_class=SmartFormatter)
+        parser.add_argument("path_or_reference", help="Path to a folder containing a recipe"
+                            " (conanfile.py or conanfile.txt) or to a recipe file. e.g., "
+                            "./my_project/conanfile.txt. It could also be a reference")
+
+        _add_common_install_arguments(parser, build_help="NO HELP HERE")
+        args = parser.parse_args(*args)
+
+        deps_graph, conanfile = self._conan.info(args.path_or_reference,
+                                                 remote_name=None,
+                                                 settings=args.settings,
+                                                 options=args.options,
+                                                 env=args.env,
+                                                 profile_names=args.profile,
+                                                 update=None,
+                                                 install_folder=None,
+                                                 build=None,
+                                                 lockfile=None)
+
+        from conans.cppstd import iter_compatible_packages
+        self._out.info(conanfile.info.package_id())
+        items = [it.package_id() for it in iter_compatible_packages(conanfile)]
+        self._out.info(items)
+
     def info(self, *args):
         """
         Gets information about the dependency graph of a recipe.
@@ -1828,7 +1859,7 @@ class Command(object):
                 ("Package development commands", ("source", "build", "package", "editable",
                                                   "workspace")),
                 ("Misc commands", ("profile", "remote", "user", "imports", "copy", "remove",
-                                   "alias", "download", "inspect", "help", "graph"))]
+                                   "alias", "download", "inspect", "help", "graph", "package_id"))]
 
         def check_all_commands_listed():
             """Keep updated the main directory, raise if don't"""

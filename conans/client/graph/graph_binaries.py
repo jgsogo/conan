@@ -166,9 +166,12 @@ class GraphBinariesAnalyzer(object):
             pref = PackageReference(node.ref, node.package_id)
             self._process_node(node, pref, build_mode, update, remotes)
             if node.binary == BINARY_MISSING:
+                # TODO: For the current 'package:id' and then for all the compatible packages
+                #   we need to iterate all the possible 'cppstd' (first the default, then the rest)
                 if node.conanfile.compatible_packages:
                     compatible_build_mode = BuildMode(None, self._out)
-                    for compatible_package in node.conanfile.compatible_packages:
+                    from conans.cppstd import iter_compatible_packages
+                    for compatible_package in iter_compatible_packages(node.conanfile):
                         package_id = compatible_package.package_id()
                         if package_id == node.package_id:
                             node.conanfile.output.info("Compatible package ID %s equal to the "

@@ -647,6 +647,18 @@ class ConanAPIV1(object):
         return nodes_to_build, deps_graph.root.conanfile
 
     @api_method
+    def package_id(self, reference_or_path, remote_name=None, settings=None, options=None, env=None,
+             profile_names=None, update=False, install_folder=None, build=None, lockfile=None):
+        reference, graph_info = self._info_args(reference_or_path, install_folder, profile_names,
+                                                settings, options, env, lockfile=lockfile)
+        recorder = ActionRecorder()
+        # FIXME: Using update as check_update?
+        remotes = self.app.load_remotes(remote_name=remote_name, check_updates=update)
+        deps_graph = self.app.graph_manager.load_graph(reference, None, graph_info, build,
+                                                       update, False, remotes, recorder)
+        return deps_graph, deps_graph.root.conanfile
+
+    @api_method
     def info(self, reference_or_path, remote_name=None, settings=None, options=None, env=None,
              profile_names=None, update=False, install_folder=None, build=None, lockfile=None):
         reference, graph_info = self._info_args(reference_or_path, install_folder, profile_names,
