@@ -24,7 +24,7 @@ def get_cppstd(conanfile):
     value = cppstd_from_settings(conanfile.settings) or \
             cppstd_default(str(conanfile.settings.compiler),
                            str(conanfile.settings.compiler.version))
-    value = value.replace('gnu', '')
+    value = value.replace('gnu', '')  # TODO: Not right now
     flag = cppstd_flag(conanfile.settings.compiler, conanfile.settings.compiler.version, value)
     stable = bool(True)
     return value, stable
@@ -69,7 +69,7 @@ def iter_compatible_packages(conanfile):
     # Get the default, its value will be 'None' in the info object
     default = cppstd_default(str(conanfile.settings.compiler),
                              str(conanfile.settings.compiler.version))
-    default = default.replace('gnu', '')
+    default = default.replace('gnu', '')  # TODO: Not right now
 
     # Iterate current 'conanfile.info'
     for it in cppstd_to_iterate:
