@@ -604,6 +604,7 @@ class Command(object):
         value, stable = get_cppstd(conanfile)
         self._out.info("cppstd={}, stable={}".format(value, stable))
         self._out.info("Package ID: {}".format(conanfile.info.package_id()))
+        #self._out.info(conanfile.info.dumps())
         items = [it.package_id() for it in iter_compatible_packages(conanfile)]
         self._out.info("Compatibles:")
         for it in items:

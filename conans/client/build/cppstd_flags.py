@@ -49,7 +49,7 @@ def _clang_cppstd_default(compiler_version):
 
 
 def _gcc_cppstd_default(compiler_version):
-    return "gnu98" if Version(compiler_version) < "6" else "gnu14"
+    return "98" if Version(compiler_version) < "6" else "14"  # REVERT: Don't want to play with GNU extensions right now
 
 
 def _visual_cppstd_default(compiler_version):

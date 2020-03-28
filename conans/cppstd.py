@@ -28,7 +28,7 @@ def get_cppstd(conanfile):
     value = cppstd_from_settings(conanfile.settings) or \
             cppstd_default(str(conanfile.settings.compiler),
                            str(conanfile.settings.compiler.version))
-    value = value.replace('gnu', '')  # TODO: Not right now
+    assert not 'gnu' in value, value  # TODO: No more complexity right now
     flag = cppstd_flag(conanfile.settings.compiler, conanfile.settings.compiler.version, value)
     stable = _is_gcc_stable(flag)
     return value, stable
@@ -93,19 +93,15 @@ def iter_compatible_packages(conanfile):
     cppstd_to_iterate = _cppstd_to_iterate()
     # TODO: Is there an order? First the default, then the rest (later to newer)
     # TODO: Apply opt-out ==> empty list
-
-    # Get the default, its value will be 'None' in the info object
-    default = cppstd_default(str(conanfile.settings.compiler),
-                             str(conanfile.settings.compiler.version))
-    default = default.replace('gnu', '')  # TODO: Not right now
+    # TODO: Some of these can be marked as a failure in `configure()` by the user, we cannot get
+    #   that information here, but it shouldn't be a big deal as those computed package-id won't
+    #   ever be available.
 
     # Iterate current 'conanfile.info'
     for it in cppstd_to_iterate:
         p = conanfile.info.clone()
-        if it == default:
-            p.settings.compiler.cppstd = None
-        else:
-            p.settings.compiler.cppstd = it
+        p.settings.compiler.cppstd = it
+        # Default 'cppstd' will always we assigned (it is also changed in the 'info' object)
         yield p
 
     # Iterate all the compatible_packages
@@ -113,10 +109,8 @@ def iter_compatible_packages(conanfile):
         yield compatible_package
         for it in cppstd_to_iterate:
             p = compatible_package.clone()
-            if it == default:
-                p.settings.compiler.cppstd = None
-            else:
-                p.settings.compiler.cppstd = it
+            p.settings.compiler.cppstd = it
+            # Default 'cppstd' will always we assigned (it is also changed in the 'info' object)
             yield p
 
     # TODO: Avoid duplicates
