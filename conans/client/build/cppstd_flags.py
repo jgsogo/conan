@@ -38,7 +38,7 @@ def cppstd_flag(compiler, compiler_version, cppstd):
 def cppstd_default(compiler, compiler_version):
     default = {"gcc": _gcc_cppstd_default(compiler_version),
                "clang": _clang_cppstd_default(compiler_version),
-               "apple-clang": "gnu98",  # Confirmed in apple-clang 9.1 with a simple "auto i=1;"
+               "apple-clang": "98",  # REVERT: Don't want to play with GNU extensions right now
                "Visual Studio": _visual_cppstd_default(compiler_version)}.get(str(compiler), None)
     return default
 
