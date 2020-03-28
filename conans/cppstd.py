@@ -7,7 +7,7 @@ CPPSTD_11 = "11"
 CPPSTD_14 = "14"
 CPPSTD_17 = "17"
 CPPSTD_20 = "20"
-_CPPSTD_ALL = [(CPPSTD_98, CPPSTD_11, CPPSTD_14, CPPSTD_17, CPPSTD_20),]
+ALL_CPPSTD = (CPPSTD_98, CPPSTD_11, CPPSTD_14, CPPSTD_17, CPPSTD_20)
 
 
 def _as_list(sublist):
@@ -70,7 +70,7 @@ def iter_compatible_packages(conanfile):
     # Get the list of 'cppstd' values to iterate
     cppstd_compatibility = getattr(conanfile, 'cppstd_compatibility', None)
     if not cppstd_compatibility:
-        cppstd_compatibility = _CPPSTD_ALL
+        cppstd_compatibility = [ALL_CPPSTD, ]  # All are one single group (compatible between them)
 
     def _cppstd_to_iterate():
         value, stable = get_cppstd(conanfile)
