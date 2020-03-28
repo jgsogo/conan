@@ -330,9 +330,8 @@ class DepsGraphBuilder(object):
                         conanfile.config()
 
                 with conanfile_exception_formatter(str(conanfile), "configure"):
-                    conanfile.configure()
-                    from conans.cppstd import conan_invalid_config
-                    conan_invalid_config(conanfile)
+                    from conans.cppstd import conanfile_configure
+                    conanfile_configure(conanfile)
 
                 conanfile.settings.validate()  # All has to be ok!
                 conanfile.options.validate()

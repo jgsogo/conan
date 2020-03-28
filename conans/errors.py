@@ -148,6 +148,11 @@ class ConanInvalidConfiguration(ConanExceptionInUserConanfileMethod):
     pass
 
 
+class ConanInvalidCppstd(ConanInvalidConfiguration):
+    # Cannot compile using this C++ standard
+    pass
+
+
 class ConanMigrationError(ConanException):
     pass
 

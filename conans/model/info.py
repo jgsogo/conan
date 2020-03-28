@@ -597,6 +597,7 @@ class ConanInfo(object):
         If we are building with gcc 7, and we specify -s cppstd=gnu14, it's the default, so the
         same as specifying None, packages are the same
         """
+        return  # Use always the cppstd value to compute package id
 
         if (self.full_settings.compiler and
                 self.full_settings.compiler.version):

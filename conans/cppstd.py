@@ -1,6 +1,6 @@
 from conans.client.build.cppstd_flags import cppstd_default
 from conans.client.build.cppstd_flags import cppstd_flag, cppstd_from_settings
-from conans.errors import ConanInvalidConfiguration
+from conans.errors import ConanInvalidConfiguration, ConanInvalidCppstd
 
 CPPSTD_98 = "98"
 CPPSTD_11 = "11"
@@ -17,6 +17,10 @@ def _as_list(sublist):
         return [sublist, ]
 
 
+def _is_gcc_stable(flag):
+    return not any([it in flag for it in ['x', 'y', 'z', 'a']])
+
+
 def get_cppstd(conanfile):
     """ Returns the value of the 'cppstd' for the given settings and also if it is a
         stable/unstable implementation according to the compiler
@@ -26,8 +30,24 @@ def get_cppstd(conanfile):
                            str(conanfile.settings.compiler.version))
     value = value.replace('gnu', '')  # TODO: Not right now
     flag = cppstd_flag(conanfile.settings.compiler, conanfile.settings.compiler.version, value)
-    stable = bool(True)
+    stable = _is_gcc_stable(flag)
     return value, stable
+
+
+def conanfile_configure(conanfile):
+    try:
+        conanfile.configure()
+        conan_invalid_config(conanfile)
+    except ConanInvalidCppstd as e:
+        # If it is a _compile invalid configuration_ due to C++ standard, delay failure to build
+        conanfile._conan_fail_build = e
+
+
+def conanfile_build(conanfile):
+    e = getattr(conanfile, '_conan_fail_build', None)
+    if e:
+        raise e
+    conanfile.build()
 
 
 def conan_invalid_config(conanfile):
@@ -60,7 +80,15 @@ def iter_compatible_packages(conanfile):
         for sublist in cppstd_compatibility:
             sublist = _as_list(sublist)
             if value in sublist:
-                return sublist  # TODO: Filter unstable/not-supported for the given compiler
+                stable_ones = []
+                for item in sublist:
+                    # Filter unstable/not-supported for the given compiler
+                    flag = cppstd_flag(conanfile.settings.compiler,
+                                       conanfile.settings.compiler.version, item)
+                    stable = _is_gcc_stable(flag)
+                    if stable:
+                        stable_ones.append(item)
+                return stable_ones
 
     cppstd_to_iterate = _cppstd_to_iterate()
     # TODO: Is there an order? First the default, then the rest (later to newer)

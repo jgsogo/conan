@@ -13,6 +13,7 @@ def run_build_method(conanfile, hook_manager, **hook_kwargs):
     with get_env_context_manager(conanfile):
         conanfile.output.highlight("Calling build()")
         with conanfile_exception_formatter(str(conanfile), "build"):
-            conanfile.build()
+            from conans.cppstd import conanfile_build
+            conanfile_build(conanfile)
 
     hook_manager.execute("post_build", conanfile=conanfile, **hook_kwargs)

@@ -600,10 +600,14 @@ class Command(object):
                                                  build=None,
                                                  lockfile=None)
 
-        from conans.cppstd import iter_compatible_packages
-        self._out.info(conanfile.info.package_id())
+        from conans.cppstd import iter_compatible_packages, get_cppstd
+        value, stable = get_cppstd(conanfile)
+        self._out.info("cppstd={}, stable={}".format(value, stable))
+        self._out.info("Package ID: {}".format(conanfile.info.package_id()))
         items = [it.package_id() for it in iter_compatible_packages(conanfile)]
-        self._out.info(items)
+        self._out.info("Compatibles:")
+        for it in items:
+            self._out.info(" - {}".format(it))
 
     def info(self, *args):
         """
