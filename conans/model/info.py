@@ -599,8 +599,7 @@ class ConanInfo(object):
         """
         if (self.full_settings.compiler and
                 self.full_settings.compiler.version):
-            default = cppstd_default(str(self.full_settings.compiler),
-                                     str(self.full_settings.compiler.version))
+            default = cppstd_default(self.full_settings)
             self.settings.compiler.cppstd = self.full_settings.compiler.cppstd or default  # REVERT: Assign always the value
 
     def default_std_non_matching(self):

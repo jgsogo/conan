@@ -55,7 +55,7 @@ _t_default_settings_yml = Template(textwrap.dedent("""
     arch: [x86, x86_64, ppc32be, ppc32, ppc64le, ppc64, armv4, armv4i, armv5el, armv5hf, armv6, armv7, armv7hf, armv7s, armv7k, armv8, armv8_32, armv8.3, sparc, sparcv9, mips, mips64, avr, s390, s390x, asm.js, wasm, sh4le]
     compiler:
         sun-cc:
-            version: ["5.10", "5.11", "5.12", "5.13", "5.14"]
+            version: ["5.10", "5.11", "5.12", "5.13", "5.14", "5.15"]
             threads: [None, posix]
             libcxx: [libCstd, libstdcxx, libstlport, libstdc++]
         gcc: &gcc
@@ -64,7 +64,7 @@ _t_default_settings_yml = Template(textwrap.dedent("""
                       "6", "6.1", "6.2", "6.3", "6.4",
                       "7", "7.1", "7.2", "7.3", "7.4",
                       "8", "8.1", "8.2", "8.3",
-                      "9", "9.1", "9.2"]
+                      "9", "9.1", "9.2", "9.3"]
             libcxx: [libstdc++, libstdc++11]
             threads: [None, posix, win32] #  Windows MinGW
             exception: [None, dwarf2, sjlj, seh] # Windows MinGW
@@ -83,7 +83,7 @@ _t_default_settings_yml = Template(textwrap.dedent("""
                       "8", "9", "10"]
             libcxx: [libstdc++, libstdc++11, libc++, c++_shared, c++_static]
             cppstd: [None, 98, gnu98, 11, gnu11, 14, gnu14, 17, gnu17, 20, gnu20]
-        apple-clang:
+        apple-clang: &apple_clang
             version: ["5.0", "5.1", "6.0", "6.1", "7.0", "7.3", "8.0", "8.1", "9.0", "9.1", "10.0", "11.0"]
             libcxx: [libstdc++, libc++]
             cppstd: [None, 98, gnu98, 11, gnu11, 14, gnu14, 17, gnu17, 20, gnu20]
@@ -96,6 +96,8 @@ _t_default_settings_yml = Template(textwrap.dedent("""
                     exception: [None]
                 Visual Studio:
                     <<: *visual_studio
+                apple-clang:
+                    <<: *apple_clang
         qcc:
             version: ["4.4", "5.4"]
             libcxx: [cxx, gpp, cpp, cpp-ne, accp, acpp-ne, ecpp, ecpp-ne]

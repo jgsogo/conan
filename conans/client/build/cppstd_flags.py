@@ -35,7 +35,20 @@ def cppstd_flag(compiler, compiler_version, cppstd):
     return flag
 
 
-def cppstd_default(compiler, compiler_version):
+def cppstd_flag_new(settings):
+    compiler = settings.get_safe("compiler")
+    compiler_version = settings.get_safe("compiler.version")
+    cppstd = cppstd_from_settings(settings)
+    return cppstd_flag(compiler, compiler_version, cppstd)
+
+
+def cppstd_default(settings):
+    if getattr(settings, "get_safe", None):
+        compiler = settings.get_safe("compiler")
+        compiler_version = settings.get_safe("compiler.version")
+    else:
+        compiler = str(settings.compiler)
+        compiler_version = str(settings.compiler.version)
     default = {"gcc": _gcc_cppstd_default(compiler_version),
                "clang": _clang_cppstd_default(compiler_version),
                "apple-clang": "98",  # REVERT: Don't want to play with GNU extensions right now
