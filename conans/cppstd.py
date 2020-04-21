@@ -6,8 +6,9 @@ CPPSTD_98 = "98"
 CPPSTD_11 = "11"
 CPPSTD_14 = "14"
 CPPSTD_17 = "17"
-CPPSTD_20 = "20"
-ALL_CPPSTD = (CPPSTD_98, CPPSTD_11, CPPSTD_14, CPPSTD_17, CPPSTD_20)
+#CPPSTD_20 = "20"
+#ALL_CPPSTD = (CPPSTD_98, CPPSTD_11, CPPSTD_14, CPPSTD_17, CPPSTD_20)
+ALL_CPPSTD = (CPPSTD_98, CPPSTD_11, CPPSTD_14, CPPSTD_17)
 
 
 def _as_list(sublist):
@@ -26,8 +27,7 @@ def get_cppstd(conanfile):
         stable/unstable implementation according to the compiler
     """
     value = cppstd_from_settings(conanfile.settings) or \
-            cppstd_default(str(conanfile.settings.compiler),
-                           str(conanfile.settings.compiler.version))
+            cppstd_default(conanfile.settings)
     assert not 'gnu' in value, value  # TODO: No more complexity right now
     flag = cppstd_flag(conanfile.settings.compiler, conanfile.settings.compiler.version, value)
     stable = _is_gcc_stable(flag)
@@ -67,6 +67,10 @@ def iter_compatible_packages(conanfile):
         * iterate all the 'cppstd' for the current conanfile.info
         * for each compatible_package, iterate all the 'cppstd' available
     """
+    # Only if settings has compiler
+    if not conanfile.settings.get_safe('compiler'):
+        return
+
     # Get the list of 'cppstd' values to iterate
     cppstd_compatibility = getattr(conanfile, 'cppstd_compatibility', None)
     if not cppstd_compatibility:
@@ -85,7 +89,7 @@ def iter_compatible_packages(conanfile):
                     # Filter unstable/not-supported for the given compiler
                     flag = cppstd_flag(conanfile.settings.compiler,
                                        conanfile.settings.compiler.version, item)
-                    stable = _is_gcc_stable(flag)
+                    stable = flag and _is_gcc_stable(flag)
                     if stable:
                         stable_ones.append(item)
                 return stable_ones

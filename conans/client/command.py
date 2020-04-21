@@ -600,19 +600,17 @@ class Command(object):
         parser = argparse.ArgumentParser(description=self.info.__doc__,
                                          prog="conan info",
                                          formatter_class=SmartFormatter)
-        parser.add_argument("path_or_reference", help="Path to a folder containing a recipe"
-                            " (conanfile.py or conanfile.txt) or to a recipe file. e.g., "
-                            "./my_project/conanfile.txt. It could also be a reference")
+        parser.add_argument("path_to_recipe", help="Path to recipe")
 
         _add_common_install_arguments(parser, build_help="NO HELP HERE")
         args = parser.parse_args(*args)
 
-        deps_graph, conanfile = self._conan.info(args.path_or_reference,
+        deps_graph, conanfile = self._conan.info(args.path_to_recipe,
                                                  remote_name=None,
-                                                 settings=args.settings,
-                                                 options=args.options,
-                                                 env=args.env,
-                                                 profile_names=args.profile,
+                                                 settings=args.settings_host,
+                                                 options=args.options_host,
+                                                 env=args.env_host,
+                                                 profile_names=args.profile_host,
                                                  update=None,
                                                  install_folder=None,
                                                  build=None,
