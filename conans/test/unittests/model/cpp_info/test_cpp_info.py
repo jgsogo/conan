@@ -3,7 +3,7 @@ import unittest
 import six
 
 from conans.errors import ConanException
-from conans.model.cpp_info.cpp_info import CppInfo, CppInfoComponent
+from conans.model.cpp_info.cpp_info import CppInfo, CppInfoComponent, CppInfoConfig
 
 
 class CppInfoBaseTestCase(object):
@@ -102,4 +102,20 @@ class CppInfoComponentTestCase(CppInfoBaseTestCase, unittest.TestCase):
         cmp_info = self.cpp_info_class("default", "rootpath")
         with six.assertRaisesRegex(self, AttributeError,
                                    "'CppInfoComponent' object has no attribute 'release'"):
+            cmp_info.release.includedirs = ["more_includes"]
+
+
+class CppInfoConfigTestCase(CppInfoBaseTestCase, unittest.TestCase):
+    cpp_info_class = CppInfoConfig
+
+    def test_no_nested_components(self):
+        cmp_info = self.cpp_info_class("default", "rootpath")
+        with six.assertRaisesRegex(self, AttributeError,
+                                   "'CppInfoConfig' object has no attribute 'components'"):
+            cmp_info.components["other"].includedirs = ["more_includes"]
+
+    def test_no_configs(self):
+        cmp_info = self.cpp_info_class("default", "rootpath")
+        with six.assertRaisesRegex(self, AttributeError,
+                                   "'CppInfoConfig' object has no attribute 'release'"):
             cmp_info.release.includedirs = ["more_includes"]
