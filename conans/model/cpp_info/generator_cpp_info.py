@@ -10,6 +10,9 @@ class BaseGeneratorCppInfo(object):
     def __init__(self, deps_cpp_info):
         self._deps_cpp_info = deps_cpp_info
 
+    def __str__(self):
+        return str(self._deps_cpp_info)
+
     def __getattr__(self, item):
         return getattr(self._deps_cpp_info, item)
 

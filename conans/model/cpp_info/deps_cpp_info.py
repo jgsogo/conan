@@ -10,6 +10,9 @@ class BaseDepsCppInfo(object):
         self._cpp_info = cpp_info
         self._remove_missing_paths = remove_missing_paths
 
+    def __str__(self):
+        return str(self._cpp_info)
+
     def _get_absolute_paths(self, _cpp_info_field):
         for it in getattr(self, _cpp_info_field):
             fullpath = os.path.join(self._cpp_info.rootpath, it)
@@ -59,7 +62,7 @@ class DepsCppInfo(BaseDepsCppInfo):
         self.components = {k: DepsCppInfoComponent(self._cpp_info, v, self._remove_missing_paths)
                            for k, v in self._cpp_info.components.items()}
         self._configs = {k: DepsCppInfoConfig(self._cpp_info, v, self._remove_missing_paths)
-                         for k, v in self._cpp_info.get_configs()}
+                         for k, v in self._cpp_info.get_configs().items()}
 
     def __getattr__(self, item):
         if item in self._configs:
@@ -88,7 +91,7 @@ class DepsCppInfoConfig(BaseDepsCppInfo):
 
 
 class DepsCppInfoComponent(BaseDepsCppInfo):
-    COMPONENTS_SCOPE = '::'
+
 
     def __init__(self, pkg_cpp_info, cpp_info, remove_missing_paths=False):
         assert isinstance(cpp_info, CppInfoComponent), \
