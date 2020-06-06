@@ -1,3 +1,3 @@
 from .cpp_info import CppInfo
-from .deps_cpp_info import DepsCppInfo
+from .dep_cpp_info import DepCppInfo
 from .generator_cpp_info import GeneratorCppInfo

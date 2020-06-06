@@ -5,7 +5,7 @@ import six
 from .cpp_info import CppInfo, CppInfoComponent, CppInfoConfig, BaseCppInfo
 
 
-class DepsCppInfoMeta(type):
+class DepCppInfoMeta(type):
     def __init__(cls, *args, **kwargs):
         # Add properties dynamically
         def getter_property(inner_field):
@@ -23,11 +23,11 @@ class DepsCppInfoMeta(type):
 
         for outter, inner in cls.FIELDS_PATH_MAPPING.items():
             setattr(cls, outter, property(getter_property(inner)))
-        super(DepsCppInfoMeta, cls).__init__(*args, **kwargs)
+        super(DepCppInfoMeta, cls).__init__(*args, **kwargs)
 
 
-@six.add_metaclass(DepsCppInfoMeta)
-class BaseDepsCppInfo(object):
+@six.add_metaclass(DepCppInfoMeta)
+class BaseDepCppInfo(object):
     """ A wrapper to access cppinfo data in a convenient way """
 
     FIELDS_PATH_MAPPING = {
@@ -51,15 +51,15 @@ class BaseDepsCppInfo(object):
         return getattr(self._cpp_info, item)
 
 
-class DepsCppInfo(BaseDepsCppInfo):
+class DepCppInfo(BaseDepCppInfo):
     def __init__(self, version, cpp_info, remove_missing_paths=False):
         assert isinstance(cpp_info, CppInfo), "CppInfo expected, got {}".format(type(cpp_info))
-        super(DepsCppInfo, self).__init__(cpp_info, remove_missing_paths)
+        super(DepCppInfo, self).__init__(cpp_info, remove_missing_paths)
 
         self.version = version
-        self.components = {k: DepsCppInfoComponent(self._cpp_info, v, self._remove_missing_paths)
+        self.components = {k: DepCppInfoComponent(self._cpp_info, v, self._remove_missing_paths)
                            for k, v in self._cpp_info.components.items()}
-        self._configs = {k: DepsCppInfoConfig(self._cpp_info, v, self._remove_missing_paths)
+        self._configs = {k: DepCppInfoConfig(self._cpp_info, v, self._remove_missing_paths)
                          for k, v in self._cpp_info.get_configs().items()}
 
     def __getattr__(self, item):
@@ -68,11 +68,11 @@ class DepsCppInfo(BaseDepsCppInfo):
         return getattr(self._cpp_info, item)
 
 
-class DepsCppInfoConfig(BaseDepsCppInfo):
+class DepCppInfoConfig(BaseDepCppInfo):
     def __init__(self, pkg_cpp_info, cpp_info, remove_missing_paths=False):
         assert isinstance(cpp_info, CppInfoConfig), \
             "CppInfoConfig expected, got {}".format(type(cpp_info))
-        super(DepsCppInfoConfig, self).__init__(cpp_info, remove_missing_paths)
+        super(DepCppInfoConfig, self).__init__(cpp_info, remove_missing_paths)
         self._pkg_cpp_info = pkg_cpp_info
 
     def __getattr__(self, item):
@@ -85,15 +85,15 @@ class DepsCppInfoConfig(BaseDepsCppInfo):
             else:
                 return getattr(self._pkg_cpp_info, item)
         else:
-            return super(DepsCppInfoConfig, self).__getattr__(item)
+            return super(DepCppInfoConfig, self).__getattr__(item)
 
 
-class DepsCppInfoComponent(BaseDepsCppInfo):
+class DepCppInfoComponent(BaseDepCppInfo):
 
     def __init__(self, pkg_cpp_info, cpp_info, remove_missing_paths=False):
         assert isinstance(cpp_info, CppInfoComponent), \
             "CppInfoComponent expected, got {}".format(type(cpp_info))
-        super(DepsCppInfoComponent, self).__init__(cpp_info, remove_missing_paths)
+        super(DepCppInfoComponent, self).__init__(cpp_info, remove_missing_paths)
         self.requires = list(self._get_requires(str(pkg_cpp_info)))
 
     def _get_requires(self, pkg_name):

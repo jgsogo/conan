@@ -1,15 +1,15 @@
 from .cpp_info import BaseCppInfo
-from .deps_cpp_info import DepsCppInfo
+from .dep_cpp_info import DepCppInfo
 
 
 class GeneratorCppInfo(object):
     """ A wrapper to access cppinfo data from generators, main difference is that this one
         aggregates the data from components
     """
-    _AGGREGATE_FIELDS = BaseCppInfo.FIELDS + list(DepsCppInfo.FIELDS_PATH_MAPPING.keys())
+    _AGGREGATE_FIELDS = BaseCppInfo.FIELDS + list(DepCppInfo.FIELDS_PATH_MAPPING.keys())
 
     def __init__(self, deps_cpp_info):
-        assert isinstance(deps_cpp_info, DepsCppInfo), \
+        assert isinstance(deps_cpp_info, DepCppInfo), \
             "DepsCppInfo expected, got {}".format(type(deps_cpp_info))
         self._deps_cpp_info = deps_cpp_info
 
