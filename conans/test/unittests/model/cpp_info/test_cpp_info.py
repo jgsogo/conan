@@ -94,11 +94,12 @@ class CppInfoComponentTestCase(CppInfoBaseTestCase, unittest.TestCase):
 
     def test_no_nested_components(self):
         cmp_info = self.cpp_info_class("default", "rootpath")
-        with six.assertRaisesRegex(self, ConanException,
-                                   "Components cannot define components inside"):
+        with six.assertRaisesRegex(self, AttributeError,
+                                   "'CppInfoComponent' object has no attribute 'components'"):
             cmp_info.components["other"].includedirs = ["more_includes"]
 
     def test_no_configs(self):
         cmp_info = self.cpp_info_class("default", "rootpath")
-        with six.assertRaisesRegex(self, AttributeError, "Invalid attribute 'release'"):
+        with six.assertRaisesRegex(self, AttributeError,
+                                   "'CppInfoComponent' object has no attribute 'release'"):
             cmp_info.release.includedirs = ["more_includes"]
