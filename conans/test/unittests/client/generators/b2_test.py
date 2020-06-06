@@ -2,7 +2,8 @@ import unittest
 
 from conans.client.conf import get_default_settings_yml
 from conans.client.generators.b2 import B2Generator
-from conans.model.build_info import CppInfo
+#from conans.model.build_info import CppInfo
+from conans.model.cpp_info import CppInfo, DepCppInfo
 from conans.model.conan_file import ConanFile
 from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
@@ -11,6 +12,7 @@ from conans.test.utils.tools import TestBufferConanOutput
 
 
 class B2GeneratorTest(unittest.TestCase):
+    maxDiff = None
 
     def b2_test(self):
         settings = Settings.loads(get_default_settings_yml())
@@ -26,26 +28,25 @@ class B2GeneratorTest(unittest.TestCase):
         conanfile.settings = settings
 
         ref = ConanFileReference.loads("MyPkg/0.1@lasote/stables")
-        cpp_info = CppInfo("dummy_root_folder1")
+        cpp_info = CppInfo(ref.name, "dummy_root_folder1")
         cpp_info.defines = ["MYDEFINE1"]
         cpp_info.cflags.append("-Flag1=23")
-        cpp_info.version = "1.3"
-        cpp_info.description = "My cool description"
         cpp_info.libs = ["MyLib1"]
+        dep_cpp_info = DepCppInfo("1.3", "My cool description", cpp_info)
+        conanfile.deps_cpp_info.add(dep_cpp_info)
 
-        conanfile.deps_cpp_info.update(cpp_info, ref.name)
         ref = ConanFileReference.loads("MyPkg2/0.1@lasote/stables")
-        cpp_info = CppInfo("dummy_root_folder2")
+        cpp_info = CppInfo(ref.name, "dummy_root_folder2")
         cpp_info.libs = ["MyLib2"]
         cpp_info.defines = ["MYDEFINE2"]
-        cpp_info.version = "2.3"
         cpp_info.exelinkflags = ["-exelinkflag"]
         cpp_info.sharedlinkflags = ["-sharedlinkflag"]
         cpp_info.cxxflags = ["-cxxflag"]
-        cpp_info.public_deps = ["MyPkg"]
-        cpp_info.lib_paths.extend(["Path\\with\\slashes", "regular/path/to/dir"])
-        cpp_info.include_paths.extend(["other\\Path\\with\\slashes", "other/regular/path/to/dir"])
-        conanfile.deps_cpp_info.update(cpp_info, ref.name)
+        cpp_info.libdirs.extend(["Path\\with\\slashes", "regular/path/to/dir"])
+        cpp_info.includedirs.extend(["other\\Path\\with\\slashes", "other/regular/path/to/dir"])
+        dep_cpp_info = DepCppInfo("2.3", "<no-description>", cpp_info)
+        dep_cpp_info.public_deps = ["MyPkg"]
+        conanfile.deps_cpp_info.add(dep_cpp_info)
         generator = B2Generator(conanfile)
 
         content = {

@@ -63,6 +63,8 @@ class DepCppInfo(BaseDepCppInfo):
                            for k, v in self._cpp_info.components.items()}
         self._configs = {k: DepCppInfoConfig(self._cpp_info, v, self._remove_missing_paths)
                          for k, v in self._cpp_info.get_configs().items()}
+        self.public_deps = []  # TODO: Why this here?
+        self.sysroot = ""  # TODO: Where is this one populated?
 
     @property
     def version(self):

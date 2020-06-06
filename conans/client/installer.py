@@ -559,7 +559,6 @@ class BinaryInstaller(object):
         conanfile.env_info = EnvInfo()
         conanfile.user_info = UserInfo()
 
-        # Get deps_cpp_info from upstream nodes
         # Once the node is build, execute package info, so it has access to the
         # package folder and artifacts
         conan_v2 = get_env(CONAN_V2_MODE_ENVVAR, False)
@@ -578,5 +577,11 @@ class BinaryInstaller(object):
                         conanfile._conan_dep_cpp_info = DepCppInfo(conanfile.version,
                                                                    conanfile.description,
                                                                    conanfile.cpp_info)
+                        # Get deps_cpp_info from upstream nodes
+                        public_deps = [name for name, req in conanfile.requires.items() if
+                                       not req.private
+                                       and not req.override]
+                        conanfile._conan_dep_cpp_info.public_deps = public_deps
+
                     self._hook_manager.execute("post_package_info", conanfile=conanfile,
                                                reference=ref)
