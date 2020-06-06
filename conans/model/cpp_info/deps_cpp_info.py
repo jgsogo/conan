@@ -1,4 +1,5 @@
 import os
+
 from .cpp_info import CppInfo, CppInfoComponent, CppInfoConfig
 
 
@@ -10,7 +11,7 @@ class BaseDepsCppInfo(object):
         self._remove_missing_paths = remove_missing_paths
 
     def _get_absolute_paths(self, _cpp_info_field):
-        for it in getattr(self._cpp_info, _cpp_info_field):
+        for it in getattr(self, _cpp_info_field):
             fullpath = os.path.join(self._cpp_info.rootpath, it)
             if not self._remove_missing_paths:
                 yield fullpath
@@ -75,6 +76,19 @@ class DepsCppInfoConfig(BaseDepsCppInfo):
         super(DepsCppInfoConfig, self).__init__(cpp_info, remove_missing_paths)
         self._pkg_cpp_info = pkg_cpp_info
 
+    def __getattr__(self, item):
+        try:
+            # If not set at the 'config' level, return the base|package one
+            field_name = '_{}'.format(item)
+            field = getattr(self._cpp_info, field_name)
+        except AttributeError:
+            return super(DepsCppInfoConfig, self).__getattr__(item)
+        else:
+            if field.used:
+                return getattr(self._cpp_info, item)
+            else:
+                return getattr(self._pkg_cpp_info, field_name)
+
 
 class DepsCppInfoComponent(BaseDepsCppInfo):
     COMPONENTS_SCOPE = '::'
@@ -95,4 +109,5 @@ class DepsCppInfoComponent(BaseDepsCppInfo):
                     yield req
                 else:
                     yield self.COMPONENTS_SCOPE.join([str(self._pkg_cpp_info), req])
+
         return list(_get_req())
