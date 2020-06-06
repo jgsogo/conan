@@ -1,10 +1,44 @@
 import os
 
+import six
+
 from .cpp_info import CppInfo, CppInfoComponent, CppInfoConfig, BaseCppInfo
 
 
+class DepsCppInfoMeta(type):
+    def __init__(cls, *args, **kwargs):
+        # Add properties dynamically
+        def getter_property(inner_field):
+            def getter(self):
+                ret = []
+                for it in getattr(self, inner_field):
+                    fullpath = os.path.join(self._cpp_info.rootpath, it)
+                    if not self._remove_missing_paths:
+                        ret.append(fullpath)
+                    elif os.path.exists(fullpath):
+                        ret.append(fullpath)
+                return ret
+
+            return getter
+
+        for outter, inner in cls.FIELDS_PATH_MAPPING.items():
+            setattr(cls, outter, property(getter_property(inner)))
+        super(DepsCppInfoMeta, cls).__init__(*args, **kwargs)
+
+
+@six.add_metaclass(DepsCppInfoMeta)
 class BaseDepsCppInfo(object):
     """ A wrapper to access cppinfo data in a convenient way """
+
+    FIELDS_PATH_MAPPING = {
+        "include_paths": "includedirs",
+        "lib_paths": "libdirs",
+        "bin_paths": "bindirs",
+        "build_paths": "builddirs",
+        "res_paths": "resdirs",
+        "framework_paths": "frameworkdirs",
+        "build_modules_paths": "build_modules",
+    }
 
     def __init__(self, cpp_info, remove_missing_paths=False):
         self._cpp_info = cpp_info
@@ -12,42 +46,6 @@ class BaseDepsCppInfo(object):
 
     def __str__(self):
         return str(self._cpp_info)
-
-    def _get_absolute_paths(self, _cpp_info_field):
-        for it in getattr(self, _cpp_info_field):
-            fullpath = os.path.join(self._cpp_info.rootpath, it)
-            if not self._remove_missing_paths:
-                yield fullpath
-            elif os.path.exists(fullpath):
-                yield fullpath
-
-    @property
-    def include_paths(self):
-        return list(self._get_absolute_paths("includedirs"))
-
-    @property
-    def lib_paths(self):
-        return list(self._get_absolute_paths("libdirs"))
-
-    @property
-    def bin_paths(self):
-        return list(self._get_absolute_paths("bindirs"))
-
-    @property
-    def build_paths(self):
-        return list(self._get_absolute_paths("builddirs"))
-
-    @property
-    def res_paths(self):
-        return list(self._get_absolute_paths("resdirs"))
-
-    @property
-    def framework_paths(self):
-        return list(self._get_absolute_paths("frameworkdirs"))
-
-    @property
-    def build_modules_paths(self):
-        return list(self._get_absolute_paths("build_modules"))
 
     def __getattr__(self, item):
         return getattr(self._cpp_info, item)
@@ -78,7 +76,7 @@ class DepsCppInfoConfig(BaseDepsCppInfo):
         self._pkg_cpp_info = pkg_cpp_info
 
     def __getattr__(self, item):
-        if item in BaseCppInfo._path_fields + BaseCppInfo._non_path_fields:
+        if item in BaseCppInfo.FIELDS:
             # If not set at the 'config' level, return the base|package one
             field_name = '_{}'.format(item)
             field = getattr(self._cpp_info, field_name)

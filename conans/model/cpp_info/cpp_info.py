@@ -18,7 +18,7 @@ class CppInfoField(object):
         self.values = init_values or []
         self.used = False
 
-    def clean(self):
+    def reset(self):
         self.values = []
         self.used = False
 
@@ -46,7 +46,7 @@ class CppInfoMeta(type):
 
             return setter
 
-        for it in cls._path_fields + cls._non_path_fields:
+        for it in cls.FIELDS:
             setattr(cls, it, property(getter_property(it), setter_property(it)))
         super(CppInfoMeta, cls).__init__(*args, **kwargs)
 
@@ -57,19 +57,9 @@ class BaseCppInfo(object):
         the one offered for the components in 'self.cpp_info.components["cmp"]
     """
     _allow_configs = True
-    _path_fields = ["includedirs", "libdirs", "resdirs", "bindirs", "builddirs",
-                    "frameworkdirs", "build_modules"]
-    _non_path_fields = ["libs", "defines", "cflags", "cxxflags", "sharedlinkflags", "exelinkflags",
-                        "frameworks", "system_libs"]
-
-    _default_values = {
-        "includedirs": [DEFAULT_INCLUDE, ],
-        "libdirs": [DEFAULT_LIB, ],
-        "resdirs": [DEFAULT_RES, ],
-        "bindirs": [DEFAULT_BIN, ],
-        "builddirs": [DEFAULT_BUILD, ],
-        "frameworkdirs": [DEFAULT_FRAMEWORK, ]
-    }
+    FIELDS = ["includedirs", "libdirs", "resdirs", "bindirs", "builddirs", "frameworkdirs",
+              "build_modules", "libs", "defines", "cflags", "cxxflags", "sharedlinkflags",
+              "exelinkflags", "frameworks", "system_libs"]
 
     def __init__(self):
         # TODO: I can move all these attributes to the metaclass
@@ -131,14 +121,13 @@ class CppInfo(BaseCppInfo):
 
     def clean_data(self):
         # Do not use components and root attributes at the same time
-        used_attributes = any(getattr(self, '_{}'.format(it)).used
-                              for it in self._path_fields + self._non_path_fields)
+        used_attributes = any(getattr(self, '_{}'.format(it)).used for it in self.FIELDS)
         if self._components and (self._configs or used_attributes):
             raise ConanException("Cannot use components together with root values")
 
         if self._components:
-            for it in self._path_fields + self._non_path_fields:
-                getattr(self, '_{}'.format(it)).clean()
+            for it in self.FIELDS:
+                getattr(self, '_{}'.format(it)).reset()
             # TODO: Order components according to requires
             # self._components = OrderedDict
             pass
@@ -167,7 +156,7 @@ class CppInfoConfig(BaseCppInfo):
 
 class CppInfoComponent(BaseCppInfo):
     COMPONENTS_SCOPE = '::'
-    _non_path_fields = CppInfo._non_path_fields + ['requires']
+    FIELDS = CppInfo.FIELDS + ['requires']
 
     def __init__(self, pkg_cpp_info, cpm_name):
         super(CppInfoComponent, self).__init__()
@@ -179,7 +168,7 @@ class CppInfoComponent(BaseCppInfo):
 
     def __str__(self):
         return self._fixed_name
-        #return self.COMPONENTS_SCOPE.join([str(self._pkg_cpp_info), self._fixed_name])
+        # return self.COMPONENTS_SCOPE.join([str(self._pkg_cpp_info), self._fixed_name])
 
     @property
     def rootpath(self):
