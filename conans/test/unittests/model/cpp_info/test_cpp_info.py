@@ -10,11 +10,13 @@ class CppInfoBaseTestCase(object):
 
     def test_default_name(self):
         cpp_info = self.cpp_info_class("default", "rootpath")
+        self.assertEqual(str(cpp_info), "default")
         self.assertEqual(cpp_info.name, "default")
         self.assertEqual(cpp_info.get_name("cmake"), "default")
         self.assertEqual(cpp_info.get_name("pkg_config"), "default")
 
         cpp_info.name = "other"
+        self.assertEqual(str(cpp_info), "default")
         self.assertEqual(cpp_info.name, "other")
         self.assertEqual(cpp_info.get_name("cmake"), "other")
         self.assertEqual(cpp_info.get_name("pkg_config"), "other")
