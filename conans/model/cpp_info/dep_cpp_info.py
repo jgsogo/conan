@@ -52,15 +52,24 @@ class BaseDepCppInfo(object):
 
 
 class DepCppInfo(BaseDepCppInfo):
-    def __init__(self, version, cpp_info, remove_missing_paths=False):
+    def __init__(self, version, description, cpp_info, remove_missing_paths=False):
         assert isinstance(cpp_info, CppInfo), "CppInfo expected, got {}".format(type(cpp_info))
         super(DepCppInfo, self).__init__(cpp_info, remove_missing_paths)
 
-        self.version = version
+        self._version = version
+        self._description = description
         self.components = {k: DepCppInfoComponent(self._cpp_info, v, self._remove_missing_paths)
                            for k, v in self._cpp_info.components.items()}
         self._configs = {k: DepCppInfoConfig(self._cpp_info, v, self._remove_missing_paths)
                          for k, v in self._cpp_info.get_configs().items()}
+
+    @property
+    def version(self):
+        return self._version
+
+    @property
+    def description(self):
+        return self._description
 
     def __getattr__(self, item):
         if item in self._configs:

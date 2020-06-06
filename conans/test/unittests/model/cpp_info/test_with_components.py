@@ -26,7 +26,7 @@ class CppInfoWithComponentsTestCase(unittest.TestCase):
         cls.cpp_info = cpp_info
         cls.cpp_info_cmp1 = cpp_info.components["cmp1"]
         cls.cpp_info_cmp2 = cpp_info.components["cmp2"]
-        deps_cpp_info = DepCppInfo("version_value", cpp_info)
+        deps_cpp_info = DepCppInfo("version_value", "description_value", cpp_info)
         cls.deps_cpp_info = deps_cpp_info
         cls.deps_cpp_info_cmp1 = deps_cpp_info.components["cmp1"]
         cls.deps_cpp_info_cmp2 = deps_cpp_info.components["cmp2"]

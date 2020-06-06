@@ -23,7 +23,7 @@ class CppInfoWithConfigsTestCase(unittest.TestCase):
         cpp_info.debug.includedirs = ["includedirs_debug_value"]
 
         cls.cpp_info = cpp_info
-        cls.deps_cpp_info = DepCppInfo("version_value", cls.cpp_info)
+        cls.deps_cpp_info = DepCppInfo("version_value", "description_value", cls.cpp_info)
         cls.generator_cpp_info = GeneratorCppInfo(cls.deps_cpp_info)
         cls.deps_cpp_info_debug = cls.deps_cpp_info.debug
         cls.generator_cpp_info_debug = cls.generator_cpp_info.debug
