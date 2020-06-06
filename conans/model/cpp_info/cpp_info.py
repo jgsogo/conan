@@ -18,6 +18,10 @@ class CppInfoField(object):
         self.values = init_values or []
         self.used = False
 
+    def clean(self):
+        self.values = []
+        self.used = False
+
 
 class CppInfoMeta(type):
     def __init__(cls, *args, **kwargs):
@@ -133,6 +137,8 @@ class CppInfo(BaseCppInfo):
             raise ConanException("Cannot use components together with root values")
 
         if self._components:
+            for it in self._path_fields + self._non_path_fields:
+                getattr(self, '_{}'.format(it)).clean()
             # TODO: Order components according to requires
             # self._components = OrderedDict
             pass

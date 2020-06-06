@@ -3,7 +3,8 @@ import unittest
 from conans.model.cpp_info import CppInfo, DepsCppInfo, GeneratorCppInfo
 
 
-class BasicCppInfoTestCase(unittest.TestCase):
+class CppInfoWithConfigsTestCase(unittest.TestCase):
+
     @classmethod
     def setUpClass(cls):
         cpp_info = CppInfo("name_init", "rootpath_value")
