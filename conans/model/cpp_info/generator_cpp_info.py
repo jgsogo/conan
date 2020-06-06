@@ -1,6 +1,5 @@
-import os
-#from .cpp_info import CppInfo, CppInfoComponent, CppInfoConfig
-from .deps_cpp_info import DepsCppInfo, DepsCppInfoComponent, DepsCppInfoConfig
+from .cpp_info import BaseCppInfo
+from .deps_cpp_info import DepsCppInfo
 
 
 class BaseGeneratorCppInfo(object):
@@ -21,9 +20,18 @@ class GeneratorCppInfo(BaseGeneratorCppInfo):
             "DepsCppInfo expected, got {}".format(type(deps_cpp_info))
         super(GeneratorCppInfo, self).__init__(deps_cpp_info)
 
-    # Aggregate information from all the components (in order)
+    def __getattr__(self, item):
+        if item in BaseCppInfo._path_fields + BaseCppInfo._non_path_fields:
+            if self._deps_cpp_info.components:
+                # Aggregate information from all the components (in order)
+                ret = []
+                for _, cmp in self._deps_cpp_info.components.items():
+                    ret += getattr(cmp, item)
+                return ret
+        return super(GeneratorCppInfo, self).__getattr__(item)
 
 
+"""
 class GeneratorCppInfoConfig(BaseGeneratorCppInfo):
     def __init__(self, pkg_deps_cpp_info, deps_cpp_info):
         assert isinstance(deps_cpp_info, DepsCppInfoConfig), \
@@ -42,3 +50,4 @@ class GeneratorCppInfoComponent(BaseGeneratorCppInfo):
         super(GeneratorCppInfoComponent, self).__init__(deps_cpp_info)
 
     # Retrieves only 'my' fields
+"""

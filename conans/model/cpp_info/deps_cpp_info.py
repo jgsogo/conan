@@ -1,6 +1,6 @@
 import os
 
-from .cpp_info import CppInfo, CppInfoComponent, CppInfoConfig
+from .cpp_info import CppInfo, CppInfoComponent, CppInfoConfig, BaseCppInfo
 
 
 class BaseDepsCppInfo(object):
@@ -54,18 +54,16 @@ class DepsCppInfo(BaseDepsCppInfo):
     def __init__(self, version, cpp_info, remove_missing_paths=False):
         assert isinstance(cpp_info, CppInfo), "CppInfo expected, got {}".format(type(cpp_info))
         super(DepsCppInfo, self).__init__(cpp_info, remove_missing_paths)
-        self.version = version
 
-    @property
-    def components(self):
-        return {k: DepsCppInfoComponent(self._cpp_info, v, self._remove_missing_paths)
-                for k, v in self._cpp_info.components.items()}
+        self.version = version
+        self.components = {k: DepsCppInfoComponent(self._cpp_info, v, self._remove_missing_paths)
+                           for k, v in self._cpp_info.components.items()}
+        self._configs = {k: DepsCppInfoConfig(self._cpp_info, v, self._remove_missing_paths)
+                         for k, v in self._cpp_info.get_configs()}
 
     def __getattr__(self, item):
-        if item in self._cpp_info.get_configs():
-            config = getattr(self._cpp_info, item)
-            return DepsCppInfoConfig(self._cpp_info, config, self._remove_missing_paths)
-
+        if item in self._configs:
+            return self._configs.get(item)
         return getattr(self._cpp_info, item)
 
 
@@ -77,17 +75,16 @@ class DepsCppInfoConfig(BaseDepsCppInfo):
         self._pkg_cpp_info = pkg_cpp_info
 
     def __getattr__(self, item):
-        try:
+        if item in BaseCppInfo._path_fields + BaseCppInfo._non_path_fields:
             # If not set at the 'config' level, return the base|package one
             field_name = '_{}'.format(item)
             field = getattr(self._cpp_info, field_name)
-        except AttributeError:
-            return super(DepsCppInfoConfig, self).__getattr__(item)
-        else:
             if field.used:
                 return getattr(self._cpp_info, item)
             else:
                 return getattr(self._pkg_cpp_info, field_name)
+        else:
+            return super(DepsCppInfoConfig, self).__getattr__(item)
 
 
 class DepsCppInfoComponent(BaseDepsCppInfo):
@@ -97,17 +94,13 @@ class DepsCppInfoComponent(BaseDepsCppInfo):
         assert isinstance(cpp_info, CppInfoComponent), \
             "CppInfoComponent expected, got {}".format(type(cpp_info))
         super(DepsCppInfoComponent, self).__init__(cpp_info, remove_missing_paths)
-        self._pkg_cpp_info = pkg_cpp_info
+        self.requires = list(self._get_requires(str(pkg_cpp_info)))
 
-    @property
-    def requires(self):
+    def _get_requires(self, pkg_name):
         # TODO: From the consumers POV we always know the name of the package, we always return
         #   full component name
-        def _get_req():
-            for req in self._cpp_info.requires:
-                if self.COMPONENTS_SCOPE in req:
-                    yield req
-                else:
-                    yield self.COMPONENTS_SCOPE.join([str(self._pkg_cpp_info), req])
-
-        return list(_get_req())
+        for req in self._cpp_info.requires:
+            if self.COMPONENTS_SCOPE in req:
+                yield req
+            else:
+                yield self.COMPONENTS_SCOPE.join([pkg_name, req])
