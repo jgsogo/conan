@@ -149,6 +149,14 @@ class CppInfoConfigTestCase(CppInfoBaseTestCase, unittest.TestCase):
         self.assertEqual(self.cpp_info.get_name("cmake"), "cmake_name")
         self.assertEqual(self.cpp_info.get_name("pkg_config"), "default")
 
+    def test_no_assign_names(self):
+        with six.assertRaisesRegex(self, AttributeError, "can't set attribute"):
+            self.cpp_info.name = "name_debug_value"
+
+        with six.assertRaisesRegex(self, AttributeError,
+                                   "'CppInfoConfig' object has no attribute 'names'"):
+            self.cpp_info.names["cmake"] = "cmake_debug_name"
+
     def test_no_nested_components(self):
         with six.assertRaisesRegex(self, AttributeError,
                                    "'CppInfoConfig' object has no attribute 'components'"):

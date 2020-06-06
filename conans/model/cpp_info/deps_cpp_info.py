@@ -85,13 +85,12 @@ class DepsCppInfoConfig(BaseDepsCppInfo):
             if field.used:
                 return getattr(self._cpp_info, item)
             else:
-                return getattr(self._pkg_cpp_info, field_name)
+                return getattr(self._pkg_cpp_info, item)
         else:
             return super(DepsCppInfoConfig, self).__getattr__(item)
 
 
 class DepsCppInfoComponent(BaseDepsCppInfo):
-
 
     def __init__(self, pkg_cpp_info, cpp_info, remove_missing_paths=False):
         assert isinstance(cpp_info, CppInfoComponent), \
@@ -103,7 +102,7 @@ class DepsCppInfoComponent(BaseDepsCppInfo):
         # TODO: From the consumers POV we always know the name of the package, we always return
         #   full component name
         for req in self._cpp_info.requires:
-            if self.COMPONENTS_SCOPE in req:
+            if CppInfoComponent.COMPONENTS_SCOPE in req:
                 yield req
             else:
-                yield self.COMPONENTS_SCOPE.join([pkg_name, req])
+                yield CppInfoComponent.COMPONENTS_SCOPE.join([pkg_name, req])

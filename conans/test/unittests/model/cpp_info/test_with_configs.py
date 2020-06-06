@@ -20,8 +20,6 @@ class BasicCppInfoTestCase(unittest.TestCase):
         # Assign config debug
         cpp_info.debug.libs = ["lib_debug_value"]
         cpp_info.debug.includedirs = ["includedirs_debug_value"]
-        cpp_info.debug.name = "name_debug_value"
-        cpp_info.debug.names["cmake"] = "cmake_debug_name"
 
         cls.cpp_info = cpp_info
         cls.deps_cpp_info = DepsCppInfo("version_value", cls.cpp_info)
@@ -40,14 +38,18 @@ class BasicCppInfoTestCase(unittest.TestCase):
         self.assertEqual(self.cpp_info.get_name("cmake"), "cmake_name")
         self.assertEqual(self.deps_cpp_info.get_name("cmake"), "cmake_name")
         self.assertEqual(self.generator_cpp_info.get_name("cmake"), "cmake_name")
-        self.assertEqual(self.deps_cpp_info_debug.get_name("cmake"), "cmake_debug_name")
-        self.assertEqual(self.generator_cpp_info_debug.get_name("cmake"), "cmake_debug_name")
+        self.assertEqual(self.deps_cpp_info_debug.get_name("cmake"), "cmake_name")
+        self.assertEqual(self.generator_cpp_info_debug.get_name("cmake"), "cmake_name")
 
         self.assertEqual(self.cpp_info.get_name("cmake_find_package"), "cmake_find_package_name")
-        self.assertEqual(self.deps_cpp_info.get_name("cmake_find_package"), "cmake_find_package_name")
-        self.assertEqual(self.generator_cpp_info.get_name("cmake_find_package"), "cmake_find_package_name")
-        self.assertEqual(self.deps_cpp_info_debug.get_name("cmake_find_package"), "cmake_find_package_name")
-        self.assertEqual(self.generator_cpp_info_debug.get_name("cmake_find_package"), "cmake_find_package_name")
+        self.assertEqual(self.deps_cpp_info.get_name("cmake_find_package"),
+                         "cmake_find_package_name")
+        self.assertEqual(self.generator_cpp_info.get_name("cmake_find_package"),
+                         "cmake_find_package_name")
+        self.assertEqual(self.deps_cpp_info_debug.get_name("cmake_find_package"),
+                         "cmake_find_package_name")
+        self.assertEqual(self.generator_cpp_info_debug.get_name("cmake_find_package"),
+                         "cmake_find_package_name")
 
         self.assertEqual(self.cpp_info.get_name("not-used"), "name_value")
         self.assertEqual(self.deps_cpp_info.get_name("not-used"), "name_value")
@@ -55,3 +57,39 @@ class BasicCppInfoTestCase(unittest.TestCase):
         self.assertEqual(self.deps_cpp_info_debug.get_name("not-used"), "name_value")
         self.assertEqual(self.generator_cpp_info_debug.get_name("not-used"), "name_value")
 
+    def test_libs(self):
+        self.assertEqual(self.cpp_info.libs, ["lib_value"])
+        self.assertEqual(self.deps_cpp_info.libs, ["lib_value"])
+        self.assertEqual(self.generator_cpp_info.libs, ["lib_value"])
+        self.assertEqual(self.deps_cpp_info_debug.libs, ["lib_debug_value"])
+        self.assertEqual(self.generator_cpp_info_debug.libs, ["lib_debug_value"])
+
+    def test_system_libs(self):
+        self.assertEqual(self.cpp_info.system_libs, ["system_lib_value"])
+        self.assertEqual(self.deps_cpp_info.system_libs, ["system_lib_value"])
+        self.assertEqual(self.generator_cpp_info.system_libs, ["system_lib_value"])
+        self.assertEqual(self.deps_cpp_info_debug.system_libs, ["system_lib_value"])
+        self.assertEqual(self.generator_cpp_info_debug.system_libs, ["system_lib_value"])
+
+    def test_includedirs(self):
+        self.assertEqual(self.cpp_info.includedirs, ["includedirs_value"])
+        self.assertEqual(self.deps_cpp_info.includedirs, ["includedirs_value"])
+        self.assertEqual(self.generator_cpp_info.includedirs, ["includedirs_value"])
+        self.assertEqual(self.deps_cpp_info_debug.includedirs, ["includedirs_debug_value"])
+        self.assertEqual(self.generator_cpp_info_debug.includedirs, ["includedirs_debug_value"])
+
+    def test_libdirs(self):
+        self.assertEqual(self.cpp_info.libdirs, ["lib", "libdirs_value"])
+        self.assertEqual(self.deps_cpp_info.libdirs, ["lib", "libdirs_value"])
+        self.assertEqual(self.generator_cpp_info.libdirs, ["lib", "libdirs_value"])
+        self.assertEqual(self.deps_cpp_info_debug.libdirs, ["lib", "libdirs_value"])
+        self.assertEqual(self.generator_cpp_info_debug.libdirs, ["lib", "libdirs_value"])
+
+    def test_include_paths(self):
+        # self.cpp_info.include_paths, would create a config called 'include_paths'
+        self.assertEqual(self.deps_cpp_info.include_paths, ["rootpath_value/includedirs_value"])
+        self.assertEqual(self.generator_cpp_info.include_paths, ["rootpath_value/includedirs_value"])
+        self.assertEqual(self.deps_cpp_info_debug.include_paths,
+                         ["rootpath_value/includedirs_debug_value"])
+        self.assertEqual(self.generator_cpp_info_debug.include_paths,
+                         ["rootpath_value/includedirs_debug_value"])
