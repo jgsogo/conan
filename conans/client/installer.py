@@ -20,7 +20,8 @@ from conans.client.tools.env import no_op
 from conans.client.tools.env import pythonpath
 from conans.errors import (ConanException, ConanExceptionInUserConanfileMethod,
                            conanfile_exception_formatter)
-from conans.model.build_info import CppInfo, DepCppInfo
+#from conans.model.build_info import CppInfo, DepCppInfo
+from conans.model.cpp_info import CppInfo, DepCppInfo
 from conans.model.editable_layout import EditableLayout
 from conans.model.env_info import EnvInfo
 from conans.model.graph_info import GraphInfo
@@ -533,7 +534,7 @@ class BinaryInstaller(object):
 
             if not using_build_profile:  # Do not touch anything
                 conan_file.deps_user_info[n.ref.name] = n.conanfile.user_info
-                conan_file.deps_cpp_info.update(n.conanfile._conan_dep_cpp_info, n.ref.name)
+                conan_file.deps_cpp_info.add(n.conanfile._conan_dep_cpp_info)
                 conan_file.deps_env_info.update(n.conanfile.env_info, n.ref.name)
             else:
                 if n in transitive or n in br_host:
@@ -554,17 +555,11 @@ class BinaryInstaller(object):
         add_env_conaninfo(conan_file, subtree_libnames)
 
     def _call_package_info(self, conanfile, package_folder, ref):
-        conanfile.cpp_info = CppInfo(package_folder)
-        conanfile.cpp_info.name = conanfile.name
-        conanfile.cpp_info.version = conanfile.version
-        conanfile.cpp_info.description = conanfile.description
+        conanfile.cpp_info = CppInfo(conanfile.name, package_folder)
         conanfile.env_info = EnvInfo()
         conanfile.user_info = UserInfo()
 
         # Get deps_cpp_info from upstream nodes
-        public_deps = [name for name, req in conanfile.requires.items() if not req.private
-                       and not req.override]
-        conanfile.cpp_info.public_deps = public_deps
         # Once the node is build, execute package info, so it has access to the
         # package folder and artifacts
         conan_v2 = get_env(CONAN_V2_MODE_ENVVAR, False)
@@ -579,11 +574,9 @@ class BinaryInstaller(object):
                                                reference=ref)
                     conanfile.package_info()
                     if conanfile._conan_dep_cpp_info is None:
-                        try:
-                            conanfile.cpp_info._raise_incorrect_components_definition(
-                                conanfile.name, conanfile.requires)
-                        except ConanException as e:
-                            raise ConanException("%s package_info(): %s" % (str(conanfile), e))
-                        conanfile._conan_dep_cpp_info = DepCppInfo(conanfile.cpp_info)
+                        conanfile.cpp_info.clean_data()
+                        conanfile._conan_dep_cpp_info = DepCppInfo(conanfile.version,
+                                                                   conanfile.description,
+                                                                   conanfile.cpp_info)
                     self._hook_manager.execute("post_package_info", conanfile=conanfile,
                                                reference=ref)

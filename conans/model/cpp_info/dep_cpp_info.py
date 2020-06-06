@@ -38,6 +38,7 @@ class BaseDepCppInfo(object):
         "res_paths": "resdirs",
         "framework_paths": "frameworkdirs",
         "build_modules_paths": "build_modules",
+        "src_paths": "srcdirs",  # TODO: Documented?
     }
 
     def __init__(self, cpp_info, remove_missing_paths=False):
@@ -70,6 +71,9 @@ class DepCppInfo(BaseDepCppInfo):
     @property
     def description(self):
         return self._description
+
+    def get_configs(self):
+        return self._configs
 
     def __getattr__(self, item):
         if item in self._configs:

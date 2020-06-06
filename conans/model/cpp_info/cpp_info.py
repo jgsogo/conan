@@ -59,7 +59,7 @@ class BaseCppInfo(object):
     _allow_configs = True
     FIELDS = ["includedirs", "libdirs", "resdirs", "bindirs", "builddirs", "frameworkdirs",
               "build_modules", "libs", "defines", "cflags", "cxxflags", "sharedlinkflags",
-              "exelinkflags", "frameworks", "system_libs"]
+              "exelinkflags", "frameworks", "system_libs", "srcdirs"]
 
     def __init__(self):
         # TODO: I can move all these attributes to the metaclass
@@ -71,6 +71,7 @@ class BaseCppInfo(object):
         self._builddirs = CppInfoField([DEFAULT_BUILD, ])
         self._frameworkdirs = CppInfoField([DEFAULT_FRAMEWORK, ])
         self._build_modules = CppInfoField()
+        self._srcdirs = CppInfoField()  # TODO: Is this one documented?
 
         # non path fields
         self._libs = CppInfoField()
