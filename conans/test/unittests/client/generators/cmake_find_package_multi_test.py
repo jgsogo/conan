@@ -1,7 +1,7 @@
 import unittest
 
 from conans.client.generators import CMakeFindPackageMultiGenerator
-from conans.model.build_info import CppInfo
+from conans.model.cpp_info import CppInfo, DepCppInfo
 from conans.model.conan_file import ConanFile
 from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
@@ -17,11 +17,10 @@ class CMakeFindPackageMultiTest(unittest.TestCase):
         conanfile = ConanFile(TestBufferConanOutput(), None)
         conanfile.initialize(settings_mock, EnvValues())
         ref = ConanFileReference.loads("my_pkg/0.1@user/stable")
-        cpp_info = CppInfo("")
-        cpp_info.name = ref.name
-        cpp_info.version = ref.version
+        cpp_info = CppInfo(ref.name, "")
         cpp_info.debug.libs = ["mylib"]
-        conanfile.deps_cpp_info.update(cpp_info, ref.name)
+        dep_cpp_info = DepCppInfo(ref.version, "<no-description>", cpp_info)
+        conanfile.deps_cpp_info.add(dep_cpp_info)
 
         generator = CMakeFindPackageMultiGenerator(conanfile)
         content = generator.content

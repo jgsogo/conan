@@ -7,9 +7,12 @@ class DepsCppInfo(object):
         self._configs = defaultdict(DepsCppInfo)
 
     def add(self, dep_cpp_info):
-        self._dependencies[str(dep_cpp_info)] = dep_cpp_info
+        self._add(dep_cpp_info)
         for config, dep_cpp_info_config in dep_cpp_info.get_configs().items():
-            self._configs[config].add(dep_cpp_info_config)
+            self._configs[config]._add(dep_cpp_info_config)
+
+    def _add(self, dep_cpp_info):
+        self._dependencies[str(dep_cpp_info)] = dep_cpp_info
 
     @property
     def dependencies(self):
