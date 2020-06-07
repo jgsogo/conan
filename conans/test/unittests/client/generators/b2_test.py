@@ -190,18 +190,22 @@ constant-if rootpath(conan,32,x86,17,gnu,linux,gcc-6.3,release) :
     ;
 
 constant-if includedirs(conan,32,x86,17,gnu,linux,gcc-6.3,release) :
-    "other/Path/with/slashes"
-    "other/regular/path/to/dir"
+    "dummy_root_folder1/include"
+    "dummy_root_folder2/include"
+    "dummy_root_folder2/other/Path/with/slashes"
+    "dummy_root_folder2/other/regular/path/to/dir"
     ;
 
 constant-if libdirs(conan,32,x86,17,gnu,linux,gcc-6.3,release) :
-    "Path/with/slashes"
-    "regular/path/to/dir"
+    "dummy_root_folder1/lib"
+    "dummy_root_folder2/lib"
+    "dummy_root_folder2/Path/with/slashes"
+    "dummy_root_folder2/regular/path/to/dir"
     ;
 
 constant-if defines(conan,32,x86,17,gnu,linux,gcc-6.3,release) :
-    "MYDEFINE2"
     "MYDEFINE1"
+    "MYDEFINE2"
     ;
 
 constant-if cppflags(conan,32,x86,17,gnu,linux,gcc-6.3,release) :
@@ -243,6 +247,14 @@ constant-if rootpath(mypkg,32,x86,17,gnu,linux,gcc-6.3,release) :
     "dummy_root_folder1"
     ;
 
+constant-if includedirs(mypkg,32,x86,17,gnu,linux,gcc-6.3,release) :
+    "dummy_root_folder1/include"
+    ;
+
+constant-if libdirs(mypkg,32,x86,17,gnu,linux,gcc-6.3,release) :
+    "dummy_root_folder1/lib"
+    ;
+
 constant-if defines(mypkg,32,x86,17,gnu,linux,gcc-6.3,release) :
     "MYDEFINE1"
     ;
@@ -275,13 +287,15 @@ constant-if rootpath(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release) :
     ;
 
 constant-if includedirs(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release) :
-    "other/Path/with/slashes"
-    "other/regular/path/to/dir"
+    "dummy_root_folder2/include"
+    "dummy_root_folder2/other/Path/with/slashes"
+    "dummy_root_folder2/other/regular/path/to/dir"
     ;
 
 constant-if libdirs(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release) :
-    "Path/with/slashes"
-    "regular/path/to/dir"
+    "dummy_root_folder2/lib"
+    "dummy_root_folder2/Path/with/slashes"
+    "dummy_root_folder2/regular/path/to/dir"
     ;
 
 constant-if defines(mypkg2,32,x86,17,gnu,linux,gcc-6.3,release) :
