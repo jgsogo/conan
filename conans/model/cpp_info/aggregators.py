@@ -26,10 +26,20 @@ class DepsCppInfo(object):
     def configs(self):
         return self._configs
 
+    def get_configs(self):
+        # TODO: Avoid this duplicity: get_configs and configs
+        return self._configs
+
     @property
     def rootpath(self):
         # TODO: This makes no sense, which is the rootpath of several deps?
+        raise RuntimeError("Maybe we are here because we are 'aggregating' configs? For configs it makes sense, all of them has the same rootpath")
         return ""
+
+    @property
+    def filter_empty(self):
+        # TODO: Work on this
+        return all(it._remove_missing_paths for it in self._dependencies.values())
 
     def __getitem__(self, item):
         return self._dependencies[item]

@@ -74,7 +74,12 @@ class DepCppInfo(BaseDepCppInfo):
     def description(self):
         return self._description
 
+    @property
+    def configs(self):
+        return self._configs
+
     def get_configs(self):
+        # TODO: Avoid duplicity
         return self._configs
 
     def __getattr__(self, item):

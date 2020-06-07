@@ -10,7 +10,7 @@ from conans.client.generators import CMakeFindPackageGenerator, CMakeFindPackage
 from conans.client.generators.cmake import CMakeGenerator
 from conans.client.generators.cmake_multi import CMakeMultiGenerator
 from conans.errors import ConanException
-from conans.model.build_info import CppInfo
+from conans.model.cpp_info import CppInfo, DepCppInfo
 from conans.model.conan_file import ConanFile
 from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
@@ -522,18 +522,21 @@ class CMakeBuildModulesTest(unittest.TestCase):
         self.conanfile = ConanFile(TestBufferConanOutput(), None)
         self.conanfile.initialize(settings_mock, EnvValues())
         ref = ConanFileReference.loads("my_pkg/0.1@lasote/stables")
-        cpp_info = CppInfo("dummy_root_folder1")
+        cpp_info = CppInfo(ref.name, "dummy_root_folder1")
         cpp_info.filter_empty = False  # For testing purposes only
         cpp_info.name = ref.name
         cpp_info.build_modules = ["my-module.cmake"]
-        self.conanfile.deps_cpp_info.update(cpp_info, ref.name)
+        dep_cpp_info = DepCppInfo("<no-version>", "<no-description>", cpp_info)
+        self.conanfile.deps_cpp_info.add(dep_cpp_info)
+
         ref = ConanFileReference.loads("my_pkg2/0.1@lasote/stables")
-        cpp_info = CppInfo("dummy_root_folder2")
+        cpp_info = CppInfo(ref.name, "dummy_root_folder2")
         cpp_info.filter_empty = False  # For testing purposes only
         cpp_info.name = ref.name
         cpp_info.build_modules = ["other-mod.cmake", "not-a-cmake-module.pc"]
         cpp_info.release.build_modules = ["release-mod.cmake"]
-        self.conanfile.deps_cpp_info.update(cpp_info, ref.name)
+        dep_cpp_info = DepCppInfo("<no-version>", "<no-description>", cpp_info)
+        self.conanfile.deps_cpp_info.add(dep_cpp_info)
 
     def cmake_test(self):
         generator = CMakeGenerator(self.conanfile)
