@@ -1,9 +1,13 @@
 import os
+from collections import OrderedDict
 
 import six
 
 from .cpp_info import CppInfo, CppInfoComponent
-from collections import OrderedDict
+
+
+# TODO: For all this getters, 'yielding' is the way to go, but we might need to prepare
+#  generators before, meanwhile, we will copy the lists so they are not modified
 
 
 def _getter_forward(field_name):
@@ -106,10 +110,13 @@ class CppInfoView(BaseCppInfoView):
     def description(self):
         return self._description
 
+    def get_configs(self):
+        return self._configs
+
     def __getattr__(self, item):
         if item in self._configs:
             return self._configs.get(item)
-        return getattr(self._cpp_info, item)
+        return super(CppInfoView, self).__getattr__(item)
 
 
 class CppInfoViewConfig(BaseCppInfoView):
