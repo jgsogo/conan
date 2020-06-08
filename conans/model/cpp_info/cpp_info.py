@@ -53,8 +53,9 @@ class CppInfoMeta(type):
 
 @six.add_metaclass(CppInfoMeta)
 class BaseCppInfo(object):
-    """ This is the object provided in 'package_info' as 'self.cpp_info', but also
-        the one offered for the components in 'self.cpp_info.components["cmp"]
+    """ This is the base object provided in 'package_info' as 'self.cpp_info', also
+        the one offered for the components in 'self.cpp_info.components["cmp"]' and for
+        'configs'. Just raw data.
     """
     _allow_configs = True
     FIELDS = ["includedirs", "libdirs", "resdirs", "bindirs", "builddirs", "frameworkdirs",
@@ -88,14 +89,14 @@ class CppInfo(BaseCppInfo):
         super(CppInfo, self).__init__()
         self.rootpath = rootpath
         self.name = name
-        self._fixed_name = name
+        self._package_name = name
         self._names_for_generator = {}
         self._components = _keydefaultdict(lambda key: CppInfoComponent(self, key))
         self._configs = {}
 
     def __str__(self):
         # Package name of component name as it is initially assigned
-        return self._fixed_name
+        return self._package_name
 
     @property
     def names(self):
@@ -139,7 +140,6 @@ class CppInfoConfig(BaseCppInfo):
         self._pkg_cpp_info = pkg_cpp_info
 
     def __str__(self):
-        # Package name of component name as it is initially assigned
         return str(self._pkg_cpp_info)
 
     @property
