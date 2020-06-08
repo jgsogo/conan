@@ -58,6 +58,7 @@ class BaseCppInfoViewMeta(type):
 class BaseCppInfoView(object):
     """ Once cpp_info object is populated, we can no longer modify its members, only
         access is permitted and some extra fields are added.
+        For the configs, information from the main 'cpp_info' object is prepended.
     """
 
     _getter_forward = _getter_forward

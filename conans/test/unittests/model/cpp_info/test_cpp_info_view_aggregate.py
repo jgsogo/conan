@@ -76,3 +76,28 @@ class CppInfoViewAggregateTestCase(unittest.TestCase):
         self.assertListEqual(self.app_agg.libs, ['app', 'lib', 'req'])
         self.assertListEqual(self.app_agg.debug.libs,
                              ['app', 'app_debug', 'lib', 'lib_debug', 'req', 'req_debug'])
+
+
+class CppInfoViewAggregateAssymetricTestCase(unittest.TestCase):
+    """ The requirement has a config that doesn't exist in the main package """
+
+    def test_requirement_config(self):
+        app = CppInfo("app", "app_rootpath")
+        app.libs = ["app"]
+
+        lib = CppInfo("lib", "lib_rootpath")
+        lib.libs = ["lib"]
+        lib.debug.libs = ["lib_debug"]
+
+        # Create the views
+        app_view = CppInfoView(app, "app_version", "app_description")
+        lib_view = CppInfoView(lib, "lib_version", "lib_description")
+
+        # Aggregate
+        lib_agg = CppInfoViewAggregated(lib_view)
+        app_agg = CppInfoViewAggregated(app_view)
+        app_agg.add_requirement(lib_view)
+
+        self.assertEqual(app_agg.libs, ['app', 'lib'])
+        self.assertEqual(lib_agg.debug.libs, ['lib', 'lib_debug'])
+        self.assertEqual(app_agg.debug.libs, ['app', 'lib', 'lib_debug'])
