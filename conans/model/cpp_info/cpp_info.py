@@ -18,10 +18,6 @@ class CppInfoField(object):
         self.values = init_values or []
         self.used = False
 
-    def reset(self):
-        self.values = []
-        self.used = False
-
 
 class CppInfoMeta(type):
     def __init__(cls, *args, **kwargs):
@@ -127,8 +123,7 @@ class CppInfo(BaseCppInfo):
             raise ConanException("Cannot use components together with root values")
 
         if self._components:
-            for it in self.FIELDS:
-                getattr(self, '_{}'.format(it)).reset()
+            # I can reset all fields in the root object
             # TODO: Order components according to requires
             # self._components = OrderedDict
             pass
