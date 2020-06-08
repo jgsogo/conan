@@ -162,8 +162,7 @@ class CppInfoComponent(BaseCppInfo):
         self._requires = CppInfoField()
 
     def __str__(self):
-        return self._fixed_name
-        # return self.COMPONENTS_SCOPE.join([str(self._pkg_cpp_info), self._fixed_name])
+        return self.COMPONENTS_SCOPE.join([str(self._pkg_cpp_info), self._fixed_name])
 
     @property
     def rootpath(self):

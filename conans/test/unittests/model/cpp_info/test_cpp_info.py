@@ -84,19 +84,19 @@ class CppInfoComponentTestCase(CppInfoBaseTestCase, unittest.TestCase):
         self.cpp_info = CppInfoComponent(self.pkg_cpp_info, "cmp")
 
     def test_default_name(self):
-        self.assertEqual(str(self.cpp_info), "cmp")
+        self.assertEqual(str(self.cpp_info), "default::cmp")
         self.assertEqual(self.cpp_info.name, "cmp")
         self.assertEqual(self.cpp_info.get_name("cmake"), "default::cmp")
         self.assertEqual(self.cpp_info.get_name("pkg_config"), "default::cmp")
 
         self.cpp_info.name = "other"
-        self.assertEqual(str(self.cpp_info), "cmp")
+        self.assertEqual(str(self.cpp_info), "default::cmp")
         self.assertEqual(self.cpp_info.name, "other")
         self.assertEqual(self.cpp_info.get_name("cmake"), "default::other")
         self.assertEqual(self.cpp_info.get_name("pkg_config"), "default::other")
 
         self.pkg_cpp_info.name = "pkg"
-        self.assertEqual(str(self.cpp_info), "cmp")
+        self.assertEqual(str(self.cpp_info), "default::cmp")
         self.assertEqual(self.cpp_info.name, "other")
         self.assertEqual(self.cpp_info.get_name("cmake"), "pkg::other")
         self.assertEqual(self.cpp_info.get_name("pkg_config"), "pkg::other")

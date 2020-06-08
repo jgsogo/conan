@@ -123,8 +123,8 @@ class CppInfoViewWithComponentsTestCase(unittest.TestCase):
 
     def test_names(self):
         self.assertEqual(str(self.cpp_info_view), "name_init")
-        self.assertEqual(str(self.cpp_info_view.components["cmp1"]), "cmp1")
-        self.assertEqual(str(self.cpp_info_view.components["cmp2"]), "cmp2")
+        self.assertEqual(str(self.cpp_info_view.components["cmp1"]), "name_init::cmp1")
+        self.assertEqual(str(self.cpp_info_view.components["cmp2"]), "name_init::cmp2")
 
     def test_generator_names(self):
         # cmake

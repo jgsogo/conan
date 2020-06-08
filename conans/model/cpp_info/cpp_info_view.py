@@ -3,6 +3,7 @@ import os
 import six
 
 from .cpp_info import CppInfo, CppInfoComponent
+from collections import OrderedDict
 
 
 def _getter_forward(field_name):
@@ -90,9 +91,10 @@ class CppInfoView(BaseCppInfoView):
         self._version = version
         self._description = description
 
-        # TODO: OrderedDict
-        self.components = {k: CppInfoViewComponents(self, v)
-                           for k, v in self._cpp_info.components.items()}
+        self.components = OrderedDict()
+        for k, v in self._cpp_info.components.items():
+            self.components[k] = CppInfoViewComponents(self, v)
+
         self._configs = {k: CppInfoViewConfig(self, v)
                          for k, v in self._cpp_info.get_configs().items()}
 
