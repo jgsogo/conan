@@ -97,6 +97,13 @@ class DepCppInfoConfig(BaseDepCppInfo):
 
     def __getattr__(self, item):
         if item in BaseCppInfo.FIELDS:
+            # Append the config specific to the general one
+            ret = getattr(self._pkg_cpp_info, item)
+            for it in getattr(self._cpp_info, item):
+                if it not in ret:
+                    ret.append(it)
+            return list(set(ret))
+            """
             # If not set at the 'config' level, return the base|package one
             field_name = '_{}'.format(item)
             field = getattr(self._cpp_info, field_name)
@@ -104,6 +111,7 @@ class DepCppInfoConfig(BaseDepCppInfo):
                 return getattr(self._cpp_info, item)
             else:
                 return getattr(self._pkg_cpp_info, item)
+            """
         else:
             return super(DepCppInfoConfig, self).__getattr__(item)
 

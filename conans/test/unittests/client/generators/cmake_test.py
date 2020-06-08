@@ -555,7 +555,7 @@ class CMakeBuildModulesTest(unittest.TestCase):
         self.assertIn("macro(conan_include_build_modules)", content)
         self.assertIn("conan_include_build_modules()", content)
 
-    def cmake_multi_test(self):
+    def test_cmake_multi_test(self):
         generator = CMakeMultiGenerator(self.conanfile)
         content = generator.content
         self.assertNotIn("not-a-cmake-module.pc", content["conanbuildinfo_release.cmake"])
