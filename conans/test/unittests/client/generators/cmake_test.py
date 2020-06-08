@@ -442,22 +442,25 @@ class CMakeCppInfoNamesTest(unittest.TestCase):
         settings.build_type = "Debug"
         self.conanfile.initialize(settings, EnvValues())
         ref = ConanFileReference.loads("my_pkg/0.1@lasote/stables")
-        cpp_info = CppInfo("dummy_root_folder1")
+        cpp_info = CppInfo(ref.name, "dummy_root_folder1")
         cpp_info.name = "MyPkG"
         cpp_info.names["cmake"] = "MyCMakeName"
         cpp_info.names["cmake_multi"] = "MyCMakeMultiName"
         cpp_info.names["cmake_find_package"] = "MyCMakeFindPackageName"
         cpp_info.names["cmake_find_package_multi"] = "MyCMakeFindPackageMultiName"
-        self.conanfile.deps_cpp_info.update(cpp_info, ref.name)
+        dep_cpp_info = DepCppInfo("<no-version>", "<no-description>", cpp_info)
+        self.conanfile.deps_cpp_info.add(dep_cpp_info)
+
         ref = ConanFileReference.loads("my_pkg2/0.1@lasote/stables")
-        cpp_info = CppInfo("dummy_root_folder2")
+        cpp_info = CppInfo(ref.name, "dummy_root_folder2")
         cpp_info.name = "MyPkG2"
         cpp_info.names["cmake"] = "MyCMakeName2"
         cpp_info.names["cmake_multi"] = "MyCMakeMultiName2"
         cpp_info.names["cmake_find_package"] = "MyCMakeFindPackageName2"
         cpp_info.names["cmake_find_package_multi"] = "MyCMakeFindPackageMultiName2"
-        cpp_info.public_deps = ["my_pkg"]
-        self.conanfile.deps_cpp_info.update(cpp_info, ref.name)
+        dep_cpp_info = DepCppInfo("<no-version>", "<no-description>", cpp_info)
+        dep_cpp_info.public_deps = ["my_pkg"]
+        self.conanfile.deps_cpp_info.add(dep_cpp_info)
 
     def cmake_test(self):
         generator = CMakeGenerator(self.conanfile)

@@ -44,6 +44,8 @@ class BaseDepCppInfo(object):
     def __init__(self, cpp_info, remove_missing_paths=False):
         self._cpp_info = cpp_info
         self._remove_missing_paths = remove_missing_paths
+        self.public_deps = []  # TODO: Why this here?
+        self.sysroot = ""  # TODO: Where is this one populated?
 
     def __str__(self):
         return str(self._cpp_info)
@@ -63,8 +65,6 @@ class DepCppInfo(BaseDepCppInfo):
                            for k, v in self._cpp_info.components.items()}
         self._configs = {k: DepCppInfoConfig(self._cpp_info, v, self._remove_missing_paths)
                          for k, v in self._cpp_info.get_configs().items()}
-        self.public_deps = []  # TODO: Why this here?
-        self.sysroot = ""  # TODO: Where is this one populated?
 
     @property
     def version(self):
