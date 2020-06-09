@@ -21,7 +21,6 @@ class BaseCppInfoViewDict(object):
         self._dependencies = OrderedDict()
 
     def add(self, ref_name, cpp_info_view):
-        print(f"BaseCppInfoViewDict::add('{ref_name}', '{cpp_info_view}')")
         assert isinstance(cpp_info_view, self._expected_class), "Got type '{}'".format(
             type(cpp_info_view))
         assert ref_name not in self._dependencies, "'{}' already added".format(ref_name)

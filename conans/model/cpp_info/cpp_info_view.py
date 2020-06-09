@@ -86,6 +86,7 @@ class BaseCppInfoView(object):
         "res_paths": "resdirs",
         "framework_paths": "frameworkdirs",
         "build_modules_paths": "build_modules",
+        "src_paths": "srcdirs",
     }
 
     def __init__(self, cpp_info):
@@ -109,6 +110,7 @@ class CppInfoView(BaseCppInfoView):
 
     def __init__(self, cpp_info, version, description=None):
         super(CppInfoView, self).__init__(cpp_info)
+        self._cpp_info.clean_data()
 
         self._version = version
         self._description = description

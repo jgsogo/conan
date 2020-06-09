@@ -73,6 +73,25 @@ class CppInfoTestCase(CppInfoBaseTestCase, unittest.TestCase):
         self.assertListEqual(self.cpp_info.components["cmp1"].includedirs, ["include1"])
         self.assertListEqual(self.cpp_info.components["cmp1"].bindirs, ["bin", "bin2"])
 
+    def test_components_ordered(self):
+        cpp_info = CppInfo("default", "rootpath")
+        cpp_info.components["cmp1"].libs = ["cmp1"]
+        cpp_info.components["cmp2"].libs = ["cmp2"]
+        cpp_info.components["cmp2"].requires = ["cmp1"]
+
+        cpp_info.clean_data()
+        self.assertListEqual(list(cpp_info.components.keys()), ["cmp2", "cmp1"])
+
+        cpp_info = CppInfo("default", "rootpath")
+        cpp_info.components["cmp1"].libs = ["cmp1"]
+        cpp_info.components["cmp1"].requires = ["cmp2"]
+        cpp_info.components["cmp2"].libs = ["cmp2"]
+
+        cpp_info.clean_data()
+        self.assertListEqual(list(cpp_info.components.keys()), ["cmp1", "cmp2"])
+
+        # TODO: Need here more exhaustive testing
+
     def test_configs(self):
         self.cpp_info.release.includedirs.append("include2")
         self.assertListEqual(self.cpp_info.release.includedirs, ["include", "include2"])

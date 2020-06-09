@@ -1,4 +1,5 @@
-from collections import defaultdict
+import functools
+from collections import defaultdict, OrderedDict
 
 import six
 
@@ -56,7 +57,7 @@ class BaseCppInfo(object):
     """
     _allow_configs = True
     FIELDS = ["includedirs", "libdirs", "resdirs", "bindirs", "builddirs", "frameworkdirs",
-              "build_modules", "libs", "defines", "cflags", "cxxflags", "sharedlinkflags",
+              "build_modules", "srcdirs", "libs", "defines", "cflags", "cxxflags", "sharedlinkflags",
               "exelinkflags", "frameworks", "system_libs"]
 
     def __init__(self):
@@ -69,6 +70,7 @@ class BaseCppInfo(object):
         self._builddirs = CppInfoField([DEFAULT_BUILD, ])
         self._frameworkdirs = CppInfoField([DEFAULT_FRAMEWORK, ])
         self._build_modules = CppInfoField()
+        self._srcdirs = CppInfoField()
 
         # non path fields
         self._libs = CppInfoField()
@@ -92,18 +94,18 @@ class BaseCppInfo(object):
 
 
 class CppInfo(BaseCppInfo):
-    def __init__(self, name, rootpath):
+    def __init__(self, ref_name, rootpath):
         super(CppInfo, self).__init__()
         self.rootpath = rootpath
-        self.name = name
-        self._package_name = name
+        self.name = ref_name
+        self._ref_name = ref_name
         self._names_for_generator = {}
         self._components = _keydefaultdict(lambda key: CppInfoComponent(self, key))
         self._configs = {}
 
     def __str__(self):
         # Package name of component name as it is initially assigned
-        return self._package_name
+        return self._ref_name
 
     @property
     def names(self):
@@ -134,10 +136,9 @@ class CppInfo(BaseCppInfo):
             raise ConanException("Cannot use components together with root values")
 
         if self._components:
-            # I can reset all fields in the root object
-            # TODO: Order components according to requires
-            # self._components = OrderedDict
-            pass
+            # TODO: I may reset all fields in the root object
+            self._components = OrderedDict(
+                sorted(self._components.items(), key=functools.cmp_to_key(cmp_cppinfo_components)))
 
 
 class CppInfoConfig(BaseCppInfo):
@@ -186,3 +187,19 @@ class CppInfoComponent(BaseCppInfo):
     def get_name(self, generator):
         return self.COMPONENTS_SCOPE.join([self._pkg_cpp_info.get_name(generator),
                                            self._names_for_generator.get(generator, self.name)])
+
+
+def cmp_cppinfo_components(lhs, rhs):
+    """ CppInfoComponent objects have an intrinsic ordering based on the 'requires' field: 'lhs'
+        is less than 'rhs' if the 'rhs' is contained in the requires listed in 'rhs'.
+    """
+    _, lhs = lhs
+    _, rhs = rhs
+    assert isinstance(lhs, CppInfoComponent), "Got '{}'".format(lhs)
+    assert isinstance(rhs, CppInfoComponent), "Got '{}'".format(rhs)
+    if rhs._fixed_name in lhs.requires:
+        return -1
+    elif lhs._fixed_name in rhs.requires:
+        return 1
+    else:
+        return 0
