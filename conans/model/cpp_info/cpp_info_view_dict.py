@@ -28,6 +28,11 @@ class BaseCppInfoViewDict(object):
         assert ref_name == str(cpp_info_view), "'{}' != '{}'".format(ref_name, str(cpp_info_view))
         self._dependencies[ref_name] = cpp_info_view
 
+    @property
+    def components(self):
+        raise ConanException("Do not requests 'components' for an aggregated view, they should"
+                             " be used only with a targets approach.")
+
     def __getitem__(self, item):
         return self._dependencies.get(item)
 

@@ -36,10 +36,10 @@ class CppInfoViewAggregateTestCase(unittest.TestCase):
         # Aggregate
         cls.req_agg = CppInfoViewAggregated(req_view)
         cls.lib_agg = CppInfoViewAggregated(lib_view)
-        cls.lib_agg.add_requirement(req_view)
+        cls.lib_agg.add("req", req_view)
         cls.app_agg = CppInfoViewAggregated(app_view)
-        cls.app_agg.add_requirement(lib_view)
-        cls.app_agg.add_requirement(req_view)
+        cls.app_agg.add("lib", lib_view)
+        cls.app_agg.add("req", req_view)
 
     def test_no_components(self):
         with six.assertRaisesRegex(self, ConanException, "Do not requests 'components'"):
@@ -96,7 +96,7 @@ class CppInfoViewAggregateAssymetricTestCase(unittest.TestCase):
         # Aggregate
         lib_agg = CppInfoViewAggregated(lib_view)
         app_agg = CppInfoViewAggregated(app_view)
-        app_agg.add_requirement(lib_view)
+        app_agg.add("lib", lib_view)
 
         self.assertEqual(app_agg.libs, ['app', 'lib'])
         self.assertEqual(lib_agg.debug.libs, ['lib', 'lib_debug'])
