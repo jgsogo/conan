@@ -3,7 +3,7 @@ import unittest
 from collections import defaultdict, namedtuple
 
 from conans.client.generators import TXTGenerator
-from conans.model.cpp_info import CppInfo
+from conans.model.cpp_info import CppInfo, CppInfoView, CppInfoViewDict, CppInfoViewAggregated
 from conans.model.env_info import DepsEnvInfo, EnvInfo
 from conans.model.user_info import DepsUserInfo
 from conans.test.utils.test_files import temp_folder
@@ -95,18 +95,21 @@ VAR2=23
         self.assertEqual(deps_cpp_info["Boost"].cxxflags, ["cxxmyflag"])
 
     def configs_test(self):
-        deps_cpp_info = DepsCppInfo()
-        deps_cpp_info.includedirs.append("C:/whatever")
-        deps_cpp_info.debug.includedirs.append("C:/whenever")
-        deps_cpp_info.libs.extend(["math"])
-        deps_cpp_info.debug.libs.extend(["debug_Lib"])
+        # The main library
+        cpp_info1 = CppInfo("lib1", "rootpath")
+        cpp_info1.includedirs.append("C:/whatever")
+        cpp_info1.debug.includedirs.append("C:/whenever")
+        cpp_info1.libs.extend(["math"])
+        cpp_info1.debug.libs.extend(["debug_Lib"])
+        deps_cpp_info = CppInfoViewAggregated(CppInfoView(cpp_info1, "version"))
 
-        child = DepsCppInfo()
+        # and a dependency
+        child = CppInfo("Boost", "rootpath")
         child.includedirs.append("F:/ChildrenPath")
         child.debug.includedirs.append("F:/ChildrenDebugPath")
         child.cxxflags.append("cxxmyflag")
         child.debug.cxxflags.append("cxxmydebugflag")
-        deps_cpp_info._dependencies["Boost"] = child
+        deps_cpp_info.add("Boost", CppInfoView(child, "version"))
 
         deps_env_info = DepsEnvInfo()
         env_info_lib1 = EnvInfo()

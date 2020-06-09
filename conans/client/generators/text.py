@@ -14,7 +14,7 @@ from conans.util.log import logger
 class DepsCppTXT(object):
     def __init__(self, cpp_info):
         self.version = cpp_info.version
-        self.name = cpp_info.name
+        self.name = cpp_info.get_name("txt")
         self.include_paths = "\n".join(p.replace("\\", "/")
                                        for p in cpp_info.include_paths)
         self.lib_paths = "\n".join(p.replace("\\", "/")
@@ -166,7 +166,7 @@ class TXTGenerator(Generator):
         all_flags = template.format(dep="", deps=deps, config="")
         sections.append(all_flags)
 
-        for config, cpp_info in self.deps_build_info.configs.items():
+        for config, cpp_info in self.deps_build_info.get_configs().items():
             deps = DepsCppTXT(cpp_info)
             all_flags = template.format(dep="", deps=deps, config=":" + config)
             sections.append(all_flags)
