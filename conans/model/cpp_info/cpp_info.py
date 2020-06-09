@@ -1,6 +1,6 @@
 import functools
 from collections import defaultdict, OrderedDict
-
+from copy import copy
 import six
 
 from conans.errors import ConanException
@@ -92,6 +92,9 @@ class BaseCppInfo(object):
         conan_v2_behavior("'cpp_info.cppflags' is deprecated, use 'cxxflags' instead")
         self.cxxflags = value
 
+    def clean_data(self):
+        pass
+
 
 class CppInfo(BaseCppInfo):
     def __init__(self, ref_name, rootpath):
@@ -136,9 +139,22 @@ class CppInfo(BaseCppInfo):
             raise ConanException("Cannot use components together with root values")
 
         if self._components:
-            # TODO: I may reset all fields in the root object
-            self._components = OrderedDict(
-                sorted(self._components.items(), key=functools.cmp_to_key(cmp_cppinfo_components)))
+            # TODO: Do I want/need to reset all fields in the root object? Probably not if views do their work
+            for it in self._components.values():
+                it.clean_data()
+
+            # Order the components: topological sort
+            ordered = OrderedDict()
+            components = copy(self._components)
+            while len(ordered) != len(self._components):
+                for cmp_name, cmp in components.items():
+                    if cmp_name not in [r for itcmp in components.values() for r in itcmp.requires]:
+                        ordered[cmp_name] = cmp
+                        del components[cmp_name]
+                        break
+                else:
+                    raise ConanException("There is a loop in component requirements")
+            self._components = ordered
 
 
 class CppInfoConfig(BaseCppInfo):
@@ -187,6 +203,11 @@ class CppInfoComponent(BaseCppInfo):
     def get_name(self, generator):
         return self.COMPONENTS_SCOPE.join([self._pkg_cpp_info.get_name(generator),
                                            self._names_for_generator.get(generator, self.name)])
+
+    def clean_data(self):
+        super(CppInfoComponent, self).clean_data()
+        if self._fixed_name in self._requires.values:
+            raise ConanException("Component '{}' requires itself".format(self._fixed_name))
 
 
 def cmp_cppinfo_components(lhs, rhs):
