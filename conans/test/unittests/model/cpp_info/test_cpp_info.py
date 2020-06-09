@@ -3,7 +3,7 @@ import unittest
 import six
 
 from conans.model.cpp_info.cpp_info import CppInfo, CppInfoComponent, CppInfoConfig
-
+from conans.errors import ConanException
 
 class CppInfoBaseTestCase(object):
 
@@ -73,7 +73,13 @@ class CppInfoTestCase(CppInfoBaseTestCase, unittest.TestCase):
         self.assertListEqual(self.cpp_info.components["cmp1"].includedirs, ["include1"])
         self.assertListEqual(self.cpp_info.components["cmp1"].bindirs, ["bin", "bin2"])
 
-    def test_components_ordered(self):
+    def test_configs(self):
+        self.cpp_info.release.includedirs.append("include2")
+        self.assertListEqual(self.cpp_info.release.includedirs, ["include", "include2"])
+
+
+class CppInfoCompoenntsOrderTestCase(unittest.TestCase):
+    def test_order(self):
         cpp_info = CppInfo("default", "rootpath")
         cpp_info.components["cmp1"].libs = ["cmp1"]
         cpp_info.components["cmp2"].libs = ["cmp2"]
@@ -82,6 +88,7 @@ class CppInfoTestCase(CppInfoBaseTestCase, unittest.TestCase):
         cpp_info.clean_data()
         self.assertListEqual(list(cpp_info.components.keys()), ["cmp2", "cmp1"])
 
+    def test_reverse_order(self):
         cpp_info = CppInfo("default", "rootpath")
         cpp_info.components["cmp1"].libs = ["cmp1"]
         cpp_info.components["cmp1"].requires = ["cmp2"]
@@ -90,11 +97,26 @@ class CppInfoTestCase(CppInfoBaseTestCase, unittest.TestCase):
         cpp_info.clean_data()
         self.assertListEqual(list(cpp_info.components.keys()), ["cmp1", "cmp2"])
 
-        # TODO: Need here more exhaustive testing
+    def test_loop_with_itself(self):
+        cpp_info = CppInfo("default", "rootpath")
+        cpp_info.components["cmp1"].requires = ["cmp1"]
+        with six.assertRaisesRegex(self, ConanException, "Component 'cmp1' requires itself"):
+            cpp_info.clean_data()
 
-    def test_configs(self):
-        self.cpp_info.release.includedirs.append("include2")
-        self.assertListEqual(self.cpp_info.release.includedirs, ["include", "include2"])
+    def test_loop(self):
+        cpp_info = CppInfo("default", "rootpath")
+        cpp_info.components["cmp1"].requires = ["cmp2"]
+        cpp_info.components["cmp2"].requires = ["cmp1"]
+        with six.assertRaisesRegex(self, ConanException, "There is a loop in component requirements"):
+            cpp_info.clean_data()
+
+    def test_loop3(self):
+        cpp_info = CppInfo("default", "rootpath")
+        cpp_info.components["cmp1"].requires = ["cmp2"]
+        cpp_info.components["cmp2"].requires = ["cmp3"]
+        cpp_info.components["cmp3"].requires = ["cmp1"]
+        with six.assertRaisesRegex(self, ConanException, "There is a loop in component requirements"):
+            cpp_info.clean_data()
 
 
 class CppInfoComponentTestCase(CppInfoBaseTestCase, unittest.TestCase):
