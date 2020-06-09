@@ -1,6 +1,6 @@
-import functools
 from collections import defaultdict, OrderedDict
 from copy import copy
+
 import six
 
 from conans.errors import ConanException
@@ -19,6 +19,9 @@ class CppInfoField(object):
     def __init__(self, init_values=None):
         self.values = init_values or []
         self.used = False
+
+    def reset(self):
+        self.values = []
 
 
 class CppInfoMeta(type):
@@ -139,7 +142,7 @@ class CppInfo(BaseCppInfo):
             raise ConanException("Cannot use components together with root values")
 
         if self._components:
-            # TODO: Do I want/need to reset all fields in the root object? Probably not if views do their work
+            # Validate data in components
             for it in self._components.values():
                 it.clean_data()
 
@@ -208,6 +211,9 @@ class CppInfoComponent(BaseCppInfo):
         super(CppInfoComponent, self).clean_data()
         if self._fixed_name in self._requires.values:
             raise ConanException("Component '{}' requires itself".format(self._fixed_name))
+        if any(it.startswith(self.COMPONENTS_SCOPE) for it in self._requires.values):
+            raise ConanException(
+                "Leading character '::' not allowed in {} requires".format(self._fixed_name))
 
 
 def cmp_cppinfo_components(lhs, rhs):

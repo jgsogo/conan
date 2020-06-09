@@ -48,9 +48,13 @@ def _getter_agg_if_components(field_name):
     def getter(self):
         if self.components:
             ret = []
+            # Aggregate all components
             for _, component in self.components.items():
                 ret += getattr(component, field_name)
-            return ret
+            # Remove duplicates, keep the latest seen
+            seen = set()
+            seen_add = seen.add
+            return [x for x in ret[::-1] if not (x in seen or seen_add(x))][::-1]
         else:
             return list(getattr(self._cpp_info, field_name))
     return getter
@@ -136,12 +140,6 @@ class CppInfoView(BaseCppInfoView):
     def __getattr__(self, item):
         if item in self._configs:
             return self._configs.get(item)
-        elif self.components and item in self.AGGREGATE_FIELDS:
-            # Aggregate values for all components
-            ret = []
-            for _, component in self.components.items():
-                ret += getattr(component, item)
-            return ret
         return super(CppInfoView, self).__getattr__(item)
 
 
