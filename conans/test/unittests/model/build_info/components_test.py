@@ -390,13 +390,11 @@ class CppInfoComponentsTest(unittest.TestCase):
 
     def component_default_dirs_deps_cpp_info_test(self):
         folder = temp_folder()
-        info = CppInfo(folder)
-        info.components["Component"]
+        info = CppInfo("my_lib", folder)
         info.components["Component"].filter_empty = False  # For testing purposes
-        dep_info = DepCppInfo(info)
-        deps_cpp_info = DepsCppInfo()
-        deps_cpp_info.update(dep_info, "my_lib")
-        self.assertListEqual([os.path.join(folder, "include")], deps_cpp_info.includedirs)
+        deps_cpp_info = CppInfoViewDict()
+        deps_cpp_info.add("my_lib", CppInfoView(info, "version"))
+        self.assertListEqual([os.path.join(folder, "include")], deps_cpp_info.include_paths)
         self.assertListEqual([], deps_cpp_info.srcdirs)
         self.assertListEqual([os.path.join(folder, "lib")], deps_cpp_info.libdirs)
         self.assertListEqual([os.path.join(folder, "bin")], deps_cpp_info.bindirs)
