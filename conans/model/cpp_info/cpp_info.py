@@ -5,6 +5,7 @@ import six
 from conans.errors import ConanException
 from conans.model.build_info import DEFAULT_INCLUDE, DEFAULT_LIB, DEFAULT_RES, DEFAULT_BIN, \
     DEFAULT_BUILD, DEFAULT_FRAMEWORK
+from conans.util.conan_v2_mode import conan_v2_behavior
 
 
 class _keydefaultdict(defaultdict):
@@ -78,6 +79,16 @@ class BaseCppInfo(object):
         self._exelinkflags = CppInfoField()
         self._frameworks = CppInfoField()
         self._system_libs = CppInfoField()
+
+    @property
+    def cppflags(self):
+        conan_v2_behavior("'cpp_info.cppflags' is deprecated, use 'cxxflags' instead")
+        return self.cxxflags
+
+    @cppflags.setter
+    def cppflags(self, value):
+        conan_v2_behavior("'cpp_info.cppflags' is deprecated, use 'cxxflags' instead")
+        self.cxxflags = value
 
 
 class CppInfo(BaseCppInfo):
