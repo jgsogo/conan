@@ -145,17 +145,18 @@ class CppInfoViewWithComponentsTestCase(unittest.TestCase):
                              ["name_init::cmp1", "zlib::ssl"])
 
     def test_libs(self):
-        self.assertListEqual(self.cpp_info_view.libs, [])
+        self.assertListEqual(self.cpp_info_view.libs, ["cmp1", "cmp2"])
         self.assertListEqual(self.cpp_info_view.components["cmp1"].libs, ["cmp1"])
         self.assertListEqual(self.cpp_info_view.components["cmp2"].libs, ["cmp2"])
 
     def test_includedirs(self):
-        self.assertListEqual(self.cpp_info_view.includedirs, ["include"])
+        self.assertListEqual(self.cpp_info_view.includedirs, ["cmp1/includes", "cmp2/includes"])
         self.assertListEqual(self.cpp_info_view.components["cmp1"].includedirs, ["cmp1/includes"])
         self.assertListEqual(self.cpp_info_view.components["cmp2"].includedirs, ["cmp2/includes"])
 
     def test_include_paths(self):
-        self.assertListEqual(self.cpp_info_view.include_paths, ["rootpath_value/include"])
+        self.assertListEqual(self.cpp_info_view.include_paths,
+                             ['rootpath_value/cmp1/includes', 'rootpath_value/cmp2/includes'])
         self.assertListEqual(self.cpp_info_view.components["cmp1"].include_paths,
                              ["rootpath_value/cmp1/includes"])
         self.assertListEqual(self.cpp_info_view.components["cmp2"].include_paths,
