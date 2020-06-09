@@ -1,15 +1,15 @@
 import os
 from contextlib import contextmanager
-from six import string_types
 
 import six
+from six import string_types
 
 from conans.client import tools
 from conans.client.output import ScopedOutput
 from conans.client.tools.env import environment_append, no_op, pythonpath
 from conans.client.tools.oss import OSInfo
 from conans.errors import ConanException, ConanInvalidConfiguration
-from conans.model.cpp_info import CppInfo, CppInfoView
+from conans.model.cpp_info import CppInfoViewDict
 from conans.model.env_info import DepsEnvInfo
 from conans.model.options import Options, OptionsValues, PackageOptions
 from conans.model.requires import Requirements
@@ -156,7 +156,7 @@ class ConanFile(object):
         # needed variables to pack the project
         self.cpp_info = None  # Will be initialized at processing time
         self._conan_dep_cpp_info = None  # Will be initialized at processing time
-        self.deps_cpp_info = {}
+        self.deps_cpp_info = CppInfoViewDict()
 
         # environment variables declared in the package_info
         self.env_info = None  # Will be initialized at processing time

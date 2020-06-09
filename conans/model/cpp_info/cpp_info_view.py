@@ -43,10 +43,23 @@ def _getter_append(field_name):
     return getter
 
 
+def _getter_agg_if_components(field_name):
+    """ If there are components, aggregate their information, otherwise forward """
+    def getter(self):
+        if self.components:
+            ret = []
+            for _, component in self.components.items():
+                ret += getattr(component, field_name)
+            return ret
+        else:
+            return list(getattr(self._cpp_info, field_name))
+    return getter
+
+
 class BaseCppInfoViewMeta(type):
     def __init__(cls, *args, **kwargs):
         for it in CppInfo.FIELDS:
-            setattr(cls, it, property(cls._getter_forward(it)))
+            setattr(cls, it, property(cls._getter_retrieve(it)))
 
         for outter, inner in cls.FIELDS_PATH_MAPPING.items():
             setattr(cls, outter, property(cls._getter_abs_paths(inner)))
@@ -58,10 +71,11 @@ class BaseCppInfoViewMeta(type):
 class BaseCppInfoView(object):
     """ Once cpp_info object is populated, we can no longer modify its members, only
         access is permitted and some extra fields are added.
-        For the configs, information from the main 'cpp_info' object is prepended.
+         * For the configs, information from the main 'cpp_info' object is prepended.
+         * If there are components, information is added at the base level
     """
 
-    _getter_forward = _getter_forward
+    _getter_retrieve = _getter_forward
     _getter_abs_paths = _getter_abs_paths
 
     FIELDS_PATH_MAPPING = {
@@ -90,6 +104,9 @@ class BaseCppInfoView(object):
 
 class CppInfoView(BaseCppInfoView):
 
+    _getter_retrieve = _getter_agg_if_components
+    AGGREGATE_FIELDS = CppInfo.FIELDS + list(BaseCppInfoView.FIELDS_PATH_MAPPING.keys())
+
     def __init__(self, cpp_info, version, description=None):
         super(CppInfoView, self).__init__(cpp_info)
 
@@ -117,11 +134,17 @@ class CppInfoView(BaseCppInfoView):
     def __getattr__(self, item):
         if item in self._configs:
             return self._configs.get(item)
+        elif self.components and item in self.AGGREGATE_FIELDS:
+            # Aggregate values for all components
+            ret = []
+            for _, component in self.components.items():
+                ret += getattr(component, item)
+            return ret
         return super(CppInfoView, self).__getattr__(item)
 
 
 class CppInfoViewConfig(BaseCppInfoView):
-    _getter_forward = _getter_append
+    _getter_retrieve = _getter_append
 
     def __init__(self, pkg_cpp_info, cpp_info):
         super(CppInfoViewConfig, self).__init__(cpp_info)
@@ -129,6 +152,7 @@ class CppInfoViewConfig(BaseCppInfoView):
 
 
 class CppInfoViewComponents(BaseCppInfoView):
+
     def __init__(self, pkg_cpp_info, cpp_info):
         super(CppInfoViewComponents, self).__init__(cpp_info)
         self._requires = list(self._get_requires(str(pkg_cpp_info)))
