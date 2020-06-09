@@ -6,7 +6,7 @@ import warnings
 import six
 
 from conans.errors import ConanException
-from conans.model.cpp_info import CppInfo
+from conans.model.cpp_info import CppInfo, CppInfoView, CppInfoViewDict
 from conans.test.utils.test_files import temp_folder
 from conans.util.files import save
 
@@ -30,21 +30,21 @@ class CppInfoComponentsTest(unittest.TestCase):
             cpp_info.components["libb"].components
 
     def test_deps_cpp_info_libs(self):
-        deps_cpp_info = DepsCppInfo()
+        deps_cpp_info = CppInfoViewDict()
 
-        dep1 = CppInfo("root")
+        dep1 = CppInfo("dep1", "rootpath")
         dep1.components["liba"].libs.append("liba")
         dep1.components["libb"].libs.append("libb")
-        deps_cpp_info.update(DepCppInfo(dep1), "dep1")
+        deps_cpp_info.add("dep1", CppInfoView(dep1, "version"))
 
-        dep2 = CppInfo("root")
+        dep2 = CppInfo("dep2", "rootpath")
         dep2.components["libc"].libs.append("libc")
         dep2.components["libd"].libs.append("libd")
-        deps_cpp_info.update(DepCppInfo(dep2), "dep2")
+        deps_cpp_info.add("dep2", CppInfoView(dep2, "version"))
 
-        dep3 = CppInfo("root")
+        dep3 = CppInfo("dep3", "rootpath")
         dep3.libs.append("libdep3")
-        deps_cpp_info.update(DepCppInfo(dep3), "dep3")
+        deps_cpp_info.add("dep3", CppInfoView(dep3, "version"))
 
         self.assertListEqual(["liba", "libb"], deps_cpp_info["dep1"].libs)
         self.assertListEqual(["libc", "libd"], deps_cpp_info["dep2"].libs)
