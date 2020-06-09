@@ -101,7 +101,7 @@ class BaseCppInfoView(object):
 
     @property
     def name(self):
-        raise RuntimeError("Using 'get_name(generator)' to get the name for a generator")
+        raise RuntimeError("Use 'get_name(generator)' to get the name for a generator")
 
     def __getattr__(self, item):
         return getattr(self._cpp_info, item)
@@ -150,12 +150,29 @@ class CppInfoViewConfig(BaseCppInfoView):
         super(CppInfoViewConfig, self).__init__(cpp_info)
         self._pkg_cpp_info = pkg_cpp_info
 
+    @property
+    def version(self):
+        return self._pkg_cpp_info.version
+
+    @property
+    def description(self):
+        return self._pkg_cpp_info.description
+
 
 class CppInfoViewComponents(BaseCppInfoView):
 
     def __init__(self, pkg_cpp_info, cpp_info):
         super(CppInfoViewComponents, self).__init__(cpp_info)
         self._requires = list(self._get_requires(str(pkg_cpp_info)))
+        self._pkg_cpp_info = pkg_cpp_info
+
+    @property
+    def version(self):
+        return self._pkg_cpp_info.version
+
+    @property
+    def description(self):
+        return self._pkg_cpp_info.description
 
     @property
     def requires(self):
