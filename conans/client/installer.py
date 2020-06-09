@@ -21,7 +21,7 @@ from conans.client.tools.env import no_op
 from conans.client.tools.env import pythonpath
 from conans.errors import (ConanException, ConanExceptionInUserConanfileMethod,
                            conanfile_exception_formatter)
-from conans.model.build_info import CppInfo, DepCppInfo
+from conans.model.cpp_info import CppInfo
 from conans.model.editable_layout import EditableLayout
 from conans.model.env_info import EnvInfo
 from conans.model.graph_info import GraphInfo

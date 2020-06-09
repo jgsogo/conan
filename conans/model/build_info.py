@@ -161,14 +161,14 @@ class Component(_CppInfo):
         self.requires = []
 
 
-class CppInfo(_CppInfo):
+class CppInfoOLDIES(_CppInfo):
     """ Build Information declared to be used by the CONSUMERS of a
     conans. That means that consumers must use this flags and configs i order
     to build properly.
     Defined in user CONANFILE, directories are relative at user definition time
     """
     def __init__(self, root_folder):
-        super(CppInfo, self).__init__()
+        super(CppInfoOLDIES, self).__init__()
         self.rootpath = root_folder  # the full path of the package in which the conans is found
         self.includedirs.append(DEFAULT_INCLUDE)
         self.libdirs.append(DEFAULT_LIB)
@@ -310,7 +310,7 @@ class _BaseDepsCppInfo(_CppInfo):
         return self.frameworkdirs
 
 
-class DepCppInfo(object):
+class DepCppInfoOLDIES(object):
 
     def __init__(self, cpp_info):
         self._cpp_info = cpp_info
@@ -475,7 +475,7 @@ class DepCppInfo(object):
         return self._aggregated_values("exelinkflags")
 
 
-class DepsCppInfo(_BaseDepsCppInfo):
+class DepsCppInfoOLDIES(_BaseDepsCppInfo):
     """ Build Information necessary to build a given conans. It contains the
     flags, directories and options if its dependencies. The conans CONANFILE
     should use these flags to pass them to the underlaying build system (Cmake, make),
@@ -483,7 +483,7 @@ class DepsCppInfo(_BaseDepsCppInfo):
     """
 
     def __init__(self):
-        super(DepsCppInfo, self).__init__()
+        super(DepsCppInfoOLDIES, self).__init__()
         self._dependencies = OrderedDict()
         self.configs = {}
 
@@ -502,8 +502,8 @@ class DepsCppInfo(_BaseDepsCppInfo):
         return self._dependencies[item]
 
     def update(self, cpp_info, pkg_name):
-        assert isinstance(cpp_info, (CppInfo, DepCppInfo))
+        assert isinstance(cpp_info, (CppInfoOLDIES, DepCppInfoOLDIES))
         self._dependencies[pkg_name] = cpp_info
-        super(DepsCppInfo, self).update(cpp_info)
+        super(DepsCppInfoOLDIES, self).update(cpp_info)
         for config, cpp_info in cpp_info.configs.items():
             self.configs.setdefault(config, _BaseDepsCppInfo()).update(cpp_info)

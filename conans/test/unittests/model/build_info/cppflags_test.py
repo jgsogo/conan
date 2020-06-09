@@ -3,7 +3,7 @@
 import unittest
 import warnings
 
-from conans.model.build_info import _CppInfo
+#from conans.model.build_info import _CppInfo
 
 
 class CppFlagsTest(unittest.TestCase):

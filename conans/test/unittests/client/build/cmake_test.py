@@ -15,7 +15,7 @@ from conans.client.build.cmake_flags import cmake_in_local_cache_var_name
 from conans.client.conf import get_default_settings_yml
 from conans.client.tools.oss import cpu_count
 from conans.errors import ConanException
-from conans.model.build_info import CppInfo, DepsCppInfo
+from conans.model.cpp_info import CppInfo
 from conans.model.ref import ConanFileReference
 from conans.model.settings import Settings
 from conans.test.utils.conanfile import ConanFileMock, MockSettings

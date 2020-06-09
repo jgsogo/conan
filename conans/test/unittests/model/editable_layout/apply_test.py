@@ -6,7 +6,7 @@ import shutil
 import textwrap
 import unittest
 
-from conans.model.build_info import CppInfo
+from conans.model.cpp_info import CppInfo
 from conans.model.editable_layout import EditableLayout
 from conans.model.ref import ConanFileReference
 from conans.test.utils.test_files import temp_folder

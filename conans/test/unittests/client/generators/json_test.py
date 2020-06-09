@@ -2,7 +2,7 @@ import json
 import unittest
 
 from conans.client.generators.json_generator import JsonGenerator
-from conans.model.build_info import CppInfo
+from conans.model.cpp_info import CppInfo
 from conans.model.conan_file import ConanFile
 from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
