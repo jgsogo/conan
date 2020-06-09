@@ -110,12 +110,12 @@ class CppInfoViewWithComponentsTestCase(unittest.TestCase):
         # cmp1
         cpp_info.components["cmp1"].name = "cmp1_name_value"
         cpp_info.components["cmp1"].names["cmake"] = "cmp1_cmake_name"
-        cpp_info.components["cmp1"].libs = ["cmp1"]
+        cpp_info.components["cmp1"].libs = ["cmp1", "core"]
         cpp_info.components["cmp1"].includedirs = ["cmp1/includes"]
         cpp_info.components["cmp1"].requires = ["zlib::zlib"]
 
         # cmp2
-        cpp_info.components["cmp2"].libs = ["cmp2"]
+        cpp_info.components["cmp2"].libs = ["cmp2", "core"]
         cpp_info.components["cmp2"].includedirs = ["cmp2/includes"]
         cpp_info.components["cmp2"].requires = ["cmp1", "zlib::ssl"]
 
@@ -145,9 +145,9 @@ class CppInfoViewWithComponentsTestCase(unittest.TestCase):
                              ["name_init::cmp1", "zlib::ssl"])
 
     def test_libs(self):
-        self.assertListEqual(self.cpp_info_view.libs, ["cmp2", "cmp1"])
-        self.assertListEqual(self.cpp_info_view.components["cmp1"].libs, ["cmp1"])
-        self.assertListEqual(self.cpp_info_view.components["cmp2"].libs, ["cmp2"])
+        self.assertListEqual(self.cpp_info_view.libs, ["cmp2", "cmp1", "core"])
+        self.assertListEqual(self.cpp_info_view.components["cmp1"].libs, ["cmp1", "core"])
+        self.assertListEqual(self.cpp_info_view.components["cmp2"].libs, ["cmp2", "core"])
 
     def test_includedirs(self):
         self.assertListEqual(self.cpp_info_view.includedirs, ["cmp2/includes", "cmp1/includes"])
