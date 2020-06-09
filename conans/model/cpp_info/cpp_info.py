@@ -103,6 +103,7 @@ class CppInfo(BaseCppInfo):
     def __init__(self, ref_name, rootpath):
         super(CppInfo, self).__init__()
         self.rootpath = rootpath
+        self.sysroot = ""  # TODO: Not documented! Probably something to remove
         self.name = ref_name
         self._ref_name = ref_name
         self._names_for_generator = {}
