@@ -41,7 +41,7 @@ class CppInfoViewDictTestCase(unittest.TestCase):
                                    "Cannot retrieve 'rootpath' from a list of cpp_info"):
             self.deps.rootpath
         with six.assertRaisesRegex(self, ConanException,
-                                   "Cannot retrieve 'components' from a list of cpp_info"):
+                                   "Do not requests 'components' for an aggregated view"):
             self.deps.components
 
     def test_access_dependency(self):
