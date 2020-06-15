@@ -7,6 +7,7 @@ from conans.model.env_info import DepsEnvInfo, EnvInfo
 from conans.model.settings import Settings
 from conans.model.user_info import DepsUserInfo
 from conans.test.utils.conanfile import ConanFileMock
+from conans.model.cpp_info import CppInfoView, CppInfoViewDict, CppInfo
 
 
 class CompilerArgsTest(unittest.TestCase):
@@ -23,11 +24,11 @@ class CompilerArgsTest(unittest.TestCase):
         conan_file.settings = settings
         conan_file.deps_env_info = DepsEnvInfo()
         conan_file.deps_user_info = DepsUserInfo()
-        conan_file.deps_cpp_info = DepsCppInfo()
+        conan_file.deps_cpp_info = CppInfoViewDict()
         cpp_info = CppInfo("zlib", "/root")
         cpp_info.libs.append("mylib")
         cpp_info.libs.append("other.lib")
-        conan_file.deps_cpp_info.add("zlib", cpp_info)
+        conan_file.deps_cpp_info.add("zlib", CppInfoView(cpp_info, "<version>"))
         conan_file.env_info = EnvInfo()
 
         gen = CompilerArgsGenerator(conan_file)
@@ -41,9 +42,9 @@ class CompilerArgsTest(unittest.TestCase):
         conan_file.build_folder = "my_cache_build_folder"
         conan_file.deps_env_info = DepsEnvInfo()
         conan_file.deps_user_info = DepsUserInfo()
-        conan_file.deps_cpp_info = DepsCppInfo()
+        conan_file.deps_cpp_info = CppInfoViewDict()
         cpp_info = CppInfo("zlib", "/root")
-        cpp_info.include_paths.append("path/to/include1")
+        cpp_info.includedirs.append("path/to/include1")
         cpp_info.lib_paths.append("path/to/lib1")
         cpp_info.libs.append("mylib")
         cpp_info.bindirs = "path/to/bin1"
@@ -56,7 +57,7 @@ class CompilerArgsTest(unittest.TestCase):
             cpp_info.frameworks = ["AVFoundation", "VideoToolbox"]
             cpp_info.framework_paths.extend(['path/to/Frameworks1', 'path/to/Frameworks2'])
 
-        conan_file.deps_cpp_info.add("zlib", cpp_info)
+        conan_file.deps_cpp_info.add("zlib", CppInfoView(cpp_info, "<version>"))
         conan_file.env_info = EnvInfo()
         return conan_file
 

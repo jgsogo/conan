@@ -10,7 +10,7 @@ from conans.client.generators import CMakeFindPackageGenerator, CMakeFindPackage
 from conans.client.generators.cmake import CMakeGenerator
 from conans.client.generators.cmake_multi import CMakeMultiGenerator
 from conans.errors import ConanException
-from conans.model.cpp_info.cpp_info import CppInfo
+from conans.model.cpp_info import CppInfo, CppInfoView
 from conans.model.conan_file import ConanFile
 from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
@@ -518,14 +518,14 @@ class CMakeBuildModulesTest(unittest.TestCase):
         cpp_info.filter_empty = False  # For testing purposes only
         cpp_info.name = ref.name
         cpp_info.build_modules = ["my-module.cmake"]
-        self.conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        self.conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, ref.version))
         ref = ConanFileReference.loads("my_pkg2/0.1@lasote/stables")
         cpp_info = CppInfo(ref.name, "dummy_root_folder2")
         cpp_info.filter_empty = False  # For testing purposes only
         cpp_info.name = ref.name
         cpp_info.build_modules = ["other-mod.cmake", "not-a-cmake-module.pc"]
         cpp_info.release.build_modules = ["release-mod.cmake"]
-        self.conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        self.conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, ref.version))
 
     def cmake_test(self):
         generator = CMakeGenerator(self.conanfile)

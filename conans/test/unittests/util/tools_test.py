@@ -32,6 +32,7 @@ from conans.tools import get_global_instances
 from conans.util.env_reader import get_env
 from conans.util.files import load, md5, mkdir, save
 from conans.util.runners import check_output_runner
+from conans.model.cpp_info import CppInfo
 
 
 class ConfigMock:

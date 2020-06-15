@@ -10,6 +10,7 @@ from conans.model.settings import Settings
 from conans.test.utils.test_files import temp_folder
 from conans.util.files import save
 from conans.test.utils.tools import TestBufferConanOutput
+from conans.model.cpp_info import CppInfoView, CppInfo
 
 
 class PremakeGeneratorTest(unittest.TestCase):
@@ -88,12 +89,11 @@ class PremakeGeneratorTest(unittest.TestCase):
         cpp_info.libs = ['libfoo']
         cpp_info.system_libs = ['syslib1']
         cpp_info.bindirs = ['bin1']
-        cpp_info.version = "0.1"
         cpp_info.cflags = ['-fPIC']
         cpp_info.cxxflags = ['-fPIE']
         cpp_info.sharedlinkflags = ['-framework Cocoa']
         cpp_info.exelinkflags = ['-framework QuartzCore']
-        self.conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        self.conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "0.1"))
         ref = ConanFileReference.loads("MyPkg2/3.2.3@lasote/stables")
         cpp_info = CppInfo(ref.name, self.tmp_folder2)
         cpp_info.defines = ["MYDEFINE2"]
@@ -102,12 +102,11 @@ class PremakeGeneratorTest(unittest.TestCase):
         cpp_info.libs = ['libbar']
         cpp_info.system_libs = ['syslib2']
         cpp_info.bindirs = ['bin2']
-        cpp_info.version = "3.2.3"
         cpp_info.cflags = ['-mtune=native']
         cpp_info.cxxflags = ['-march=native']
         cpp_info.sharedlinkflags = ['-framework AudioFoundation', '-framework "Some Spaced Framework"']
         cpp_info.exelinkflags = ['-framework VideoToolbox', '-framework "Other Spaced Framework"']
-        self.conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        self.conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "3.2.3"))
 
     def test_variables_content(self):
         generator = PremakeGenerator(self.conanfile)

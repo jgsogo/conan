@@ -20,6 +20,7 @@ from conans.model.settings import Settings
 from conans.test.utils.conanfile import ConanFileMock, MockSettings
 from conans.test.utils.test_files import temp_folder
 from conans.util.files import load, save
+from conans.model.cpp_info import CppInfoView, CppInfoViewDict, CppInfoViewAggregated, CppInfo
 
 
 def _format_path_as_cmake(pathstr):
@@ -47,7 +48,7 @@ class CMakeTest(unittest.TestCase):
         conanfile.source_folder = os.path.join(self.tempdir, "src")
         conanfile.build_folder = os.path.join(self.tempdir, "build")
         conanfile.package_folder = os.path.join(self.tempdir, "pkg")
-        conanfile.deps_cpp_info = DepsCppInfo()
+        conanfile.deps_cpp_info = CppInfoViewDict()
 
         msg = "FOLDER: " + _format_path_as_cmake(conanfile.package_folder)
         for folder in (conanfile.build_folder, conanfile.package_folder):
@@ -75,7 +76,7 @@ class CMakeTest(unittest.TestCase):
         conanfile.source_folder = os.path.join(self.tempdir, "src")
         conanfile.build_folder = os.path.join(self.tempdir, "build")
         conanfile.package_folder = os.path.join(self.tempdir, "pkg")
-        conanfile.deps_cpp_info = DepsCppInfo()
+        conanfile.deps_cpp_info = CppInfoViewDict()
 
         ref = ConanFileReference.loads("MyPkg1/0.1@user/channel")
         cpp_info = CppInfo(ref.name, self.tempdir2)

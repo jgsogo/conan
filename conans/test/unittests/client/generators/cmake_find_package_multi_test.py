@@ -6,6 +6,7 @@ from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
 from conans.test.unittests.client.generators.cmake_test import _MockSettings
 from conans.test.utils.tools import TestBufferConanOutput
+from conans.model.cpp_info import CppInfoView, CppInfo
 
 
 class CMakeFindPackageMultiTest(unittest.TestCase):
@@ -17,9 +18,8 @@ class CMakeFindPackageMultiTest(unittest.TestCase):
         conanfile.initialize(settings_mock, EnvValues())
         ref = ConanFileReference.loads("my_pkg/0.1@user/stable")
         cpp_info = CppInfo(ref.name, "")
-        cpp_info.version = ref.version
         cpp_info.debug.libs = ["mylib"]
-        conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, ref.version))
 
         generator = CMakeFindPackageMultiGenerator(conanfile)
         content = generator.content

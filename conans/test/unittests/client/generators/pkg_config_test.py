@@ -2,7 +2,7 @@ import unittest
 
 from conans.client.conf import get_default_settings_yml
 from conans.client.generators.pkg_config import PkgConfigGenerator
-from conans.model.cpp_info.cpp_info import CppInfo
+from conans.model.cpp_info import CppInfo, CppInfoView, CppInfoViewDict
 from conans.model.conan_file import ConanFile
 from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
@@ -20,29 +20,24 @@ class PkgGeneratorTest(unittest.TestCase):
         cpp_info.name = "my_pkg"
         cpp_info.defines = ["MYDEFINE1"]
         cpp_info.cflags.append("-Flag1=23")
-        cpp_info.version = "1.3"
-        cpp_info.description = "My cool description"
-        conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "1.3", "My cool description"))
 
         ref = ConanFileReference.loads("MyPkg1/0.1@lasote/stables")
         cpp_info = CppInfo(ref.name, "dummy_root_folder1")
         cpp_info.name = "MYPKG1"
         cpp_info.defines = ["MYDEFINE11"]
         cpp_info.cflags.append("-Flag1=21")
-        cpp_info.version = "1.7"
-        cpp_info.description = "My other cool description"
-        cpp_info.public_deps = ["MyPkg"]
-        conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        cpp_info.public_deps = ["MyPkg"]  # TODO: ???
+        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "1.7", "My other cool description"))
 
         ref = ConanFileReference.loads("MyPkg2/0.1@lasote/stables")
         cpp_info = CppInfo(ref.name, "dummy_root_folder2")
         cpp_info.defines = ["MYDEFINE2"]
-        cpp_info.version = "2.3"
         cpp_info.exelinkflags = ["-exelinkflag"]
         cpp_info.sharedlinkflags = ["-sharedlinkflag"]
         cpp_info.cxxflags = ["-cxxflag"]
-        cpp_info.public_deps = ["MyPkg"]
-        conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        cpp_info.public_deps = ["MyPkg"]  # TODO: ???
+        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "2.3"))
         generator = PkgConfigGenerator(conanfile)
         files = generator.content
 
@@ -91,9 +86,7 @@ Cflags: -I${includedir} -Flag1=23 -DMYDEFINE1
         cpp_info.names["pkg_config"] = "my_pkg_custom_name"
         cpp_info.defines = ["MYDEFINE1"]
         cpp_info.cflags.append("-Flag1=23")
-        cpp_info.version = "1.3"
-        cpp_info.description = "My cool description"
-        conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "1.3", "My cool description"))
 
         ref = ConanFileReference.loads("MyPkg1/0.1@lasote/stables")
         cpp_info = CppInfo(ref.name, "dummy_root_folder1")
@@ -101,39 +94,34 @@ Cflags: -I${includedir} -Flag1=23 -DMYDEFINE1
         cpp_info.names["pkg_config"] = "my_pkg1_custom_name"
         cpp_info.defines = ["MYDEFINE11"]
         cpp_info.cflags.append("-Flag1=21")
-        cpp_info.version = "1.7"
-        cpp_info.description = "My other cool description"
-        conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "1.7", "My other cool description"))
 
         ref = ConanFileReference.loads("MyPkg2/0.1@lasote/stables")
         cpp_info = CppInfo(ref.name, "dummy_root_folder2")
         cpp_info.names["pkg_config"] = "my_pkg2_custom_name"
         cpp_info.defines = ["MYDEFINE2"]
-        cpp_info.version = "2.3"
         cpp_info.exelinkflags = ["-exelinkflag"]
         cpp_info.sharedlinkflags = ["-sharedlinkflag"]
         cpp_info.cxxflags = ["-cxxflag"]
         cpp_info.public_deps = ["MyPkg", "MyPkg1"]
-        conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "2.3"))
 
         ref = ConanFileReference.loads("zlib/1.2.11@lasote/stable")
         cpp_info = CppInfo(ref.name, "dummy_root_folder_zlib")
         cpp_info.name = "ZLIB"
         cpp_info.defines = ["MYZLIBDEFINE2"]
-        cpp_info.version = "1.2.11"
-        conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "1.2.11"))
 
         ref = ConanFileReference.loads("bzip2/0.1@lasote/stables")
         cpp_info = CppInfo(ref.name, "dummy_root_folder2")
         cpp_info.name = "BZip2"
         cpp_info.names["pkg_config"] = "BZip2"
         cpp_info.defines = ["MYDEFINE2"]
-        cpp_info.version = "2.3"
         cpp_info.exelinkflags = ["-exelinkflag"]
         cpp_info.sharedlinkflags = ["-sharedlinkflag"]
         cpp_info.cxxflags = ["-cxxflag"]
         cpp_info.public_deps = ["MyPkg", "MyPkg1", "zlib"]
-        conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "2.3"))
         generator = PkgConfigGenerator(conanfile)
         files = generator.content
 
@@ -190,9 +178,7 @@ Requires: my_pkg_custom_name my_pkg1_custom_name zlib
         ref = ConanFileReference.loads("MyPkg/0.1@lasote/stables")
         cpp_info = CppInfo(ref.name, "dummy_root_folder1")
         cpp_info.frameworks = ['AudioUnit', 'AudioToolbox']
-        cpp_info.version = "1.3"
-        cpp_info.description = "My cool description"
-        conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "1.3", "My cool description"))
 
         generator = PkgConfigGenerator(conanfile)
         files = generator.content

@@ -13,6 +13,7 @@ from conans.model.ref import ConanFileReference
 from conans.model.settings import Settings
 from conans.test.utils.test_files import temp_folder
 from conans.test.utils.tools import TestBufferConanOutput
+from conans.model.cpp_info import CppInfoView, CppInfo
 
 
 @attr('visual_studio')
@@ -34,10 +35,10 @@ class VisualStudioMultiGeneratorTest(unittest.TestCase):
 
             ref = ConanFileReference.loads("MyPkg/0.1@user/testing")
             cpp_info = CppInfo(ref.name, "dummy_root_folder1")
-            conanfile.deps_cpp_info.add(ref.name, cpp_info)
+            conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "<version>"))
             ref = ConanFileReference.loads("My.Fancy-Pkg_2/0.1@user/testing")
             cpp_info = CppInfo(ref.name, "dummy_root_folder2")
-            conanfile.deps_cpp_info.add(ref.name, cpp_info)
+            conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "<version>"))
 
             settings.arch = "x86"
             settings.build_type = "Debug"
@@ -97,7 +98,7 @@ class VisualStudioMultiGeneratorTest(unittest.TestCase):
                 ref = ConanFileReference.loads("MyPkg/0.1@user/testing")
                 cpp_info = CppInfo(ref.name, "dummy_root_folder1")
                 cpp_info.libs = [libname]
-                conanfile.deps_cpp_info.add(ref.name, cpp_info)
+                conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, ref.version))
 
                 settings = Settings.loads(get_default_settings_yml())
                 settings.os = "Windows"

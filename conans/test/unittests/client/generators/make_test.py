@@ -9,6 +9,7 @@ from conans.model.settings import Settings
 from conans.test.utils.test_files import temp_folder
 from conans.test.utils.tools import TestBufferConanOutput
 from conans.util.files import save
+from conans.model.cpp_info import CppInfoView, CppInfo, CppInfoViewDict
 
 
 class MakeGeneratorTest(unittest.TestCase):
@@ -41,7 +42,7 @@ class MakeGeneratorTest(unittest.TestCase):
         cpp_info.frameworks = ['AudioUnit']
         cpp_info.frameworkdirs = ['SystemFrameworks']
         cpp_info.system_libs = ["system_lib1"]
-        conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, ref.version))
         ref = ConanFileReference.loads("MyPkg2/3.2.3@lasote/stables")
         cpp_info = CppInfo(ref.name, tmp_folder2)
         cpp_info.defines = ["MYDEFINE2"]
@@ -55,7 +56,7 @@ class MakeGeneratorTest(unittest.TestCase):
         cpp_info.sharedlinkflags = ['-framework AudioFoundation']
         cpp_info.exelinkflags = ['-framework VideoToolbox']
         cpp_info.system_libs = ["system_lib2"]
-        conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, ref.version))
         generator = MakeGenerator(conanfile)
         content = generator.content
 

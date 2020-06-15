@@ -6,6 +6,7 @@ from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
 from conans.model.settings import Settings
 from conans.test.utils.tools import TestBufferConanOutput
+from conans.model.cpp_info import CppInfoView, CppInfo
 
 
 class SConsGeneratorTest(unittest.TestCase):
@@ -16,13 +17,11 @@ class SConsGeneratorTest(unittest.TestCase):
         ref = ConanFileReference.loads("MyPkg/0.1@lasote/stables")
         cpp_info = CppInfo(ref.name, "")
         cpp_info.defines = ["MYDEFINE1"]
-        cpp_info.version = "0.1"
-        conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "0.1"))
         ref = ConanFileReference.loads("MyPkg2/3.2.3@lasote/stables")
         cpp_info = CppInfo(ref.name, "")
         cpp_info.defines = ["MYDEFINE2"]
-        cpp_info.version = "3.2.3"
-        conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "3.2.3"))
         generator = SConsGenerator(conanfile)
         content = generator.content
         scons_lines = content.splitlines()

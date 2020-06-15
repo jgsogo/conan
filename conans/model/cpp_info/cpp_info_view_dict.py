@@ -75,6 +75,15 @@ class CppInfoViewDict(BaseCppInfoViewDict):
     def get_configs(self):
         return self._configs
 
+    @property
+    def dependencies(self):
+        for key, val in self._dependencies.items():
+            yield key, val
+
+    @property
+    def deps(self):
+        return self._dependencies.values()
+
     def __getattr__(self, item):
         if item in self._configs:
             return self._configs.get(item)

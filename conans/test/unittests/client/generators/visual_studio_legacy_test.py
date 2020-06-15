@@ -9,6 +9,7 @@ from conans.model.ref import ConanFileReference
 from conans.model.settings import Settings
 from conans.test.utils.test_files import temp_folder
 from conans.test.utils.tools import TestBufferConanOutput
+from conans.model.cpp_info import CppInfoView, CppInfo
 
 
 class VisualStudioLegacyGeneratorTest(unittest.TestCase):
@@ -22,14 +23,14 @@ class VisualStudioLegacyGeneratorTest(unittest.TestCase):
         os.makedirs(os.path.join(folder1, "include"))
         os.makedirs(os.path.join(folder1, "lib"))
         cpp_info = CppInfo(ref.name, folder1)
-        conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "<version>"))
         ref = ConanFileReference.loads("My.Fancy-Pkg_2/0.1@user/testing")
         folder2 = temp_folder()
         folder2 = folder2.replace("\\", "/")
         os.makedirs(os.path.join(folder2, "include"))
         os.makedirs(os.path.join(folder2, "lib"))
         cpp_info = CppInfo(ref.name, folder2)
-        conanfile.deps_cpp_info.add(ref.name, cpp_info)
+        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "<version>"))
         generator = VisualStudioLegacyGenerator(conanfile)
 
         content = generator.content
