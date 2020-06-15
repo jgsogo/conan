@@ -72,6 +72,9 @@ class CppInfoViewDict(BaseCppInfoViewDict):
                 fake_config = _CppInfoViewConfigPlaceholder(cpp_info_view)
                 self._configs[k].add(ref_name, fake_config)
 
+    def get_configs(self):
+        return self._configs
+
     def __getattr__(self, item):
         if item in self._configs:
             return self._configs.get(item)
