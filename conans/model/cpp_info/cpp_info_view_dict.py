@@ -70,7 +70,7 @@ class CppInfoViewDict(BaseCppInfoViewDict):
             if k not in configs_for_added:
                 # Need to mock this config for the added requirement
                 fake_config = _CppInfoViewConfigPlaceholder(cpp_info_view)
-                self._configs[k].add(ref_name, cpp_info_view)
+                self._configs[k].add(ref_name, fake_config)
 
     def __getattr__(self, item):
         if item in self._configs:

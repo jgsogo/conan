@@ -103,6 +103,7 @@ class CppInfo(BaseCppInfo):
     def __init__(self, ref_name, rootpath):
         super(CppInfo, self).__init__()
         self.rootpath = rootpath
+        self.sysroot = ""
         self.name = ref_name
         self._ref_name = ref_name
         self._names_for_generator = {}
@@ -187,6 +188,10 @@ class CppInfoConfig(BaseCppInfo):
     def rootpath(self):
         return self._pkg_cpp_info.rootpath
 
+    @property
+    def sysroot(self):
+        return self._pkg_cpp_info.sysroot
+
 
 class CppInfoComponent(BaseCppInfo):
     COMPONENTS_SCOPE = '::'
@@ -206,6 +211,10 @@ class CppInfoComponent(BaseCppInfo):
     @property
     def rootpath(self):
         return self._pkg_cpp_info.rootpath
+
+    @property
+    def sysroot(self):
+        return self._pkg_cpp_info.sysroot
 
     @property
     def names(self):
