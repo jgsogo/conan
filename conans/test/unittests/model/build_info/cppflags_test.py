@@ -2,8 +2,8 @@
 
 import unittest
 import warnings
+from conans.model.cpp_info import CppInfo
 
-from conans.model.build_info import _CppInfo
 
 
 class CppFlagsTest(unittest.TestCase):
@@ -15,7 +15,7 @@ class CppFlagsTest(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
 
-            cpp_info = _CppInfo()
+            cpp_info = CppInfo("", "")
             cpp_info.cxxflags = "flags"
             self.assertEqual(cpp_info.cppflags, "flags")
             self.assertEqual(cpp_info.cxxflags, cpp_info.cppflags)
@@ -33,7 +33,7 @@ class CppFlagsTest(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
 
-            cpp_info = _CppInfo()
+            cpp_info = CppInfo("", "")
 
             cpp_info.cppflags = "flags"
             self.assertEqual(cpp_info.cxxflags, "flags")

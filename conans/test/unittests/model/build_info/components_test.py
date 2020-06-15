@@ -1,12 +1,10 @@
-# coding=utf-8
 import os
 import unittest
-import warnings
 
 import six
 
 from conans.errors import ConanException
-from conans.model.build_info import CppInfo, DepsCppInfo, DepCppInfo
+from conans.model.cpp_info import CppInfo, CppInfoView, CppInfoViewDict, CppInfoViewAggregated
 from conans.test.utils.test_files import temp_folder
 from conans.util.files import save
 
@@ -14,12 +12,12 @@ from conans.util.files import save
 class CppInfoComponentsTest(unittest.TestCase):
 
     def test_components_set(self):
-        cpp_info = CppInfo("", "root_folder")
+        cpp_info = CppInfo("dep", "root_folder")
         cpp_info.components["liba"].name = "LIBA"
         cpp_info.components["libb"].includedirs.append("includewhat")
         cpp_info.components["libc"].libs.append("thelibc")
         self.assertListEqual(list(cpp_info.components.keys()), ["liba", "libb", "libc"])
-        self.assertEqual(cpp_info.components["liba"].get_name("any"), "LIBA")
+        self.assertEqual(cpp_info.components["liba"].get_name("any"), "dep::LIBA")
         self.assertListEqual(cpp_info.components["libb"].includedirs, ["include", "includewhat"])
         self.assertListEqual(cpp_info.components["libc"].libs, ["thelibc"])
 
@@ -27,24 +25,24 @@ class CppInfoComponentsTest(unittest.TestCase):
         cpp_info = CppInfo("", "root_folder")
         cpp_info.components["liba"].name = "LIBA"
         with self.assertRaises(AttributeError):
-            cpp_info.components["libb"].components
+            _ = cpp_info.components["libb"].components
 
     def test_deps_cpp_info_libs(self):
-        deps_cpp_info = DepsCppInfo()
+        deps_cpp_info = CppInfoViewDict()
 
         dep1 = CppInfo("dep1", "root")
         dep1.components["liba"].libs.append("liba")
         dep1.components["libb"].libs.append("libb")
-        deps_cpp_info.add("dep1", DepCppInfo(dep1))
+        deps_cpp_info.add("dep1", CppInfoView(dep1, "<version>", "<description>"))
 
         dep2 = CppInfo("dep2", "root")
         dep2.components["libc"].libs.append("libc")
         dep2.components["libd"].libs.append("libd")
-        deps_cpp_info.add("dep2", DepCppInfo(dep2))
+        deps_cpp_info.add("dep2", CppInfoView(dep2, "<version>", "<description>"))
 
         dep3 = CppInfo("dep3", "root")
         dep3.libs.append("libdep3")
-        deps_cpp_info.add("dep3", DepCppInfo(dep3))
+        deps_cpp_info.add("dep3", CppInfoView(dep3, "<version>", "<description>"))
 
         self.assertListEqual(["liba", "libb"], deps_cpp_info["dep1"].libs)
         self.assertListEqual(["libc", "libd"], deps_cpp_info["dep2"].libs)
@@ -53,7 +51,7 @@ class CppInfoComponentsTest(unittest.TestCase):
                              deps_cpp_info.libs)
 
     def test_deps_cpp_info_paths(self):
-        deps_cpp_info = DepsCppInfo()
+        deps_cpp_info = CppInfoViewDict()
 
         folder1 = temp_folder()
         dep1 = CppInfo("dep1", folder1)
@@ -62,7 +60,7 @@ class CppInfoComponentsTest(unittest.TestCase):
         os.mkdir(os.path.join(folder1, "includeb"))
         dep1.components["liba"].includedirs.append("includea")
         dep1.components["libb"].includedirs.append("includeb")
-        deps_cpp_info.add("dep1", DepCppInfo(dep1))
+        deps_cpp_info.add("dep1", CppInfoView(dep1, "<version>", "<description>"))
 
         folder2 = temp_folder()
         dep2 = CppInfo("dep2", folder2)
@@ -71,21 +69,21 @@ class CppInfoComponentsTest(unittest.TestCase):
         os.mkdir(os.path.join(folder2, "included"))
         dep2.components["libc"].includedirs.append("includec")
         dep2.components["libd"].includedirs.append("included")
-        deps_cpp_info.add("dep2", DepCppInfo(dep2))
+        deps_cpp_info.add("dep2", CppInfoView(dep2, "<version>", "<description>"))
 
-        self.assertListEqual([os.path.join(folder1, "include"), os.path.join(folder1, "includea"),
+        self.assertListEqual([os.path.join(folder1, "includea"), os.path.join(folder1, "include"),
                               os.path.join(folder1, "includeb")],
                              deps_cpp_info["dep1"].include_paths)
-        self.assertListEqual([os.path.join(folder2, "include"), os.path.join(folder2, "includec"),
+        self.assertListEqual([os.path.join(folder2, "includec"), os.path.join(folder2, "include"),
                               os.path.join(folder2, "included")],
                              deps_cpp_info["dep2"].include_paths)
-        self.assertListEqual([os.path.join(folder1, "include"), os.path.join(folder1, "includea"),
-                              os.path.join(folder1, "includeb"), os.path.join(folder2, "include"),
-                              os.path.join(folder2, "includec"), os.path.join(folder2, "included")],
+        self.assertListEqual([os.path.join(folder1, "includea"), os.path.join(folder1, "include"),
+                              os.path.join(folder1, "includeb"), os.path.join(folder2, "includec"),
+                              os.path.join(folder2, "include"), os.path.join(folder2, "included")],
                              deps_cpp_info.include_paths)
 
     def test_deps_cpp_info_libs_defines_flags(self):
-        deps_cpp_info = DepsCppInfo()
+        deps_cpp_info = CppInfoViewDict()
 
         dep1 = CppInfo("dep1", "root")
         dep1.components["liba"].libs.append("liba")
@@ -104,7 +102,7 @@ class CppInfoComponentsTest(unittest.TestCase):
         dep1.components["libb"].sharedlinkflags.append("slinkb")
         dep1.components["libb"].frameworks.append("frameworkb")
         dep1.components["libb"].exelinkflags.append("elinkb")
-        deps_cpp_info.add("dep1", DepCppInfo(dep1))
+        deps_cpp_info.add("dep1", CppInfoView(dep1, "<version>", "<description>"))
 
         dep2 = CppInfo("dep2", "root")
         dep2.components["libc"].libs.append("libc")
@@ -114,7 +112,7 @@ class CppInfoComponentsTest(unittest.TestCase):
         dep2.components["libd"].cflags = ["cflagd"]
         dep2.components["libc"].sharedlinkflags = ["slinkc"]
         dep2.components["libd"].sharedlinkflags = ["slinkd"]
-        deps_cpp_info.add("dep2", DepCppInfo(dep2))
+        deps_cpp_info.add("dep2", CppInfoView(dep2, "<version>", "<description>"))
 
         self.assertListEqual(["liba", "libb"], deps_cpp_info["dep1"].libs)
         self.assertListEqual(["libc", "libd"], deps_cpp_info["dep2"].libs)
@@ -129,15 +127,15 @@ class CppInfoComponentsTest(unittest.TestCase):
 
         self.assertListEqual(["cxxflaga", "cxxflagb"], deps_cpp_info["dep1"].cxxflags)
         self.assertListEqual(["cxxflagc"], deps_cpp_info["dep2"].cxxflags)
-        self.assertListEqual(["cxxflagc", "cxxflaga", "cxxflagb"], deps_cpp_info.cxxflags)
+        self.assertListEqual(["cxxflaga", "cxxflagb", "cxxflagc"], deps_cpp_info.cxxflags)
 
         self.assertListEqual(["cflaga", "cflagb"], deps_cpp_info["dep1"].cflags)
         self.assertListEqual(["cflagd"], deps_cpp_info["dep2"].cflags)
-        self.assertListEqual(["cflagd", "cflaga", "cflagb"], deps_cpp_info.cflags)
+        self.assertListEqual(["cflaga", "cflagb", "cflagd"], deps_cpp_info.cflags)
 
         self.assertListEqual(["slinka", "slinkb"], deps_cpp_info["dep1"].sharedlinkflags)
         self.assertListEqual(["slinkc", "slinkd"], deps_cpp_info["dep2"].sharedlinkflags)
-        self.assertListEqual(["slinkc", "slinkd", "slinka", "slinkb"],
+        self.assertListEqual(["slinka", "slinkb", "slinkc", "slinkd"],
                              deps_cpp_info.sharedlinkflags)
 
         self.assertListEqual(["frameworka", "frameworkb"], deps_cpp_info["dep1"].frameworks)
@@ -148,38 +146,35 @@ class CppInfoComponentsTest(unittest.TestCase):
         self.assertListEqual(["elinka", "elinkb"], deps_cpp_info.exelinkflags)
 
     def test_deps_cpp_info_libs_release_debug(self):
-        deps_cpp_info = DepsCppInfo()
+        deps_cpp_info = CppInfoViewDict()
 
         dep1 = CppInfo("dep1", "root")
         dep1.components["liba"].libs.append("liba")
-        with self.assertRaises(AttributeError):
+        with six.assertRaisesRegex(self, AttributeError,
+                                   "'CppInfoConfig' object has no attribute 'components'"):
             dep1.release.components["libb"].libs.append("libb")
-        with self.assertRaises(AttributeError):
+        with six.assertRaisesRegex(self, AttributeError,
+                                   "'CppInfoConfig' object has no attribute 'components'"):
             dep1.debug.components["libb"].libs.append("libb_d")
-        deps_cpp_info.add("dep1", DepCppInfo(dep1))
+        with six.assertRaisesRegex(self, ConanException,
+                                   "Cannot use components together with root values"):
+            deps_cpp_info.add("dep1", CppInfoView(dep1, "<version>", "<description>"))
 
+        deps_cpp_info = CppInfoViewDict()
         dep2 = CppInfo("dep2", "root")
         dep2.release.libs.append("libdep2")
         dep2.debug.libs.append("libdep2_d")
-        with self.assertRaises(AttributeError):
+        with six.assertRaisesRegex(self, AttributeError,
+                                   "'CppInfoComponent' object has no attribute 'release'"):
             dep2.components["libc"].release.libs.append("libc")
-        with self.assertRaises(AttributeError):
+        with six.assertRaisesRegex(self, AttributeError,
+                                   "'CppInfoComponent' object has no attribute 'debug'"):
             dep2.components["libc"].debug.libs.append("libc_d")
         dep2.components["libc"].libs.append("libc")
         dep2.components["libc"].libs.append("libc2")
-        deps_cpp_info.add("dep2", DepCppInfo(dep2))
-
-        self.assertListEqual(["liba"], deps_cpp_info["dep1"].libs)
-        self.assertListEqual(["libc", "libc2"], deps_cpp_info["dep2"].libs)
-        self.assertListEqual(["liba", "libc", "libc2"], deps_cpp_info.libs)
-
-        self.assertListEqual([], deps_cpp_info["dep1"].release.libs)
-        self.assertListEqual(["libdep2"], deps_cpp_info["dep2"].release.libs)
-        self.assertListEqual(["libdep2"], deps_cpp_info.release.libs)
-
-        self.assertListEqual([], deps_cpp_info["dep1"].debug.libs)
-        self.assertListEqual(["libdep2_d"], deps_cpp_info["dep2"].debug.libs)
-        self.assertListEqual(["libdep2_d"], deps_cpp_info.debug.libs)
+        with six.assertRaisesRegex(self, ConanException,
+                                   "Cannot use components together with root values"):
+            deps_cpp_info.add("dep2", CppInfoView(dep2, "<version>", "<description>"))
 
     def cpp_info_link_order_test(self):
 
@@ -207,10 +202,10 @@ class CppInfoComponentsTest(unittest.TestCase):
         info.components["1"].requires = ["2"]
         info.components["2"].libs = ["lib2"]
         info.components["2"].requires = []
-        dep_cpp_info = DepCppInfo(info)
+        dep_cpp_info = CppInfoView(info, "<version>", "<description>")
         _assert_link_order(dep_cpp_info.libs)
         self.assertEqual(["lib6", "lib5", "lib4", "lib3", "lib1", "lib2"], dep_cpp_info.libs)
-        deps_cpp_info = DepsCppInfo()
+        deps_cpp_info = CppInfoViewDict()
         deps_cpp_info.add("dep1", dep_cpp_info)
         self.assertEqual(["lib6", "lib5", "lib4", "lib3", "lib1", "lib2"],
                          deps_cpp_info.libs)
@@ -240,7 +235,7 @@ class CppInfoComponentsTest(unittest.TestCase):
         info.components["A"].requires = []
         info.components["B"].libs = ["libB"]
         info.components["B"].requires = []
-        dep_cpp_info = DepCppInfo(info)
+        dep_cpp_info = CppInfoView(info, "<version>", "<description>")
         _assert_link_order(dep_cpp_info.libs)
         self.assertEqual(["libK", "libJ", "libG", "libH", "libL", "libF", "libI", "libC", "libD",
                           "libE", "libA", "libB"], dep_cpp_info.libs)
@@ -250,41 +245,40 @@ class CppInfoComponentsTest(unittest.TestCase):
                          deps_cpp_info.libs)
 
     def cppinfo_inexistent_component_dep_test(self):
-        info = CppInfo("", None)
+        info = CppInfo("mydep", None)
         info.components["LIB1"].requires = ["LIB2"]
-        with six.assertRaisesRegex(self, ConanException, "Component 'LIB1' "
-                                                         "declares a missing dependency"):
-            DepCppInfo(info).libs
+        with six.assertRaisesRegex(self, ConanException,
+                                   "Component 'mydep::LIB1' declares a missing dependency"):
+            _ = CppInfoView(info, "<version>", "<description>").libs
         info.components["LIB1"].requires = ["::LIB2"]
         with six.assertRaisesRegex(self, ConanException, "Leading character '::' not allowed in "
                                                          "LIB1 requires"):
-            DepCppInfo(info).libs
+            _ = CppInfoView(info, "<version>", "<description>").libs
 
     def cpp_info_components_requires_loop_test(self):
         info = CppInfo("", "")
         info.components["LIB1"].requires = ["LIB1"]
-        msg = "There is a dependency loop in 'self.cpp_info.components' requires"
-        with six.assertRaisesRegex(self, ConanException, msg):
-            DepCppInfo(info).libs
+        with six.assertRaisesRegex(self, ConanException, "Component 'LIB1' requires itself"):
+            _ = CppInfoView(info, "<version>", "<description>").libs
         info = CppInfo("", "")
         info.components["LIB1"].requires = ["LIB2"]
         info.components["LIB2"].requires = ["LIB1", "LIB2"]
-        with six.assertRaisesRegex(self, ConanException, msg):
-            DepCppInfo(info).build_paths
+        with six.assertRaisesRegex(self, ConanException, "Component 'LIB2' requires itself"):
+            _ = CppInfoView(info, "<version>", "<description>").libs
         info = CppInfo("", "")
         info.components["LIB1"].requires = ["LIB2"]
         info.components["LIB2"].requires = ["LIB3"]
         info.components["LIB3"].requires = ["LIB1"]
-        with six.assertRaisesRegex(self, ConanException, msg):
-            DepCppInfo(info).defines
+        with six.assertRaisesRegex(self, ConanException, "There is a loop in component requirements"):
+            _ = CppInfoView(info, "<version>", "<description>").defines
 
     def components_libs_order_test(self):
         info = CppInfo("dep1", "")
         info.components["liba"].libs = ["liba"]
         info.components["libb"].libs = ["libb"]
-        dep_cpp_info = DepCppInfo(info)
+        dep_cpp_info = CppInfoView(info, "<version>", "<description>")
         self.assertListEqual(["liba", "libb"], dep_cpp_info.libs)
-        deps_cpp_info = DepsCppInfo()
+        deps_cpp_info = CppInfoViewDict()
         deps_cpp_info.add("dep1", dep_cpp_info)
         self.assertListEqual(["liba", "libb"], deps_cpp_info["dep1"].libs)
         self.assertListEqual(["liba", "libb"], deps_cpp_info.libs)
@@ -292,11 +286,11 @@ class CppInfoComponentsTest(unittest.TestCase):
         info = CppInfo("dep1", "")
         info.components["liba"].libs = ["liba"]
         info.components["libb"].libs = ["libb"]
-        dep_cpp_info = DepCppInfo(info)
+        dep_cpp_info = CppInfoView(info, "<version>", "<description>")
         info2 = CppInfo("dep2", "")
         info2.components["libc"].libs = ["libc"]
-        dep_cpp_info2 = DepCppInfo(info2)
-        deps_cpp_info = DepsCppInfo()
+        dep_cpp_info2 = CppInfoView(info2, "<version>", "<description>")
+        deps_cpp_info = CppInfoViewDict()
         # Update in reverse order
         deps_cpp_info.add("dep2", dep_cpp_info2)
         deps_cpp_info.add("dep1", dep_cpp_info)
@@ -308,9 +302,9 @@ class CppInfoComponentsTest(unittest.TestCase):
         info.components["liba"].libs = ["liba"]
         info.components["libb"].libs = ["libb"]
         info.components["libb"].requires = ["liba"]
-        dep_cpp_info = DepCppInfo(info)
+        dep_cpp_info = CppInfoView(info, "<version>", "<description>")
         self.assertListEqual(["libb", "liba"], dep_cpp_info.libs)
-        deps_cpp_info = DepsCppInfo()
+        deps_cpp_info = CppInfoViewDict()
         deps_cpp_info.add("dep1", dep_cpp_info)
         self.assertListEqual(["libb", "liba"], deps_cpp_info["dep1"].libs)
         self.assertListEqual(["libb", "liba"], deps_cpp_info.libs)
@@ -319,11 +313,11 @@ class CppInfoComponentsTest(unittest.TestCase):
         info.components["liba"].libs = ["liba"]
         info.components["libb"].libs = ["libb"]
         info.components["libb"].requires = ["liba"]
-        dep_cpp_info = DepCppInfo(info)
+        dep_cpp_info = CppInfoView(info, "<version>", "<description>")
         info2 = CppInfo("dep2", "")
         info2.components["libc"].libs = ["libc"]
-        dep_cpp_info2 = DepCppInfo(info2)
-        deps_cpp_info = DepsCppInfo()
+        dep_cpp_info2 = CppInfoView(info2, "<version>", "<description>")
+        deps_cpp_info = CppInfoViewDict()
         # Update in reverse order
         deps_cpp_info.add("dep2", dep_cpp_info2)
         deps_cpp_info.add("dep1", dep_cpp_info)
@@ -387,21 +381,21 @@ class CppInfoComponentsTest(unittest.TestCase):
         self.assertEqual(["different_res", "another_res", "another_other_res"],
                          info.components["Crypto"].resdirs)
 
-    def component_default_dirs_deps_cpp_info_test(self):
+    def test_component_default_dirs_deps_cpp_info_test(self):
         folder = temp_folder()
         info = CppInfo("my_lib", folder)
-        info.components["Component"]
         info.components["Component"].filter_empty = False  # For testing purposes
-        dep_info = DepCppInfo(info)
-        deps_cpp_info = DepsCppInfo()
+        dep_info = CppInfoView(info, "<version>", "<description>")
+        deps_cpp_info = CppInfoViewDict()
         deps_cpp_info.add("my_lib", dep_info)
-        self.assertListEqual([os.path.join(folder, "include")], deps_cpp_info.includedirs)
+        self.assertListEqual(["include"], deps_cpp_info.includedirs)
+        self.assertListEqual([os.path.join(folder, "include")], deps_cpp_info.include_paths)
         self.assertListEqual([], deps_cpp_info.srcdirs)
-        self.assertListEqual([os.path.join(folder, "lib")], deps_cpp_info.libdirs)
-        self.assertListEqual([os.path.join(folder, "bin")], deps_cpp_info.bindirs)
-        self.assertListEqual([os.path.join(folder, "")], deps_cpp_info.builddirs)
-        self.assertListEqual([os.path.join(folder, "res")], deps_cpp_info.resdirs)
-        self.assertListEqual([os.path.join(folder, "Frameworks")], deps_cpp_info.frameworkdirs)
+        self.assertListEqual([os.path.join(folder, "lib")], deps_cpp_info.lib_paths)
+        self.assertListEqual([os.path.join(folder, "bin")], deps_cpp_info.bin_paths)
+        self.assertListEqual([os.path.join(folder, "")], deps_cpp_info.build_paths)
+        self.assertListEqual([os.path.join(folder, "res")], deps_cpp_info.res_paths)
+        self.assertListEqual([os.path.join(folder, "Frameworks")], deps_cpp_info.framework_paths)
 
     def deps_cpp_info_components_test(self):
         folder = temp_folder()
@@ -409,8 +403,8 @@ class CppInfoComponentsTest(unittest.TestCase):
         # Create file so path is not cleared
         save(os.path.join(folder, "include", "my_file.h"), "")
         info.components["Component"].libs = ["libcomp"]
-        dep_info = DepCppInfo(info)
-        deps_cpp_info = DepsCppInfo()
+        dep_info = CppInfoView(info, "<version>", "<description>")
+        deps_cpp_info = CppInfoViewDict()
         deps_cpp_info.add("my_lib", dep_info)
         self.assertListEqual(["libcomp"], deps_cpp_info.libs)
         self.assertListEqual(["libcomp"], deps_cpp_info["my_lib"].components["Component"].libs)
