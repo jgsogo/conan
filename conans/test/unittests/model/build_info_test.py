@@ -3,15 +3,15 @@ import unittest
 from collections import defaultdict, namedtuple
 
 from conans.client.generators import TXTGenerator
-from conans.model.build_info import CppInfo, DepsCppInfo
 from conans.model.env_info import DepsEnvInfo, EnvInfo
 from conans.model.user_info import DepsUserInfo
 from conans.test.utils.test_files import temp_folder
 from conans.util.files import mkdir
+from conans.model.cpp_info import  CppInfo, CppInfoView, CppInfoViewDict, CppInfoViewAggregated
 
 
 class BuildInfoTest(unittest.TestCase):
-
+    maxDiff = None
     def parse_test(self):
         text = """[includedirs]
 C:/Whenever
@@ -68,16 +68,19 @@ VAR2=23
         self.assertEqual(deps_env_info["LIBA"].VAR2, "23")
 
     def help_test(self):
-        deps_env_info = DepsEnvInfo()
-        deps_cpp_info = DepsCppInfo()
-        deps_cpp_info.includedirs.append("C:/whatever")
-        deps_cpp_info.includedirs.append("C:/whenever")
-        deps_cpp_info.libdirs.append("C:/other")
-        deps_cpp_info.libs.extend(["math", "winsock", "boost"])
-        child = DepsCppInfo()
-        child.includedirs.append("F:/ChildrenPath")
+        cpp_info = CppInfo("base", "C:")
+        cpp_info.includedirs.append("whatever")
+        cpp_info.includedirs.append("whenever")
+        cpp_info.libdirs.append("other")
+        cpp_info.libs.extend(["math", "winsock", "boost"])
+
+        deps_cpp_info = CppInfoViewAggregated(CppInfoView(cpp_info, "<version>", "<description>"))
+        child = CppInfo("Boost", "F:")
+        child.includedirs.append("ChildrenPath")
         child.cxxflags.append("cxxmyflag")
-        deps_cpp_info._dependencies["Boost"] = child
+        deps_cpp_info.add("Boost", CppInfoView(child, "<version>", "<description>"))
+
+        deps_env_info = DepsEnvInfo()
         fakeconan = namedtuple("Conanfile", "deps_cpp_info cpp_info deps_env_info env_info user_info deps_user_info")
         output = TXTGenerator(fakeconan(deps_cpp_info, None, deps_env_info, None, {}, defaultdict(dict))).content
         deps_cpp_info2, _, _ = TXTGenerator.loads(output)
@@ -94,19 +97,21 @@ VAR2=23
                          deps_cpp_info2["Boost"].cxxflags)
         self.assertEqual(deps_cpp_info["Boost"].cxxflags, ["cxxmyflag"])
 
-    def configs_test(self):
-        deps_cpp_info = DepsCppInfo()
-        deps_cpp_info.includedirs.append("C:/whatever")
-        deps_cpp_info.debug.includedirs.append("C:/whenever")
-        deps_cpp_info.libs.extend(["math"])
-        deps_cpp_info.debug.libs.extend(["debug_Lib"])
+    def test_configs_test(self):
 
-        child = DepsCppInfo()
-        child.includedirs.append("F:/ChildrenPath")
-        child.debug.includedirs.append("F:/ChildrenDebugPath")
+        cpp_info = CppInfo("dep1", "C:")
+        cpp_info.includedirs.append("whatever")
+        cpp_info.debug.includedirs.append("whenever")
+        cpp_info.libs.extend(["math"])
+        cpp_info.debug.libs.extend(["debug_Lib"])
+        deps_cpp_info = CppInfoViewAggregated(CppInfoView(cpp_info, "<version>", "<description>"))
+
+        child = CppInfo("Boost", "F:")
+        child.includedirs.append("ChildrenPath")
+        child.debug.includedirs.append("ChildrenDebugPath")
         child.cxxflags.append("cxxmyflag")
         child.debug.cxxflags.append("cxxmydebugflag")
-        deps_cpp_info._dependencies["Boost"] = child
+        deps_cpp_info.add("Boost", CppInfoView(child, "<version>", "<description>"))
 
         deps_env_info = DepsEnvInfo()
         env_info_lib1 = EnvInfo()
@@ -169,9 +174,11 @@ VAR2=23
         info.libdirs.append(abs_lib)
         info.bindirs.append(abs_bin)
         info.bindirs.append("local_bindir")
+        info = CppInfoView(info, "<version>", "<description>")
         self.assertEqual(info.include_paths, [os.path.join(folder, "include"), abs_include])
         self.assertEqual(info.lib_paths, [os.path.join(folder, "lib"), abs_lib])
         self.assertEqual(info.bin_paths, [abs_bin,
+                                          os.path.join(folder, "bin"),
                                           os.path.join(folder, "local_bindir")])
 
     def cpp_info_system_libs_test(self):
@@ -179,9 +186,9 @@ VAR2=23
         info1.system_libs = ["sysdep1"]
         info2 = CppInfo("dep2", "folder2")
         info2.system_libs = ["sysdep2", "sysdep3"]
-        deps_cpp_info = DepsCppInfo()
-        deps_cpp_info.add("dep1", info1)
-        deps_cpp_info.add("dep2", info2)
+        deps_cpp_info = CppInfoViewDict()
+        deps_cpp_info.add("dep1", CppInfoView(info1, "<version>", "<description>"))
+        deps_cpp_info.add("dep2", CppInfoView(info2, "<version>", "<description>"))
         self.assertEqual(["sysdep1", "sysdep2", "sysdep3"], deps_cpp_info.system_libs)
         self.assertEqual(["sysdep1"], deps_cpp_info["dep1"].system_libs)
         self.assertEqual(["sysdep2", "sysdep3"], deps_cpp_info["dep2"].system_libs)
@@ -191,8 +198,8 @@ VAR2=23
         info = CppInfo("myname", folder)
         info.name = "MyName"
         info.names["my_generator"] = "MyNameForMyGenerator"
-        deps_cpp_info = DepsCppInfo()
-        deps_cpp_info.add("myname", info)
+        deps_cpp_info = CppInfoViewDict()
+        deps_cpp_info.add("myname", CppInfoView(info, "<version>", "<description>"))
         self.assertIn("MyName", deps_cpp_info["myname"].get_name("my_undefined_generator"))
         self.assertIn("MyNameForMyGenerator", deps_cpp_info["myname"].get_name("my_generator"))
 
@@ -201,11 +208,12 @@ VAR2=23
         info = CppInfo("myname", folder)
         info.build_modules.append("my_module.cmake")
         info.debug.build_modules = ["mod-release.cmake"]
-        deps_cpp_info = DepsCppInfo()
-        deps_cpp_info.add("myname", info)
+        deps_cpp_info = CppInfoViewDict()
+        deps_cpp_info.add("myname", CppInfoView(info, "<version>", "<description>"))
         self.assertListEqual([os.path.join(folder, "my_module.cmake")],
                              deps_cpp_info["myname"].build_modules_paths)
-        self.assertListEqual([os.path.join(folder, "mod-release.cmake")],
+        self.assertListEqual([os.path.join(folder, "my_module.cmake"),
+                              os.path.join(folder, "mod-release.cmake")],
                              deps_cpp_info["myname"].debug.build_modules_paths)
 
     def cppinfo_public_interface_test(self):

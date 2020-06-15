@@ -4,11 +4,12 @@ from collections import defaultdict
 
 from conans.errors import ConanException
 from conans.model import Generator
-from conans.model.build_info import CppInfo, DepsCppInfo
+from conans.model.cpp_info import CppInfo, CppInfoViewDict, CppInfoView, CppInfoViewAggregated
 from conans.model.env_info import DepsEnvInfo
 from conans.model.user_info import DepsUserInfo
 from conans.paths import BUILD_INFO
 from conans.util.log import logger
+from collections import namedtuple
 
 
 class DepsCppTXT(object):
@@ -124,20 +125,38 @@ class TXTGenerator(Generator):
                 data[dep][config][field] = lines
 
             # Build the data structures
-            deps_cpp_info = DepsCppInfo()
+            cpp_info_root = [None, "<version>", "<description>"]
+            cpp_info_deps = defaultdict(lambda: [None, "<version>", "<description>"])
             for dep, configs_cpp_info in data.items():
+                cpp_info_list = [CppInfo(dep or "<name>", "<rootpath>"), "<version>", "<description>"]
                 if dep is None:
-                    cpp_info = deps_cpp_info
+                    cpp_info_root = cpp_info_list
+                    #cpp_info = CppInfo(dep, "<rootpath>")
                 else:
-                    cpp_info = deps_cpp_info._dependencies.setdefault(dep, CppInfo(dep, root_folder=""))
+                    cpp_info_deps[dep] = cpp_info_list
+                    #cpp_info = deps_cpp_info._dependencies.setdefault(dep, CppInfo(dep, root_folder=""))
 
                 for config, fields in configs_cpp_info.items():
-                    item_to_apply = cpp_info if not config else getattr(cpp_info, config)
+                    item_to_apply = cpp_info_list[0] if not config else getattr(cpp_info_list[0], config)
 
                     for key, value in fields.items():
-                        if key in ['rootpath', 'sysroot', 'version', 'name']:
-                            value = value[0]
-                        setattr(item_to_apply, key, value)
+                        if key == 'version':
+                            cpp_info_list[1] = value[0]
+                        elif key == 'description':
+                            cpp_info_list[2] = value[0]
+                        elif key == 'name':
+                            setattr(item_to_apply, '_ref_name', value[0])
+                        elif key in ['rootpath', 'sysroot']:  # TODO: What about names-for-generator?
+                            setattr(item_to_apply, key, value[0])
+                        else:
+                            setattr(item_to_apply, key, value)
+
+            cpp_info, version, description = cpp_info_root
+            cpp_info_view = CppInfoView(cpp_info, version, description)
+            deps_cpp_info = CppInfoViewAggregated(cpp_info_view)
+            for key, val in cpp_info_deps.items():
+                cpp_info, version, description = val
+                deps_cpp_info.add(key, CppInfoView(cpp_info, version, description))
             return deps_cpp_info
 
         except Exception as e:
@@ -178,7 +197,7 @@ class TXTGenerator(Generator):
                          '[name{dep}]\n{deps.name}\n\n' +
                          '[version{dep}]\n{deps.version}\n\n')
 
-        for dep_name, dep_cpp_info in self.deps_build_info.dependencies:
+        for dep_name, dep_cpp_info in self.deps_build_info._dependencies.items():
             dep = "_" + dep_name
             deps = DepsCppTXT(dep_cpp_info)
             dep_flags = template_deps.format(dep=dep, deps=deps, config="")
