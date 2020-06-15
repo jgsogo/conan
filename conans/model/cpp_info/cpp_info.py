@@ -146,6 +146,14 @@ class CppInfo(BaseCppInfo):
             for it in self._components.values():
                 it.clean_data()
 
+            # Check all listed requires are components:
+            cmp_keys = self._components.keys()
+            for cmp in self._components.values():
+                inner_cmps = [it for it in cmp.requires if
+                              CppInfoComponent.COMPONENTS_SCOPE not in it]
+                if any([it not in cmp_keys for it in inner_cmps]):
+                    raise ConanException("Component '{}' declares a missing dependency".format(cmp))
+
             # Order the components: topological sort
             ordered = OrderedDict()
             components = copy(self._components)
