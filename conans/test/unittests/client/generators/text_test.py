@@ -3,7 +3,6 @@ import textwrap
 import unittest
 
 from conans.client.generators.text import TXTGenerator
-from conans.model.build_info import CppInfo
 from conans.model.conan_file import ConanFile
 from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference

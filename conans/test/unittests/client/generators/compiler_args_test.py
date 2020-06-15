@@ -3,7 +3,6 @@ import unittest
 from conans.client.conf import get_default_settings_yml
 from conans.client.generators.compiler_args import CompilerArgsGenerator
 from conans.client.generators.gcc import GCCGenerator
-from conans.model.build_info import CppInfo, DepsCppInfo
 from conans.model.env_info import DepsEnvInfo, EnvInfo
 from conans.model.settings import Settings
 from conans.model.user_info import DepsUserInfo

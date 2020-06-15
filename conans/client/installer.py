@@ -21,7 +21,7 @@ from conans.client.tools.env import no_op
 from conans.client.tools.env import pythonpath
 from conans.errors import (ConanException, ConanExceptionInUserConanfileMethod,
                            conanfile_exception_formatter)
-from conans.model.build_info import CppInfo, DepCppInfo
+from conans.model.cpp_info import CppInfoView, CppInfo
 from conans.model.editable_layout import EditableLayout
 from conans.model.env_info import EnvInfo
 from conans.model.graph_info import GraphInfo
@@ -560,8 +560,6 @@ class BinaryInstaller(object):
 
     def _call_package_info(self, conanfile, package_folder, ref):
         conanfile.cpp_info = CppInfo(conanfile.name, package_folder)
-        conanfile.cpp_info.version = conanfile.version
-        conanfile.cpp_info.description = conanfile.description
         conanfile.env_info = EnvInfo()
         conanfile.user_info = UserInfo()
 
@@ -584,10 +582,8 @@ class BinaryInstaller(object):
                     conanfile.package_info()
                     if conanfile._conan_dep_cpp_info is None:
                         try:
-                            conanfile.cpp_info._raise_incorrect_components_definition(
-                                conanfile.name, conanfile.requires)
+                            conanfile._conan_dep_cpp_info = CppInfoView(conanfile.cpp_info, conanfile.version, conanfile.description)
                         except ConanException as e:
                             raise ConanException("%s package_info(): %s" % (str(conanfile), e))
-                        conanfile._conan_dep_cpp_info = DepCppInfo(conanfile.cpp_info)
                     self._hook_manager.execute("post_package_info", conanfile=conanfile,
                                                reference=ref)

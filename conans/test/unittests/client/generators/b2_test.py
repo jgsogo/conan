@@ -2,7 +2,7 @@ import unittest
 
 from conans.client.conf import get_default_settings_yml
 from conans.client.generators.b2 import B2Generator
-from conans.model.build_info import CppInfo
+from conans.model.cpp_info.cpp_info import CppInfo
 from conans.model.conan_file import ConanFile
 from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
