@@ -18,26 +18,26 @@ DEFAULT_FRAMEWORK = "Frameworks"
 COMPONENT_SCOPE = "::"
 
 
-class DefaultOrderedDict(OrderedDict):
+class DefaultOrderedDictREMOVE(OrderedDict):
 
     def __init__(self, factory):
         self.factory = factory
-        super(DefaultOrderedDict, self).__init__()
+        super(DefaultOrderedDictREMOVE, self).__init__()
 
     def __getitem__(self, key):
         if key not in self.keys():
-            super(DefaultOrderedDict, self).__setitem__(key, self.factory())
-            super(DefaultOrderedDict, self).__getitem__(key).name = key
-        return super(DefaultOrderedDict, self).__getitem__(key)
+            super(DefaultOrderedDictREMOVE, self).__setitem__(key, self.factory())
+            super(DefaultOrderedDictREMOVE, self).__getitem__(key).name = key
+        return super(DefaultOrderedDictREMOVE, self).__getitem__(key)
 
     def __copy__(self):
-        the_copy = DefaultOrderedDict(self.factory)
-        for key, value in super(DefaultOrderedDict, self).items():
+        the_copy = DefaultOrderedDictREMOVE(self.factory)
+        for key, value in super(DefaultOrderedDictREMOVE, self).items():
             the_copy[key] = value
         return the_copy
 
 
-class _CppInfo(object):
+class _CppInfoREMOVE(object):
     """ Object that stores all the necessary information to build in C/C++.
     It is intended to be system independent, translation to
     specific systems will be produced from this info
@@ -157,10 +157,10 @@ class _CppInfo(object):
     cppflags = property(get_cppflags, set_cppflags)
 
 
-class Component(_CppInfo):
+class ComponentREMOVE(_CppInfoREMOVE):
 
     def __init__(self, rootpath):
-        super(Component, self).__init__()
+        super(ComponentREMOVE, self).__init__()
         self.rootpath = rootpath
         self.includedirs.append(DEFAULT_INCLUDE)
         self.libdirs.append(DEFAULT_LIB)
@@ -171,14 +171,14 @@ class Component(_CppInfo):
         self.requires = []
 
 
-class CppInfo(_CppInfo):
+class CppInfoREMOVE(_CppInfoREMOVE):
     """ Build Information declared to be used by the CONSUMERS of a
     conans. That means that consumers must use this flags and configs i order
     to build properly.
     Defined in user CONANFILE, directories are relative at user definition time
     """
     def __init__(self, ref_name, root_folder):
-        super(CppInfo, self).__init__()
+        super(CppInfoREMOVE, self).__init__()
         self._ref_name = ref_name
         self._name = ref_name
         self.rootpath = root_folder  # the full path of the package in which the conans is found
@@ -188,7 +188,7 @@ class CppInfo(_CppInfo):
         self.resdirs.append(DEFAULT_RES)
         self.builddirs.append(DEFAULT_BUILD)
         self.frameworkdirs.append(DEFAULT_FRAMEWORK)
-        self.components = DefaultOrderedDict(lambda: Component(self.rootpath))
+        self.components = DefaultOrderedDictREMOVE(lambda: ComponentREMOVE(self.rootpath))
         # public_deps is needed to accumulate list of deps for cmake targets
         self.public_deps = []
         self._configs = {}
@@ -197,7 +197,7 @@ class CppInfo(_CppInfo):
         return self._ref_name
 
     def get_name(self, generator):
-        name = super(CppInfo, self).get_name(generator)
+        name = super(CppInfoREMOVE, self).get_name(generator)
 
         # Legacy logic for pkg_config generator
         from conans.client.generators.pkg_config import PkgConfigGenerator
@@ -216,7 +216,7 @@ class CppInfo(_CppInfo):
 
     def __getattr__(self, config):
         def _get_cpp_info():
-            result = _CppInfo()
+            result = _CppInfoREMOVE()
             result.rootpath = self.rootpath
             result.sysroot = self.sysroot
             result.includedirs.append(DEFAULT_INCLUDE)
@@ -278,9 +278,9 @@ class CppInfo(_CppInfo):
                                          "but not defined as a recipe requirement" % comp_require)
 
 
-class _BaseDepsCppInfo(_CppInfo):
+class _BaseDepsCppInfoREMOVE(_CppInfoREMOVE):
     def __init__(self):
-        super(_BaseDepsCppInfo, self).__init__()
+        super(_BaseDepsCppInfoREMOVE, self).__init__()
 
     def update(self, dep_cpp_info):
 
@@ -343,7 +343,7 @@ class _BaseDepsCppInfo(_CppInfo):
         return self.frameworkdirs
 
 
-class DepCppInfo(object):
+class DepCppInfoREMOVE(object):
 
     def __init__(self, cpp_info):
         self._cpp_info = cpp_info
@@ -511,7 +511,7 @@ class DepCppInfo(object):
         return self._aggregated_values("exelinkflags")
 
 
-class DepsCppInfo(_BaseDepsCppInfo):
+class DepsCppInfoREMOVE(_BaseDepsCppInfoREMOVE):
     """ Build Information necessary to build a given conans. It contains the
     flags, directories and options if its dependencies. The conans CONANFILE
     should use these flags to pass them to the underlaying build system (Cmake, make),
@@ -519,12 +519,12 @@ class DepsCppInfo(_BaseDepsCppInfo):
     """
 
     def __init__(self):
-        super(DepsCppInfo, self).__init__()
+        super(DepsCppInfoREMOVE, self).__init__()
         self._dependencies = OrderedDict()
         self._configs = {}
 
     def __getattr__(self, config):
-        return self._configs.setdefault(config, _BaseDepsCppInfo())
+        return self._configs.setdefault(config, _BaseDepsCppInfoREMOVE())
 
     def get_configs(self):
         return self._configs
@@ -542,8 +542,8 @@ class DepsCppInfo(_BaseDepsCppInfo):
 
     def add(self, pkg_name, cpp_info):
         assert pkg_name == str(cpp_info), "'{}' != '{}'".format(pkg_name, cpp_info)
-        assert isinstance(cpp_info, (CppInfo, DepCppInfo))
+        assert isinstance(cpp_info, (CppInfoREMOVE, DepCppInfoREMOVE))
         self._dependencies[pkg_name] = cpp_info
-        super(DepsCppInfo, self).update(cpp_info)
+        super(DepsCppInfoREMOVE, self).update(cpp_info)
         for config, cpp_info in cpp_info.get_configs().items():
-            self._configs.setdefault(config, _BaseDepsCppInfo()).update(cpp_info)
+            self._configs.setdefault(config, _BaseDepsCppInfoREMOVE()).update(cpp_info)
