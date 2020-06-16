@@ -184,11 +184,12 @@ class TXTGenerator(Generator):
 
 
         sections = []
-        deps = DepsCppTXT(self.root_cpp_info)
+        cpp_info_root = self.root_cpp_info or CppInfoView(CppInfo("", "", add_defaults=False), "")
+        deps = DepsCppTXT(cpp_info_root)
         all_flags = template.format(dep="", deps=deps, config="")
         sections.append(all_flags)
 
-        for config, cpp_info in self.root_cpp_info.get_configs().items():
+        for config, cpp_info in cpp_info_root.get_configs().items():
             deps = DepsCppTXT(cpp_info)
             all_flags = template.format(dep="", deps=deps, config=":" + config)
             sections.append(all_flags)
