@@ -8,6 +8,7 @@ from datetime import datetime
 
 # Install actions
 from conans.model.ref import ConanFileReference, PackageReference
+from conans.model.cpp_info import CppInfoView, CppInfo
 
 INSTALL_CACHE = 0
 INSTALL_DOWNLOADED = 1
@@ -23,25 +24,33 @@ INSTALL_ERROR_BUILDING = "building"
 
 
 def _cpp_info_to_dict(cpp_info):
-    doc = {}
-    for it, value in vars(cpp_info).items():
-        if it == "_configs":
-            configs_data = {}
-            for cfg_name, cfg_cpp_info in value.items():
-                configs_data[cfg_name] = _cpp_info_to_dict(cfg_cpp_info)
-            doc["configs"] = configs_data
-            continue
+    fields = CppInfo.FIELDS + list(CppInfoView.FIELDS_PATH_MAPPING.keys()) + ['version', 'description',]
 
-        if it.startswith("_") or not value:
-            continue
+    def populate_basic_fields(_cpp_info, extra_fields=None):
+        doc = {}
+        extra_fields = extra_fields or []
+        for it in fields + extra_fields:
+            value = getattr(_cpp_info, it)
+            if value:
+                doc[it] = value
+        return doc
 
-        if it == "components":
-            doc[it] = {comp_name: _cpp_info_to_dict(comp) for comp_name, comp in value.items()}
-            continue
+    result = populate_basic_fields(cpp_info)
 
-        doc[it] = value
+    configs = cpp_info.get_configs()
+    if configs:
+        configs_data = {}
+        for config_name, config_data in cpp_info.get_configs().items():
+            configs_data[config_name] = populate_basic_fields(config_data)
+        result["configs"] = configs_data
 
-    return doc
+    if cpp_info.components:
+        cmps_data = {}
+        for cmp_name, cmp_data in cpp_info.components.items():
+            cmps_data[cmp_name] = populate_basic_fields(cmp_data, extra_fields=['requires',])
+        result["components"] = cmps_data
+
+    return result
 
 
 class Action(namedtuple("Action", "type, full_ref, doc, time")):
