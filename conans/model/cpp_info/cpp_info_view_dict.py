@@ -3,6 +3,7 @@ from collections import OrderedDict, defaultdict
 from conans.errors import ConanException
 from .cpp_info import BaseCppInfo, CppInfoConfig
 from .cpp_info_view import CppInfoView, CppInfoViewConfig
+from conans.model.editables.cpp_info_view_editable import CppInfoViewEditable, CppInfoViewEditableConfig
 
 
 class _CppInfoViewConfigPlaceholder(CppInfoViewConfig):
@@ -67,7 +68,7 @@ class BaseCppInfoViewDict(object):
 
 class CppInfoViewDict(BaseCppInfoViewDict):
     """ Stores an ordered dict of CppInfoView objects and offers some convenient methods """
-    _expected_class = CppInfoView
+    _expected_class = (CppInfoView, CppInfoViewEditable)
 
     def __init__(self):
         super(CppInfoViewDict, self).__init__()
@@ -110,7 +111,7 @@ class CppInfoViewDict(BaseCppInfoViewDict):
 
 
 class CppInfoViewConfigDict(BaseCppInfoViewDict):
-    _expected_class = CppInfoViewConfig
+    _expected_class = (CppInfoViewConfig, CppInfoViewEditableConfig)
 
     def __getitem__(self, item):
         raise ConanException("Do not try to return individual dependencies from configs")

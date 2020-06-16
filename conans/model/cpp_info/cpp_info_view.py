@@ -127,7 +127,8 @@ class CppInfoView(BaseCppInfoView):
             self.components[k] = CppInfoViewComponents(self, v)
 
         self._configs = {k: CppInfoViewConfig(self, v)
-                         for k, v in self._cpp_info.get_configs().items()}
+                         for k, v in self._cpp_info.get_configs().items() if k != '__len__'}
+        # TODO: See above, how the 'len' arrives there?
 
     @property
     def version(self):

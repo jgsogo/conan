@@ -9,7 +9,7 @@ from conans.errors import ConanException
 from conans.model.ref import ConanFileReference, check_valid_ref
 from conans.util.files import load
 from conans.util.templates import render_layout_file
-
+from .editables.cpp_info_view_editable import CppInfoViewEditable
 DEFAULT_LAYOUT_FILE = "default"
 LAYOUTS_FOLDER = 'layouts'
 
@@ -107,9 +107,5 @@ class EditableLayout(object):
 
         # Apply the data to the cpp_info
         data = data.get(str(ref)) or data.get(None) or {}
-
-        try:
-            for key, items in data.items():
-                setattr(cpp_info, key, items)
-        except Exception as e:
-            raise ConanException("Error applying layout in '%s': %s" % (str(ref), str(e)))
+        cpp_info = CppInfoViewEditable(cpp_info, data)
+        return cpp_info
