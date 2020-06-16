@@ -218,8 +218,8 @@ class CMakeFindPackageGenerator(Generator):
 
     def _get_components(self, pkg_name, pkg_findname, cpp_info):
         find_package_components = []
-        for comp_name, comp in self.sorted_components(cpp_info).items():
-            comp_findname = self._get_name(cpp_info.components[comp_name])
+        for comp_name, comp in cpp_info.components.items():
+            comp_findname = comp.get_name(CMakeFindPackageGenerator.name)
             deps_cpp_cmake = DepsCppCmake(comp)
             deps_cpp_cmake.public_deps = self._get_component_requires(pkg_name, pkg_findname, comp)
             find_package_components.append((comp_findname, deps_cpp_cmake))
