@@ -34,7 +34,7 @@ class BaseCppInfoViewDict(object):
                              " be used only with a targets approach.")
 
     def __getitem__(self, item):
-        return self._dependencies.get(item)
+        return self._dependencies[item]
 
     def __getattr__(self, item):
         if item in self.AGGREGATE_FIELDS:
@@ -51,6 +51,18 @@ class BaseCppInfoViewDict(object):
             return ret
         else:
             raise ConanException("Cannot retrieve '{}' from a list of cpp_info".format(item))
+
+    @property
+    def sysroot(self):
+        # TODO: This is a chapuza, but 'sysroot' is the first one found
+        for it in self._dependencies.values():
+            try:
+                sysroot = getattr(it, 'sysroot')
+                if sysroot:
+                    return sysroot
+            except AttributeError:
+                pass
+        return ""
 
 
 class CppInfoViewDict(BaseCppInfoViewDict):
@@ -89,18 +101,6 @@ class CppInfoViewDict(BaseCppInfoViewDict):
     @property
     def deps(self):
         return map(str, self._dependencies.values())
-
-    @property
-    def sysroot(self):
-        # TODO: This is a chapuza, but 'sysroot' is the first one found
-        for it in self._dependencies.values():
-            try:
-                sysroot = getattr(it, 'sysroot')
-                if sysroot:
-                    return sysroot
-            except AttributeError:
-                pass
-        return ""
 
     def __getattr__(self, item):
         if item in self._configs:
