@@ -445,9 +445,9 @@ class MyPkg(ConanFile):
         client = TestClient()
         conanfile = textwrap.dedent("""
             from conans import ConanFile
-    
+
             class MyPkg(ConanFile):
-    
+
                 def build(self):
                     raise ConanException("Build error")
             """)
@@ -479,11 +479,11 @@ class MyPkg(ConanFile):
         client = TestClient()
         conanfile = textwrap.dedent('''
             from conans import ConanFile
-        
+
             class HelloConan(ConanFile):
                 name = "HelloBar"
                 version = "0.1"
-                
+
                 def package_info(self):
                     self.output.warn("Hello, I'm HelloBar")
             ''')
@@ -539,4 +539,4 @@ class MyPkg(ConanFile):
         self.assertIn("libpkg1", cpp_info_data["components"]["pkg1"]["libs"])
         self.assertNotIn("requires", cpp_info_data["components"]["pkg1"])
         self.assertIn("libpkg2", cpp_info_data["components"]["pkg2"]["libs"])
-        self.assertListEqual(["pkg1"], cpp_info_data["components"]["pkg2"]["requires"])
+        self.assertListEqual(["pkg::pkg1"], cpp_info_data["components"]["pkg2"]["requires"])
