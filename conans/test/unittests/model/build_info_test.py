@@ -99,13 +99,14 @@ VAR2=23
 
     def test_configs_test(self):
 
-        cpp_info = CppInfo("dep1", "C:")
+        cpp_info = CppInfo("root", "C:")
         cpp_info.includedirs.append("whatever")
         cpp_info.debug.includedirs.append("whenever")
         cpp_info.libs.extend(["math"])
         cpp_info.debug.libs.extend(["debug_Lib"])
-        deps_cpp_info = CppInfoViewAggregated(CppInfoView(cpp_info, "<version>", "<description>"))
+        cpp_info_root = CppInfoView(cpp_info, "<version>", "<description>")
 
+        deps_cpp_info = CppInfoViewDict()
         child = CppInfo("Boost", "F:")
         child.includedirs.append("ChildrenPath")
         child.debug.includedirs.append("ChildrenDebugPath")
@@ -123,7 +124,7 @@ VAR2=23
         deps_user_info["LIB2"].myuservar = "23"
 
         fakeconan = namedtuple("Conanfile", "deps_cpp_info cpp_info deps_env_info env_info user_info deps_user_info")
-        output = TXTGenerator(fakeconan(deps_cpp_info, None, deps_env_info, deps_user_info, {}, defaultdict(dict))).content
+        output = TXTGenerator(fakeconan(deps_cpp_info, cpp_info_root, deps_env_info, deps_user_info, {}, defaultdict(dict))).content
 
         deps_cpp_info2, _, deps_env_info2 = TXTGenerator.loads(output)
         self.assertEqual(deps_cpp_info.includedirs, deps_cpp_info2.includedirs)
