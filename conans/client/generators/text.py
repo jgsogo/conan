@@ -125,7 +125,7 @@ class TXTGenerator(Generator):
                 data[dep][config][field] = lines
 
             # Build the data structures
-            cpp_info_root = [None, "<version>", "<description>"]
+            cpp_info_root = [CppInfo("<name>", "<rootpath>"), "<version>", "<description>"]
             cpp_info_deps = defaultdict(lambda: [None, "<version>", "<description>"])
             for dep, configs_cpp_info in data.items():
                 cpp_info_list = [CppInfo(dep or "<name>", "<rootpath>"), "<version>", "<description>"]
