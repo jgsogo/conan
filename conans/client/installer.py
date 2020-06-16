@@ -538,19 +538,19 @@ class BinaryInstaller(object):
 
             if not using_build_profile:  # Do not touch anything
                 conan_file.deps_user_info[n.ref.name] = n.conanfile.user_info
-                conan_file.deps_cpp_info.add(n.ref.name, n.conanfile._conan_dep_cpp_info)
+                conan_file.deps_cpp_info.add(n.ref.name, n.conanfile.cpp_info)
                 conan_file.deps_env_info.update(n.conanfile.env_info, n.ref.name)
             else:
                 if n in transitive or n in br_host:
-                    conan_file.deps_cpp_info.add(n.ref.name, n.conanfile._conan_dep_cpp_info)
+                    conan_file.deps_cpp_info.add(n.ref.name, n.conanfile.cpp_info)
                 else:
                     env_info = EnvInfo()
                     env_info._values_ = n.conanfile.env_info._values_.copy()
                     # Add cpp_info.bin_paths/lib_paths to env_info (it is needed for runtime)
-                    env_info.DYLD_LIBRARY_PATH.extend(n.conanfile._conan_dep_cpp_info.lib_paths)
-                    env_info.DYLD_LIBRARY_PATH.extend(n.conanfile._conan_dep_cpp_info.framework_paths)
-                    env_info.LD_LIBRARY_PATH.extend(n.conanfile._conan_dep_cpp_info.lib_paths)
-                    env_info.PATH.extend(n.conanfile._conan_dep_cpp_info.bin_paths)
+                    env_info.DYLD_LIBRARY_PATH.extend(n.conanfile.cpp_info.lib_paths)
+                    env_info.DYLD_LIBRARY_PATH.extend(n.conanfile.cpp_info.framework_paths)
+                    env_info.LD_LIBRARY_PATH.extend(n.conanfile.cpp_info.lib_paths)
+                    env_info.PATH.extend(n.conanfile.cpp_info.bin_paths)
                     conan_file.deps_env_info.update(env_info, n.ref.name)
 
         # Update the info but filtering the package values that not apply to the subtree
@@ -559,14 +559,13 @@ class BinaryInstaller(object):
         add_env_conaninfo(conan_file, subtree_libnames)
 
     def _call_package_info(self, conanfile, package_folder, ref):
-        conanfile.cpp_info = CppInfo(conanfile.name, package_folder)
         conanfile.env_info = EnvInfo()
         conanfile.user_info = UserInfo()
 
         # Get deps_cpp_info from upstream nodes
-        public_deps = [name for name, req in conanfile.requires.items() if not req.private
-                       and not req.override]
-        conanfile.cpp_info.public_deps = public_deps
+        #public_deps = [name for name, req in conanfile.requires.items() if not req.private
+        #               and not req.override]
+        #conanfile.cpp_info.public_deps = public_deps
         # Once the node is build, execute package info, so it has access to the
         # package folder and artifacts
         conan_v2 = get_env(CONAN_V2_MODE_ENVVAR, False)
@@ -577,13 +576,14 @@ class BinaryInstaller(object):
                     conanfile.source_folder = None
                     conanfile.build_folder = None
                     conanfile.install_folder = None
+
+                    conanfile.cpp_info = CppInfo(conanfile.name, package_folder)
                     self._hook_manager.execute("pre_package_info", conanfile=conanfile,
                                                reference=ref)
                     conanfile.package_info()
-                    if conanfile._conan_dep_cpp_info is None:
-                        try:
-                            conanfile._conan_dep_cpp_info = CppInfoView(conanfile.cpp_info, conanfile.version, conanfile.description)
-                        except ConanException as e:
-                            raise ConanException("%s package_info(): %s" % (str(conanfile), e))
                     self._hook_manager.execute("post_package_info", conanfile=conanfile,
                                                reference=ref)
+                    try:
+                        conanfile.cpp_info = CppInfoView(conanfile.cpp_info, conanfile.version, conanfile.description)
+                    except ConanException as e:
+                        raise ConanException("%s package_info(): %s" % (str(conanfile), e))

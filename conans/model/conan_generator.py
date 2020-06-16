@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractproperty
-
+from conans.model.cpp_info import CppInfoViewAggregated
 import six
 
 
@@ -15,8 +15,28 @@ class Generator(object):
         self._deps_user_info = conanfile.deps_user_info
 
     @property
+    def deps_cpp_info(self):
+        """ Cpp info from all the dependencies """
+        return self.conanfile.deps_cpp_info
+
+    @property
+    def root_cpp_info(self):
+        """ Cpp for the conanfile itself """
+        return self.conanfile.cpp_info
+
+    @property
+    def cpp_info(self):
+        """ Cpp info aggregated for the conanfile itself and the dependencies """
+        # TODO: Cache property
+        cpp_info_agg = CppInfoViewAggregated(self.root_cpp_info)
+        for key, value in self.deps_cpp_info.dependencies.items():
+            cpp_info_agg.add(key, value)
+        return cpp_info_agg
+
+    @property
     def deps_build_info(self):
-        return self._deps_build_info
+        # TODO: Remove, prefer 'self.deps_cpp_info'
+        return self.deps_cpp_info
 
     @property
     def deps_env_info(self):
