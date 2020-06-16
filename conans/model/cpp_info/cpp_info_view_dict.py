@@ -88,7 +88,19 @@ class CppInfoViewDict(BaseCppInfoViewDict):
 
     @property
     def deps(self):
-        return self._dependencies.values()
+        return map(str, self._dependencies.values())
+
+    @property
+    def sysroot(self):
+        # TODO: This is a chapuza, but 'sysroot' is the first one found
+        for it in self._dependencies.values():
+            try:
+                sysroot = getattr(it, 'sysroot')
+                if sysroot:
+                    return sysroot
+            except AttributeError:
+                pass
+        return ""
 
     def __getattr__(self, item):
         if item in self._configs:

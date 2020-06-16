@@ -26,6 +26,8 @@ def _getter_abs_paths(inner_field):
         ret = []
         for it in getattr(self, inner_field):
             fullpath = os.path.join(self._cpp_info.rootpath, it)
+            if self.filter_empty and not os.path.exists(fullpath):
+                continue
             ret.append(fullpath)
         return ret
 
@@ -95,9 +97,14 @@ class BaseCppInfoView(object):
 
     def __init__(self, cpp_info):
         self._cpp_info = cpp_info
+        self._filter_empty = True
 
     def __str__(self):
         return str(self._cpp_info)
+
+    @property
+    def filter_empty(self):
+        return self._filter_empty
 
     @property
     def name(self):

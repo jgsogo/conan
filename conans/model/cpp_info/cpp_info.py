@@ -100,7 +100,7 @@ class BaseCppInfo(object):
 
 
 class CppInfo(BaseCppInfo):
-    def __init__(self, ref_name, rootpath, add_defaults=False):
+    def __init__(self, ref_name, rootpath, add_defaults=True):
         super(CppInfo, self).__init__(add_defaults=add_defaults)
         self.rootpath = rootpath
         self.sysroot = ""
