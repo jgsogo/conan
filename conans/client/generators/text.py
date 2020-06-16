@@ -14,8 +14,8 @@ from collections import namedtuple
 
 class DepsCppTXT(object):
     def __init__(self, cpp_info):
-        self.version = "<DepsCppTXT::version>"  # cpp_info.version
-        self.name = "<DepsCppTXT::name>"  # cpp_info.get_name(TXTGenerator.name)
+        self.version = cpp_info.version
+        self.name = cpp_info.get_name(TXTGenerator.name)
         self.include_paths = "\n".join(p.replace("\\", "/")
                                        for p in cpp_info.include_paths)
         self.lib_paths = "\n".join(p.replace("\\", "/")
@@ -33,8 +33,8 @@ class DepsCppTXT(object):
         self.exelinkflags = "\n".join(cpp_info.exelinkflags)
         self.bin_paths = "\n".join(p.replace("\\", "/")
                                    for p in cpp_info.bin_paths)
-        self.rootpath = "<DepsCppTXT::rootpath>"  # "%s" % cpp_info.rootpath.replace("\\", "/")
-        self.sysroot = "<DepsCppTXT::sysroot>"  # "%s" % cpp_info.sysroot.replace("\\", "/") if cpp_info.sysroot else ""
+        self.rootpath = "%s" % cpp_info.rootpath.replace("\\", "/")
+        self.sysroot = "%s" % cpp_info.sysroot.replace("\\", "/") if cpp_info.sysroot else ""
         self.frameworks = "\n".join(cpp_info.frameworks)
         self.framework_paths = "\n".join(p.replace("\\", "/")
                                          for p in cpp_info.framework_paths)
@@ -182,12 +182,13 @@ class TXTGenerator(Generator):
                     '[frameworks{dep}{config}]\n{deps.frameworks}\n\n'
                     '[frameworkdirs{dep}{config}]\n{deps.framework_paths}\n\n')
 
+
         sections = []
-        deps = DepsCppTXT(self.deps_build_info)
+        deps = DepsCppTXT(self.root_cpp_info)
         all_flags = template.format(dep="", deps=deps, config="")
         sections.append(all_flags)
 
-        for config, cpp_info in self.deps_build_info.get_configs().items():
+        for config, cpp_info in self.root_cpp_info.get_configs().items():
             deps = DepsCppTXT(cpp_info)
             all_flags = template.format(dep="", deps=deps, config=":" + config)
             sections.append(all_flags)
@@ -197,7 +198,7 @@ class TXTGenerator(Generator):
                          '[name{dep}]\n{deps.name}\n\n' +
                          '[version{dep}]\n{deps.version}\n\n')
 
-        for dep_name, dep_cpp_info in self.deps_build_info._dependencies.items():
+        for dep_name, dep_cpp_info in self.deps_build_info.dependencies:
             dep = "_" + dep_name
             deps = DepsCppTXT(dep_cpp_info)
             dep_flags = template_deps.format(dep=dep, deps=deps, config="")
