@@ -562,10 +562,6 @@ class BinaryInstaller(object):
         conanfile.env_info = EnvInfo()
         conanfile.user_info = UserInfo()
 
-        # Get deps_cpp_info from upstream nodes
-        #public_deps = [name for name, req in conanfile.requires.items() if not req.private
-        #               and not req.override]
-        #conanfile.cpp_info.public_deps = public_deps
         # Once the node is build, execute package info, so it has access to the
         # package folder and artifacts
         conan_v2 = get_env(CONAN_V2_MODE_ENVVAR, False)
@@ -585,5 +581,10 @@ class BinaryInstaller(object):
                                                reference=ref)
                     try:
                         conanfile.cpp_info = CppInfoView(conanfile.cpp_info, conanfile.version, conanfile.description)
+                        # Get deps_cpp_info from upstream nodes
+                        public_deps = [name for name, req in conanfile.requires.items() if
+                                       not req.private
+                                       and not req.override]
+                        conanfile.cpp_info.public_deps = public_deps
                     except ConanException as e:
                         raise ConanException("%s package_info(): %s" % (str(conanfile), e))
