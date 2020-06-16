@@ -62,7 +62,7 @@ class DepsCppCmake(object):
         self.sharedlinkflags_list = join_flags(";", cpp_info.sharedlinkflags)
         self.exelinkflags_list = join_flags(";", cpp_info.exelinkflags)
 
-        self.rootpath = join_paths([cpp_info.rootpath])
+        self.rootpath = join_paths(["<rootpath>"])
         self.build_modules_paths = join_paths([path for path in cpp_info.build_modules_paths if
                                                path.endswith(".cmake")])
 

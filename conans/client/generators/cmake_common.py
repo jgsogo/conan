@@ -89,7 +89,7 @@ def cmake_settings_info(settings):
 
 def cmake_dependencies(dependencies, build_type=""):
     build_type = _build_type_str(build_type)
-    dependencies = " ".join(dependencies)
+    dependencies = " ".join(map(str, dependencies))  # TODO: Use 'get_name(generator)'??
     return "set(CONAN_DEPENDENCIES{build_type} {dependencies})".format(dependencies=dependencies,
                                                                        build_type=build_type)
 
