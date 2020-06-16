@@ -74,7 +74,7 @@ class Alpha(ConanFile):
         client.run("install . -g cmake")
         cmake = client.load("conanbuildinfo.cmake")
         self.assertIn('set(CONAN_SHARED_LINKER_FLAGS '
-                      '"CharlieFlag BetaFlag ${CONAN_SHARED_LINKER_FLAGS}")', cmake)
+                      '"BetaFlag CharlieFlag ${CONAN_SHARED_LINKER_FLAGS}")', cmake)
 
     def header_only_test(self):
         client = TestClient()

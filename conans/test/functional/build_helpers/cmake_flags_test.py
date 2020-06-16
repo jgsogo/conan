@@ -185,6 +185,7 @@ int main(){
 
     def targets_flags_test(self):
         client = TestClient()
+        client.current_folder = '/private/var/folders/fc/6mvcrc952dqcjfhl4c7c11ph0000gn/T/tmprkvv026zconans/path with spaces'
         client.save({"conanfile.py": conanfile_py})
         client.run("export . lasote/testing")
         cmake_targets = cmake.replace("conan_basic_setup()",
