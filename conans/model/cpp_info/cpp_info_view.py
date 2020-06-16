@@ -97,14 +97,9 @@ class BaseCppInfoView(object):
 
     def __init__(self, cpp_info):
         self._cpp_info = cpp_info
-        self._filter_empty = True
 
     def __str__(self):
         return str(self._cpp_info)
-
-    @property
-    def filter_empty(self):
-        return self._filter_empty
 
     @property
     def name(self):
@@ -125,6 +120,7 @@ class CppInfoView(BaseCppInfoView):
 
         self._version = version
         self._description = description
+        self._filter_empty = True
         self.public_deps = []
         self.components = OrderedDict()
         for k, v in self._cpp_info.components.items():
@@ -140,6 +136,14 @@ class CppInfoView(BaseCppInfoView):
     @property
     def description(self):
         return self._description
+
+    @property
+    def filter_empty(self):
+        return self._filter_empty
+
+    @filter_empty.setter
+    def filter_empty(self, value):
+        self._filter_empty = value
 
     def get_configs(self):
         return self._configs
@@ -165,6 +169,10 @@ class CppInfoViewConfig(BaseCppInfoView):
     def description(self):
         return self._pkg_cpp_info.description
 
+    @property
+    def filter_empty(self):
+        return self._pkg_cpp_info.filter_empty
+
 
 class CppInfoViewComponents(BaseCppInfoView):
 
@@ -180,6 +188,10 @@ class CppInfoViewComponents(BaseCppInfoView):
     @property
     def description(self):
         return self._pkg_cpp_info.description
+
+    @property
+    def filter_empty(self):
+        return self._pkg_cpp_info.filter_empty
 
     @property
     def requires(self):
