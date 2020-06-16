@@ -63,15 +63,15 @@ class BaseCppInfo(object):
               "build_modules", "srcdirs", "libs", "defines", "cflags", "cxxflags", "sharedlinkflags",
               "exelinkflags", "frameworks", "system_libs"]
 
-    def __init__(self):
+    def __init__(self, add_defaults=True):
         # TODO: I can move all these attributes to the metaclass
         # path fields
-        self._includedirs = CppInfoField([DEFAULT_INCLUDE, ])
-        self._libdirs = CppInfoField([DEFAULT_LIB, ])
-        self._resdirs = CppInfoField([DEFAULT_RES, ])
-        self._bindirs = CppInfoField([DEFAULT_BIN, ])
-        self._builddirs = CppInfoField([DEFAULT_BUILD, ])
-        self._frameworkdirs = CppInfoField([DEFAULT_FRAMEWORK, ])
+        self._includedirs = CppInfoField([DEFAULT_INCLUDE, ] if add_defaults else [])
+        self._libdirs = CppInfoField([DEFAULT_LIB, ] if add_defaults else [])
+        self._resdirs = CppInfoField([DEFAULT_RES, ] if add_defaults else [])
+        self._bindirs = CppInfoField([DEFAULT_BIN, ] if add_defaults else [])
+        self._builddirs = CppInfoField([DEFAULT_BUILD, ] if add_defaults else [])
+        self._frameworkdirs = CppInfoField([DEFAULT_FRAMEWORK, ] if add_defaults else [])
         self._build_modules = CppInfoField()
         self._srcdirs = CppInfoField()
 
@@ -100,8 +100,8 @@ class BaseCppInfo(object):
 
 
 class CppInfo(BaseCppInfo):
-    def __init__(self, ref_name, rootpath):
-        super(CppInfo, self).__init__()
+    def __init__(self, ref_name, rootpath, add_defaults=False):
+        super(CppInfo, self).__init__(add_defaults=add_defaults)
         self.rootpath = rootpath
         self.sysroot = ""
         self.name = ref_name
