@@ -247,7 +247,7 @@ class AutoToolsBuildEnvironment(object):
         if arch_flag:
             ret.append(arch_flag)
 
-        sysf = sysroot_flag(self._deps_cpp_info.sysroot, self._conanfile.settings,
+        sysf = sysroot_flag("<sysroot>", self._conanfile.settings,
                             win_bash=self._win_bash,
                             subsystem=self.subsystem)
         if sysf:
@@ -269,7 +269,7 @@ class AutoToolsBuildEnvironment(object):
         btfs = build_type_flags(self._conanfile.settings)
         if btfs:
             ret.extend(btfs)
-        srf = sysroot_flag(self._deps_cpp_info.sysroot,
+        srf = sysroot_flag("<sysroot>",
                            self._conanfile.settings,
                            win_bash=self._win_bash,
                            subsystem=self.subsystem)
