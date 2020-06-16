@@ -1,6 +1,7 @@
 import re
 import traceback
 from collections import defaultdict
+import os
 
 from conans.errors import ConanException
 from conans.model import Generator
@@ -12,10 +13,8 @@ from conans.util.log import logger
 from collections import namedtuple
 
 
-class DepsCppTXT(object):
+class RootCppTXT(object):
     def __init__(self, cpp_info):
-        self.version = cpp_info.version
-        self.name = cpp_info.get_name(TXTGenerator.name)
         self.include_paths = "\n".join(p.replace("\\", "/")
                                        for p in cpp_info.include_paths)
         self.lib_paths = "\n".join(p.replace("\\", "/")
@@ -33,11 +32,18 @@ class DepsCppTXT(object):
         self.exelinkflags = "\n".join(cpp_info.exelinkflags)
         self.bin_paths = "\n".join(p.replace("\\", "/")
                                    for p in cpp_info.bin_paths)
-        self.rootpath = "%s" % cpp_info.rootpath.replace("\\", "/")
         self.sysroot = "%s" % cpp_info.sysroot.replace("\\", "/") if cpp_info.sysroot else ""
         self.frameworks = "\n".join(cpp_info.frameworks)
         self.framework_paths = "\n".join(p.replace("\\", "/")
                                          for p in cpp_info.framework_paths)
+
+
+class DepsCppTXT(RootCppTXT):
+    def __init__(self, cpp_info):
+        super(DepsCppTXT, self).__init__(cpp_info)
+        self.version = cpp_info.version
+        self.name = cpp_info.get_name(TXTGenerator.name)
+        self.rootpath = "%s" % cpp_info.rootpath.replace("\\", "/")
 
 
 class TXTGenerator(Generator):
@@ -125,38 +131,33 @@ class TXTGenerator(Generator):
                 data[dep][config][field] = lines
 
             # Build the data structures
-            cpp_info_root = [CppInfo("<name>", "<rootpath>"), "<version>", "<description>"]
-            cpp_info_deps = defaultdict(lambda: [None, "<version>", "<description>"])
+            def _populate_cpp_info(_cpp_info, _data, _rootpath):
+                for it, value in _data.items():
+                    if it.endswith('dirs'):
+                        value = [os.path.relpath(it, rootpath) for it in value]
+                    setattr(_cpp_info, it, value)
+
+            _ = data.pop(None, {})  # This is the data for the root object
+            deps_cpp_info = CppInfoViewDict()
+
             for dep, configs_cpp_info in data.items():
-                cpp_info_list = [CppInfo(dep or "<name>", "<rootpath>"), "<version>", "<description>"]
-                if dep is None:
-                    cpp_info_root = cpp_info_list
-                    #cpp_info = CppInfo(dep, "<rootpath>")
-                else:
-                    cpp_info_deps[dep] = cpp_info_list
-                    #cpp_info = deps_cpp_info._dependencies.setdefault(dep, CppInfo(dep, root_folder=""))
+                # Data for the 'cpp_info' object (no configs)
+                no_config_data = configs_cpp_info.pop(None)
+                rootpath = no_config_data.pop('rootpath')[0]
+                dep_cpp_info = CppInfo(dep, rootpath)
+                dep_cpp_info.names[TXTGenerator.name] = no_config_data.pop('name')[0]
+                dep_cpp_info.sysroot = no_config_data.pop('sysroot', [""])[0]
+                _populate_cpp_info(dep_cpp_info, no_config_data, rootpath)
 
-                for config, fields in configs_cpp_info.items():
-                    item_to_apply = cpp_info_list[0] if not config else getattr(cpp_info_list[0], config)
+                # Now the configs
+                for config, config_data in configs_cpp_info.items():
+                    cpp_info_config = getattr(dep_cpp_info, config)
+                    _populate_cpp_info(cpp_info_config, config_data, rootpath)
 
-                    for key, value in fields.items():
-                        if key == 'version':
-                            cpp_info_list[1] = value[0]
-                        elif key == 'description':
-                            cpp_info_list[2] = value[0]
-                        elif key == 'name':
-                            setattr(item_to_apply, '_ref_name', value[0])
-                        elif key in ['rootpath', 'sysroot']:  # TODO: What about names-for-generator?
-                            setattr(item_to_apply, key, value[0])
-                        else:
-                            setattr(item_to_apply, key, value)
+                # Add to the dependecy list
+                version = no_config_data.pop('version')[0]
+                deps_cpp_info.add(dep, CppInfoView(dep_cpp_info, version))
 
-            cpp_info, version, description = cpp_info_root
-            cpp_info_view = CppInfoView(cpp_info, version, description)
-            deps_cpp_info = CppInfoViewAggregated(cpp_info_view)
-            for key, val in cpp_info_deps.items():
-                cpp_info, version, description = val
-                deps_cpp_info.add(key, CppInfoView(cpp_info, version, description))
             return deps_cpp_info
 
         except Exception as e:
@@ -184,13 +185,13 @@ class TXTGenerator(Generator):
 
 
         sections = []
-        cpp_info_root = self.root_cpp_info or CppInfoView(CppInfo("", "", add_defaults=False), "")
-        deps = DepsCppTXT(cpp_info_root)
+        cpp_info_root = self.cpp_info  # self.root_cpp_info or CppInfoView(CppInfo("", "", add_defaults=False), "")
+        deps = RootCppTXT(cpp_info_root)
         all_flags = template.format(dep="", deps=deps, config="")
         sections.append(all_flags)
 
         for config, cpp_info in cpp_info_root.get_configs().items():
-            deps = DepsCppTXT(cpp_info)
+            deps = RootCppTXT(cpp_info)
             all_flags = template.format(dep="", deps=deps, config=":" + config)
             sections.append(all_flags)
 
