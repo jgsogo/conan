@@ -16,6 +16,7 @@ class _CppInfoViewConfigPlaceholder(CppInfoViewConfig):
 class BaseCppInfoViewDict(object):
     _expected_class = None
     AGGREGATE_FIELDS = BaseCppInfo.FIELDS + list(CppInfoView.FIELDS_PATH_MAPPING.keys())
+    REVERSED_FIELDS = ["defines", "cflags", "cxxflags", "sharedlinkflags",]
 
     def __init__(self):
         self._dependencies = OrderedDict()
@@ -37,9 +38,15 @@ class BaseCppInfoViewDict(object):
 
     def __getattr__(self, item):
         if item in self.AGGREGATE_FIELDS:
+            deps = list(self._dependencies.items())
+            if item in self.REVERSED_FIELDS:
+                # Some items, like flags require the most indirect one to be first, so it is
+                #   overriden by other values downstream
+                deps = reversed(deps)
+
             # Aggregate fields from all dependencies
             ret = []
-            for _, dep in self._dependencies.items():
+            for _, dep in deps:
                 ret += getattr(dep, item)
             return ret
         else:
@@ -77,8 +84,7 @@ class CppInfoViewDict(BaseCppInfoViewDict):
 
     @property
     def dependencies(self):
-        for key, val in self._dependencies.items():
-            yield key, val
+        return [(key, val) for key, val in self._dependencies.items()]
 
     @property
     def deps(self):

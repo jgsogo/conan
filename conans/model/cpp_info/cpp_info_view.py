@@ -118,7 +118,7 @@ class CppInfoView(BaseCppInfoView):
 
         self._version = version
         self._description = description
-
+        self.public_deps = []
         self.components = OrderedDict()
         for k, v in self._cpp_info.components.items():
             self.components[k] = CppInfoViewComponents(self, v)
