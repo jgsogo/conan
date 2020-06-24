@@ -240,7 +240,7 @@ class CMakeBuildHelper(object):
                 compilervars_dict = tools.compilervars_dict(self._conanfile, force=True)
                 context = _environment_add(compilervars_dict, post=self._append_vcvars)
         with context:
-            self._conanfile.run(command)
+            self._conanfile.run(command, run_environment=True)
 
     def configure(self, args=None, defs=None, source_dir=None, build_dir=None,
                   source_folder=None, build_folder=None, cache_build_folder=None,
