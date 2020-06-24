@@ -275,10 +275,10 @@ class ConanFile(object):
                 if OSInfo().is_macos and isinstance(command, string_types):
                     # Security policy on macOS clears this variable when executing /bin/sh. To
                     # keep its value, set it again inside the shell when running the command.
-                    command = 'DYLD_LIBRARY_PATH="%s" DYLD_FRAMEWORK_PATH="%s" %s' % \
-                              (os.environ.get('DYLD_LIBRARY_PATH', ''),
-                               os.environ.get("DYLD_FRAMEWORK_PATH", ''),
-                               command)
+                    env_prefix = 'DYLD_LIBRARY_PATH="%s"' % os.environ.get('DYLD_LIBRARY_PATH', '')
+                    # Add it to every command in 'commands'
+                    cmds = [it for it in command.split('&&')]
+                    command = ' && '.join(['{} {}'.format(env_prefix, it) for it in cmds])
                 retcode = _run()
         else:
             retcode = _run()
