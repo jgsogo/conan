@@ -5,13 +5,13 @@ import xml.etree.ElementTree
 from conans.client import tools
 from conans.client.generators import VisualStudioGenerator
 from conans.model.conan_file import ConanFile
+from conans.model.cpp_info import CppInfoView, CppInfo
 from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
 from conans.model.settings import Settings
+from conans.test.utils.mocks import TestBufferConanOutput
 from conans.test.utils.test_files import temp_folder
-from conans.test.utils.tools import TestBufferConanOutput
 from conans.util.files import save
-from conans.model.cpp_info import CppInfoView, CppInfo
 
 
 class VisualStudioGeneratorTest(unittest.TestCase):
@@ -113,7 +113,6 @@ class VisualStudioGeneratorTest(unittest.TestCase):
         self.assertIn(condition_custom, content)
 
     def addional_dependencies_test(self):
-
         def validate_additional_dependencies(lib, additional_dep):
             conanfile = ConanFile(TestBufferConanOutput(), None)
             conanfile.initialize(Settings({}), EnvValues())

@@ -1,4 +1,3 @@
-
 # FIXME: The functions from the tracer.py module should be called here, I removed from there some
 # of them because it has to be called in the remote manager, not in the proxy, where we have info
 # about the downloaded files prior to unzip them
@@ -6,9 +5,9 @@
 from collections import OrderedDict, defaultdict, namedtuple
 from datetime import datetime
 
+from conans.model.cpp_info import CppInfoView, CppInfo
 # Install actions
 from conans.model.ref import ConanFileReference, PackageReference
-from conans.model.cpp_info import CppInfoView, CppInfo
 
 INSTALL_CACHE = 0
 INSTALL_DOWNLOADED = 1
@@ -24,7 +23,8 @@ INSTALL_ERROR_BUILDING = "building"
 
 
 def _cpp_info_to_dict(cpp_info):
-    fields = CppInfo.FIELDS + list(CppInfoView.FIELDS_PATH_MAPPING.keys()) + ['version', 'description',]
+    fields = CppInfo.FIELDS + list(CppInfoView.FIELDS_PATH_MAPPING.keys()) + ['version',
+                                                                              'description', ]
 
     def populate_basic_fields(_cpp_info, extra_fields=None):
         doc = {}
@@ -47,7 +47,7 @@ def _cpp_info_to_dict(cpp_info):
     if cpp_info.components:
         cmps_data = {}
         for cmp_name, cmp_data in cpp_info.components.items():
-            cmps_data[cmp_name] = populate_basic_fields(cmp_data, extra_fields=['requires',])
+            cmps_data[cmp_name] = populate_basic_fields(cmp_data, extra_fields=['requires', ])
         result["components"] = cmps_data
 
     return result
@@ -72,18 +72,18 @@ class ActionRecorder(object):
 
     # ###### INSTALL METHODS ############
     def add_recipe_being_developed(self, ref):
-        assert(isinstance(ref, ConanFileReference))
+        assert (isinstance(ref, ConanFileReference))
         self._inst_recipes_develop.add(ref.copy_clear_rev())
 
     def _add_recipe_action(self, ref, action):
-        assert(isinstance(ref, ConanFileReference))
+        assert (isinstance(ref, ConanFileReference))
         ref = ref.copy_clear_rev()
         if ref not in self._inst_recipes_actions:
             self._inst_recipes_actions[ref] = []
         self._inst_recipes_actions[ref].append(action)
 
     def _add_package_action(self, pref, action):
-        assert(isinstance(pref, PackageReference))
+        assert (isinstance(pref, PackageReference))
         pref = pref.copy_clear_revs()
         if pref not in self._inst_packages_actions:
             self._inst_packages_actions[pref] = []
@@ -117,7 +117,7 @@ class ActionRecorder(object):
         self._add_package_action(pref, Action(INSTALL_DOWNLOADED, pref, {"remote": remote_name}))
 
     def package_install_error(self, pref, error_type, description, remote_name=None):
-        assert(isinstance(pref, PackageReference))
+        assert (isinstance(pref, PackageReference))
         if pref not in self._inst_packages_actions:
             self._inst_packages_actions[pref.copy_clear_revs()] = []
         doc = {"type": error_type, "description": description, "remote": remote_name}
@@ -130,7 +130,8 @@ class ActionRecorder(object):
 
     @property
     def install_errored(self):
-        all_values = list(self._inst_recipes_actions.values()) + list(self._inst_packages_actions.values())
+        all_values = list(self._inst_recipes_actions.values()) + list(
+            self._inst_packages_actions.values())
         for acts in all_values:
             for act in acts:
                 if act.type == INSTALL_ERROR:
@@ -138,7 +139,7 @@ class ActionRecorder(object):
         return False
 
     def _get_installed_packages(self, ref):
-        assert(isinstance(ref, ConanFileReference))
+        assert (isinstance(ref, ConanFileReference))
         ret = []
         for _pref, _package_actions in self._inst_packages_actions.items():
             # Could be a download and then an access to cache, we want the first one

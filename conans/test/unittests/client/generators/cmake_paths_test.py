@@ -2,12 +2,12 @@ import os
 import unittest
 
 from conans.client.generators.cmake_paths import CMakePathsGenerator
-from conans.model.conan_file import ConanFile
-from conans.model.env_info import EnvValues
-from conans.test.utils.test_files import temp_folder
-from conans.test.utils.tools import TestBufferConanOutput
 from conans.errors import ConanException
-from conans.model.cpp_info import CppInfoView, CppInfo, CppInfoViewDict
+from conans.model.conan_file import ConanFile
+from conans.model.cpp_info import CppInfoView, CppInfo
+from conans.model.env_info import EnvValues
+from conans.test.utils.mocks import TestBufferConanOutput
+from conans.test.utils.test_files import temp_folder
 
 
 class _MockSettings(object):

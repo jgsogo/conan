@@ -2,12 +2,12 @@ import unittest
 
 from conans.client.conf import get_default_settings_yml
 from conans.client.generators.pkg_config import PkgConfigGenerator
-from conans.model.cpp_info import CppInfo, CppInfoView, CppInfoViewDict
 from conans.model.conan_file import ConanFile
+from conans.model.cpp_info import CppInfo, CppInfoView
 from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
 from conans.model.settings import Settings
-from conans.test.utils.tools import TestBufferConanOutput
+from conans.test.utils.mocks import TestBufferConanOutput
 
 
 class PkgGeneratorTest(unittest.TestCase):
@@ -28,7 +28,8 @@ class PkgGeneratorTest(unittest.TestCase):
         cpp_info.defines = ["MYDEFINE11"]
         cpp_info.cflags.append("-Flag1=21")
         cpp_info.public_deps = ["MyPkg"]  # TODO: ???
-        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "1.7", "My other cool description"))
+        conanfile.deps_cpp_info.add(ref.name,
+                                    CppInfoView(cpp_info, "1.7", "My other cool description"))
 
         ref = ConanFileReference.loads("MyPkg2/0.1@lasote/stables")
         cpp_info = CppInfo(ref.name, "dummy_root_folder2")
@@ -94,7 +95,8 @@ Cflags: -I${includedir} -Flag1=23 -DMYDEFINE1
         cpp_info.names["pkg_config"] = "my_pkg1_custom_name"
         cpp_info.defines = ["MYDEFINE11"]
         cpp_info.cflags.append("-Flag1=21")
-        conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "1.7", "My other cool description"))
+        conanfile.deps_cpp_info.add(ref.name,
+                                    CppInfoView(cpp_info, "1.7", "My other cool description"))
 
         ref = ConanFileReference.loads("MyPkg2/0.1@lasote/stables")
         cpp_info = CppInfo(ref.name, "dummy_root_folder2")

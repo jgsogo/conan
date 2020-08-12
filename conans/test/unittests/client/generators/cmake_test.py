@@ -10,13 +10,13 @@ from conans.client.generators import CMakeFindPackageGenerator, CMakeFindPackage
 from conans.client.generators.cmake import CMakeGenerator
 from conans.client.generators.cmake_multi import CMakeMultiGenerator
 from conans.errors import ConanException
-from conans.model.cpp_info import CppInfo, CppInfoView
 from conans.model.conan_file import ConanFile
+from conans.model.cpp_info import CppInfo, CppInfoView
 from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
 from conans.model.settings import Settings
+from conans.test.utils.mocks import TestBufferConanOutput
 from conans.test.utils.test_files import temp_folder
-from conans.test.utils.tools import TestBufferConanOutput
 from conans.util.files import save
 
 
@@ -323,9 +323,11 @@ endmacro()""", macro)
         settings.build_type = "Debug"
         conanfile = ConanFile(TestBufferConanOutput(), None)
         conanfile.initialize(Settings({}), EnvValues())
+        conanfile.settings = settings
+
         ref = ConanFileReference.loads("MyPkg/0.1@lasote/stables")
         cpp_info = CppInfo(ref.name, "dummy_root_folder1")
-        cpp_info.framework_paths.extend(["path/to/Frameworks1", "path/to/Frameworks2"])
+        cpp_info.frameworkdirs.extend(["path/to/Frameworks1", "path/to/Frameworks2"])
         cpp_info.frameworks = ["OpenGL", "OpenCL"]
         conanfile.deps_cpp_info.add(ref.name, cpp_info)
         conanfile.settings = settings
@@ -334,7 +336,9 @@ endmacro()""", macro)
         content = generator.content
         self.assertIn('find_library(CONAN_FRAMEWORK_${_FRAMEWORK}_FOUND NAME ${_FRAMEWORK} PATHS'
                       ' ${CONAN_FRAMEWORK_DIRS${SUFFIX}})', content)
-        self.assertIn('set(CONAN_FRAMEWORK_DIRS "path/to/Frameworks1"\n\t\t\t"path/to/Frameworks2" '
+        self.assertIn('set(CONAN_FRAMEWORK_DIRS "dummy_root_folder1/Frameworks"\n'
+                      '\t\t\t"dummy_root_folder1/path/to/Frameworks1"\n'
+                      '\t\t\t"dummy_root_folder1/path/to/Frameworks2" '
                       '${CONAN_FRAMEWORK_DIRS})', content)
         self.assertIn('set(CONAN_LIBS ${CONAN_LIBS} ${CONAN_SYSTEM_LIBS} '
                       '${CONAN_FRAMEWORKS_FOUND})', content)
@@ -476,10 +480,12 @@ class CMakeCppInfoNamesTest(unittest.TestCase):
         self.assertIn("FindMyCMakeFindPackageName2.cmake", content.keys())
         self.assertNotIn("MyPkG", content["FindMyCMakeFindPackageName.cmake"])
         self.assertNotIn("MyPkG2", content["FindMyCMakeFindPackageName2.cmake"])
-        self.assertIn("add_library(MyCMakeFindPackageName::MyCMakeFindPackageName INTERFACE IMPORTED)",
-                      content["FindMyCMakeFindPackageName.cmake"])
-        self.assertIn("add_library(MyCMakeFindPackageName2::MyCMakeFindPackageName2 INTERFACE IMPORTED)",
-                      content["FindMyCMakeFindPackageName2.cmake"])
+        self.assertIn(
+            "add_library(MyCMakeFindPackageName::MyCMakeFindPackageName INTERFACE IMPORTED)",
+            content["FindMyCMakeFindPackageName.cmake"])
+        self.assertIn(
+            "add_library(MyCMakeFindPackageName2::MyCMakeFindPackageName2 INTERFACE IMPORTED)",
+            content["FindMyCMakeFindPackageName2.cmake"])
         self.assertIn("find_dependency(MyCMakeFindPackageName REQUIRED)",
                       content["FindMyCMakeFindPackageName2.cmake"])
 

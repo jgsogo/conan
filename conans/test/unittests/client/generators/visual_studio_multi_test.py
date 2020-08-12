@@ -8,18 +8,18 @@ from conans.client.conf import get_default_settings_yml
 from conans.client.generators import VisualStudioMultiGenerator
 from conans.client.tools.files import chdir
 from conans.model.conan_file import ConanFile
+from conans.model.cpp_info import CppInfoView, CppInfo
 from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
 from conans.model.settings import Settings
+from conans.test.utils.mocks import TestBufferConanOutput
 from conans.test.utils.test_files import temp_folder
-from conans.test.utils.tools import TestBufferConanOutput
-from conans.model.cpp_info import CppInfoView, CppInfo
 
 
 @attr('visual_studio')
 class VisualStudioMultiGeneratorTest(unittest.TestCase):
 
-    @parameterized.expand([(False, ), (True, )])
+    @parameterized.expand([(False,), (True,)])
     def valid_xml_test(self, use_toolset):
         tempdir = temp_folder()
         with chdir(tempdir):
@@ -88,7 +88,6 @@ class VisualStudioMultiGeneratorTest(unittest.TestCase):
             os.unlink('conanbuildinfo_multi.props')
 
     def addional_dependencies_test(self):
-
         def validate_additional_dependencies(libname, additional_dep):
             tempdir = temp_folder()
             with chdir(tempdir):

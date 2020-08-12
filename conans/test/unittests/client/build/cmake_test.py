@@ -17,7 +17,7 @@ from conans.client.tools.oss import cpu_count
 from conans.errors import ConanException
 from conans.model.ref import ConanFileReference
 from conans.model.settings import Settings
-from conans.test.utils.conanfile import ConanFileMock, MockSettings
+from conans.test.utils.mocks import MockSettings, ConanFileMock
 from conans.test.utils.test_files import temp_folder
 from conans.util.files import load, save
 from conans.model.cpp_info import CppInfoView, CppInfoViewDict, CppInfoViewAggregated, CppInfo
@@ -1307,8 +1307,9 @@ build_type: [ Release]
                            ("iOS", "7.0",),
                            ("watchOS", "4.0",),
                            ("tvOS", "11.0",)])
-    @mock.patch('platform.system', return_value="Macos")
-    def test_cmake_system_version_osx(self, the_os, os_version, _):
+    @mock.patch("platform.system", return_value="Darwin")
+    @mock.patch("conans.client.tools.apple.XCRun.sdk_path", return_value='/opt')
+    def test_cmake_system_version_osx(self, the_os, os_version, _, __):
         settings = Settings.loads(get_default_settings_yml())
         settings.os = the_os
 

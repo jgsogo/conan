@@ -23,16 +23,17 @@ from conans.client.output import ConanOutput
 from conans.client.tools.files import replace_in_file, which
 from conans.client.tools.oss import OSInfo
 from conans.client.tools.win import vswhere
-from conans.errors import ConanException, NotFoundException, AuthenticationException
+from conans.errors import ConanException, AuthenticationException
+from conans.model.build_info import CppInfo
+from conans.model.cpp_info import CppInfo
 from conans.model.settings import Settings
-from conans.test.utils.conanfile import ConanFileMock
+from conans.test.utils.mocks import ConanFileMock, TestBufferConanOutput
 from conans.test.utils.test_files import temp_folder
-from conans.test.utils.tools import StoppableThreadBottle, TestBufferConanOutput, TestClient
+from conans.test.utils.tools import StoppableThreadBottle, TestClient
 from conans.tools import get_global_instances
 from conans.util.env_reader import get_env
 from conans.util.files import load, md5, mkdir, save
 from conans.util.runners import check_output_runner
-from conans.model.cpp_info import CppInfo
 
 
 class ConfigMock:
@@ -42,14 +43,17 @@ class ConfigMock:
 
 
 class RunnerMock(object):
-    def __init__(self, return_ok=True):
+    def __init__(self, return_ok=True, output=None):
         self.command_called = None
         self.return_ok = return_ok
+        self.output = output
 
     def __call__(self, command, output, win_bash=False, subsystem=None):  # @UnusedVariable
         self.command_called = command
         self.win_bash = win_bash
         self.subsystem = subsystem
+        if self.output and output and hasattr(output, "write"):
+            output.write(self.output)
         return 0 if self.return_ok else 1
 
 
@@ -212,7 +216,7 @@ class ToolsTest(unittest.TestCase):
         )
         self.assertEqual(
             tools.get_env("TO_LIST_NOT_TRIMMED", default=[], environment={"TO_LIST_NOT_TRIMMED":
-                                                                          " 1 , 2 , 3 "}),
+                                                                              " 1 , 2 , 3 "}),
             ["1", "2", "3"]
         )
 
@@ -260,7 +264,8 @@ class HelloConan(ConanFile):
 
         # Not test the real commmand get_command if it's setting the module global vars
         tmp = temp_folder()
-        conf = get_default_client_conf().replace("\n[proxies]", "\n[proxies]\nhttp = http://myproxy.com")
+        conf = get_default_client_conf().replace("\n[proxies]",
+                                                 "\n[proxies]\nhttp = http://myproxy.com")
         os.mkdir(os.path.join(tmp, ".conan"))
         save(os.path.join(tmp, ".conan", CONAN_CONF), conf)
         with tools.environment_append({"CONAN_USER_HOME": tmp}):
@@ -417,8 +422,8 @@ class HelloConan(ConanFile):
         # vswhere in PATH but not in ProgramFiles
         env = {"ProgramFiles": None, "ProgramFiles(x86)": None}
         if not which("vswhere") and vswhere_path:
-                vswhere_folder = os.path.join(program_files, "Microsoft Visual Studio", "Installer")
-                env.update({"PATH": [vswhere_folder]})
+            vswhere_folder = os.path.join(program_files, "Microsoft Visual Studio", "Installer")
+            env.update({"PATH": [vswhere_folder]})
         with tools.environment_append(env):
             self.assertTrue(vswhere())
 
@@ -427,7 +432,6 @@ class HelloConan(ConanFile):
 
         class MockConanfile(object):
             def __init__(self):
-
                 self.output = namedtuple("output", "info")(lambda x: None)  # @UnusedVariable
                 self.env = {"PATH": "/path/to/somewhere"}
 
@@ -435,6 +439,7 @@ class HelloConan(ConanFile):
                     def __call__(self, command, output, log_filepath=None,
                                  cwd=None, subprocess=False):  # @UnusedVariable
                         self.command = command
+
                 self._conan_runner = MyRun()
 
         conanfile = MockConanfile()
@@ -597,11 +602,17 @@ class HelloConan(ConanFile):
         ["Windows", "x86_64", "gcc", "x86_64-w64-mingw32"],
         ["Darwin", "x86_64", None, "x86_64-apple-darwin"],
         ["Macos", "x86", None, "i686-apple-darwin"],
-        ["iOS", "armv7", None, "arm-apple-darwin"],
-        ["watchOS", "armv7k", None, "arm-apple-darwin"],
-        ["watchOS", "armv8_32", None, "aarch64-apple-darwin"],
-        ["tvOS", "armv8", None, "aarch64-apple-darwin"],
-        ["tvOS", "armv8.3", None, "aarch64-apple-darwin"],
+        ["iOS", "armv7", None, "arm-apple-ios"],
+        ["iOS", "x86", None, "i686-apple-ios"],
+        ["iOS", "x86_64", None, "x86_64-apple-ios"],
+        ["watchOS", "armv7k", None, "arm-apple-watchos"],
+        ["watchOS", "armv8_32", None, "aarch64-apple-watchos"],
+        ["watchOS", "x86", None, "i686-apple-watchos"],
+        ["watchOS", "x86_64", None, "x86_64-apple-watchos"],
+        ["tvOS", "armv8", None, "aarch64-apple-tvos"],
+        ["tvOS", "armv8.3", None, "aarch64-apple-tvos"],
+        ["tvOS", "x86", None, "i686-apple-tvos"],
+        ["tvOS", "x86_64", None, "x86_64-apple-tvos"],
         ["Emscripten", "asm.js", None, "asmjs-local-emscripten"],
         ["Emscripten", "wasm", None, "wasm32-local-emscripten"],
         ["AIX", "ppc32", None, "rs6000-ibm-aix"],
@@ -639,7 +650,7 @@ class HelloConan(ConanFile):
             tar_file.add(os.path.abspath("test_folder"), "test_folder")
             tar_file.close()
             file_path = os.path.abspath("sample.tar.gz")
-            assert(os.path.exists(file_path))
+            assert (os.path.exists(file_path))
 
         # Instance stoppable thread server and add endpoints
         thread = StoppableThreadBottle()
@@ -791,7 +802,6 @@ class HelloConan(ConanFile):
             mktemp.return_value = patched_temp
             output = check_output_runner(["echo", payload], stderr=subprocess.STDOUT)
             self.assertIn(payload, str(output))
-
 
     def unix_to_dos_unit_test(self):
 

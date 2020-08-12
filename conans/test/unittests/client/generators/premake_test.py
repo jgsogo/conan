@@ -4,13 +4,13 @@ import unittest
 
 from conans.client.generators import PremakeGenerator
 from conans.model.conan_file import ConanFile
+from conans.model.cpp_info import CppInfoView, CppInfo
 from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
 from conans.model.settings import Settings
+from conans.test.utils.mocks import TestBufferConanOutput
 from conans.test.utils.test_files import temp_folder
 from conans.util.files import save
-from conans.test.utils.tools import TestBufferConanOutput
-from conans.model.cpp_info import CppInfoView, CppInfo
 
 
 class PremakeGeneratorTest(unittest.TestCase):
@@ -104,7 +104,8 @@ class PremakeGeneratorTest(unittest.TestCase):
         cpp_info.bindirs = ['bin2']
         cpp_info.cflags = ['-mtune=native']
         cpp_info.cxxflags = ['-march=native']
-        cpp_info.sharedlinkflags = ['-framework AudioFoundation', '-framework "Some Spaced Framework"']
+        cpp_info.sharedlinkflags = ['-framework AudioFoundation',
+                                    '-framework "Some Spaced Framework"']
         cpp_info.exelinkflags = ['-framework VideoToolbox', '-framework "Other Spaced Framework"']
         self.conanfile.deps_cpp_info.add(ref.name, CppInfoView(cpp_info, "3.2.3"))
 

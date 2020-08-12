@@ -3,11 +3,11 @@ import unittest
 
 from conans.client.generators.json_generator import JsonGenerator
 from conans.model.conan_file import ConanFile
+from conans.model.cpp_info import CppInfoView, CppInfo
 from conans.model.env_info import EnvValues
 from conans.model.ref import ConanFileReference
 from conans.model.settings import Settings
-from conans.test.utils.tools import TestBufferConanOutput
-from conans.model.cpp_info import CppInfoView, CppInfoViewDict, CppInfo
+from conans.test.utils.mocks import TestBufferConanOutput
 
 
 class JsonTest(unittest.TestCase):

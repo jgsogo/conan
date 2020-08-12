@@ -3,12 +3,14 @@ import os
 import re
 import textwrap
 import unittest
+from datetime import datetime
 
 from conans.model.ref import ConanFileReference
 from conans.paths import CONANFILE
 from conans.test.utils.cpp_test_files import cpp_hello_conan_files
 from conans.test.utils.tools import TestClient, GenConanfile
 from conans.util.files import load, save
+from conans import __version__ as client_version
 
 
 class InfoTest(unittest.TestCase):
@@ -199,6 +201,8 @@ class InfoTest(unittest.TestCase):
         self.assertIn("<body>", html)
         self.assertIn("{ from: 0, to: 1 }", html)
         self.assertIn("id: 0,\n                        label: 'Hello0/0.1',", html)
+        self.assertIn("Conan <b>v{}</b> <script>document.write(new Date().getFullYear())</script> JFrog LTD. <a>https://conan.io</a>"
+                      .format(client_version, datetime.today().year), html)
 
     def graph_html_embedded_visj_test(self):
         client = TestClient()
@@ -634,7 +638,7 @@ class MyTest(ConanFile):
         client.run("info Pkg/0.2@lasote/testing --graph file.html")
         html_content = client.load("file.html")
         self.assertIn("<h3>Pkg/0.2@lasote/testing</h3>", html_content)
-        self.assertIn("<li><b>topics</b>: (&#34;foo&#34;, &#34;bar&#34;, &#34;qux&#34;)</li>", html_content)
+        self.assertIn("<li><b>topics</b>: foo, bar, qux</li>", html_content)
 
         # Topics as a string
         conanfile = conanfile.replace("(\"foo\", \"bar\", \"qux\")", "\"foo\"")
