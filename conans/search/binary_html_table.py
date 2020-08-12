@@ -1,10 +1,9 @@
+import os
 from collections import OrderedDict, defaultdict
 
-from jinja2 import Template
-
-from conans.assets.templates import search_table_html
 from conans.model.ref import PackageReference
 from conans.util.files import save
+from conans import __version__ as client_version
 
 
 class RowResult(object):
@@ -152,5 +151,7 @@ def html_binary_graph(search_info, reference, table_filename, template):
     results = Results(search_info)
 
     # Render and save
-    content = template.render(search=search, results=results)
+    template_folder = os.path.dirname(template.filename)
+    content = template.render(search=search, results=results, base_template_path=template_folder,
+                              version=client_version)
     save(table_filename, content)
