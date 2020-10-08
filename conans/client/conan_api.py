@@ -69,6 +69,7 @@ from conans.util.env_reader import get_env
 from conans.util.files import exception_message_safe, mkdir, save_files, load, save
 from conans.util.log import configure_logger
 from conans.util.tracer import log_command, log_exception
+from conans.api.middlewares.log_raw_commands import LogRawCommandsMiddleware
 
 default_manifest_folder = '.conan_manifests'
 
@@ -225,7 +226,14 @@ class ConanApp(object):
 class ConanAPIV1(object):
     @classmethod
     def factory(cls):
-        return cls(), None, None
+        # TODO: If we want the user to add other middlewares, we need to read the config folder,
+        # TODO: to load everythin in `<cache>/.conan/middlewares`, or only those listed in
+        # TODO: conan.conf. Anyway, that's something to fix afterward
+        conan_api = cls()
+        output = conan_api.out
+        for it in [LogRawCommandsMiddleware]:  # TODO: List of middlewared to enable
+            conan_api = it(api_call=conan_api, output=output)
+        return conan_api, None, None
 
     def __init__(self, cache_folder=None, output=None, user_io=None, http_requester=None,
                  runner=None):

@@ -24,8 +24,7 @@ class Cli(object):
     """
 
     def __init__(self, conan_api):
-        assert isinstance(conan_api, Conan), "Expected 'Conan' type, got '{}'".format(
-            type(conan_api))
+        # assert isinstance(conan_api, Conan), "Expected 'Conan' type, got '{}'".format(type(conan_api))
         self._conan_api = conan_api
         self._out = conan_api.out
         self._groups = defaultdict(list)
