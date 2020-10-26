@@ -3,15 +3,19 @@ from collections import defaultdict
 from conans.client.tools import cross_building, OrderedDict
 from .android import CMakeAndroidToolchain
 from .generic import CMakeGenericToolchain
+from ...build.cmake_flags import get_generator
 
 
-def CMakeToolchain(conanfile, **kwargs):
+def CMakeToolchain(conanfile, generator, **kwargs):
     # This function is responsible of:
     #   1. build dynamically the class to instantiate
     #   2. get/compute the template to use
     #   3. instantiate and render
 
+    base_mixins = []
     # 1) Build the class to instantiate
+    #   - generator: provided or guess
+    generator = generator or get_generator(conanfile=conanfile)
     #   - coordinates: xbuilding, os:host
     xbuild = cross_building(conanfile, skip_x64_x86=True)
     os_host = conanfile.settings.os

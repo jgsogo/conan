@@ -28,6 +28,15 @@ set(CMAKE_PREFIX_PATH {{ tc.cmake_prefix_path }} ${CMAKE_PREFIX_PATH})
 
 
 {% block main %}
+    {# It is ok to modify content here, these are options of the project itself. There is no alternative #}
+    {% if tc.shared_libs %}set(BUILD_SHARED_LIBS {{ tc.shared_libs }}){% endif %}
+    {% if tc.fpic %}set(CMAKE_POSITION_INDEPENDENT_CODE ON){% endif %}
+
+
+    set(CONAN_CXX_FLAGS "${CONAN_CXX_FLAGS} {{ tc.architecture }}")
+    set(CONAN_C_FLAGS "${CONAN_C_FLAGS} {{ tc.architecture }}")
+    set(CONAN_SHARED_LINKER_FLAGS "${CONAN_SHARED_LINKER_FLAGS} {{ tc.architecture }}")
+    set(CONAN_EXE_LINKER_FLAGS "${CONAN_EXE_LINKER_FLAGS} {{ tc.architecture }}")
 {% endblock %}
 
 
