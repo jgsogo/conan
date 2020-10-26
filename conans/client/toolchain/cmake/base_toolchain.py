@@ -1,5 +1,3 @@
-from conans.client.build.compiler_flags import architecture_flag
-from conans.client.tools import cpu_count
 from conans.errors import ConanException
 
 
@@ -21,12 +19,10 @@ class BaseToolchain(object):
             self.install_prefix = None
 
     def get_template_names(self):
-        compiler = str(self._conanfile.settings.compiler).lower().replace(' ', '')
+        return ['{prefix}{extension}', ]
 
-        return [
-            '{}/toolchain_{}.cmake'.format(self._conanfile.settings_build.os, compiler),
-            'toolchain_{}.cmake'.format(compiler),
-        ]
+    def get_filename(self):
+        return '{prefix}{extension}'
 
     @property
     def shared_libs(self):
@@ -50,5 +46,3 @@ class BaseToolchain(object):
                                         "for a shared library")
             return None
         return fpic
-
-
