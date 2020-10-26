@@ -52,7 +52,7 @@ class WindowsCEMixin(OSHostDefaultMixin):
 
     @property
     def generator_platform(self):
-        assert self.generator_name == 'visualstudio', "Got '{}'!".format(self.generator_platform)
+        assert self.generator_name == 'visualstudio', "Got '{}'!".format(self.generator_name)
         return self._conanfile.settings.get_safe("os.platform")
 
 
