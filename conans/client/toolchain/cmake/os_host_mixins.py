@@ -2,7 +2,7 @@ class OSHostMixin(object):
     host_name = None
 
     def get_template_names(self):
-        # It adds an alternative (more specific) using the host name
+        # It adds an alternate name (more specific) using the host name
         parent_template_names = super(OSHostMixin, self).get_template_names()
         if self.host_name:
             template_names = []

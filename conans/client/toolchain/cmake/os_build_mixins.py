@@ -1,6 +1,6 @@
 class OSBuildMixin(object):
     def get_template_names(self):
-        # It adds an alternative (more specific) using the build-os name
+        # It adds an alternate name (more specific) using the build-os name
         os_build = str(self._conanfile.settings_build.os).lower()
         template_names = super(OSBuildMixin, self).get_template_names()
         build_template_names = []
