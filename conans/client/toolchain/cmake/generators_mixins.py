@@ -1,28 +1,41 @@
-class GeneratorMixin(object):
-    generator_name = None
+from conans.client.tools import cpu_count
 
-    def get_template_names(self):
-        tpl_names = super(GeneratorMixin, self).get_template_names()
-        if self.generator_name:
-            return ['{{prefix}}_{}{{extension}}'.format(self.generator_name), ] + tpl_names
-        return tpl_names
+
+class GeneratorMixin(object):
+    _conanfile = None
 
 
 class NinjaMixin(GeneratorMixin):
     generator_name = 'ninja'
 
-    def get_filename(self):
-        filename = super(NinjaMixin, self).get_filename()
-        filename = filename.replace('{prefix}', '{{prefix}}_{}'.format(self.generator_name))
-        return filename
+
+class VisualStudioMixin(GeneratorMixin):
+    generator_name = 'visualstudio'
+    generator_blocks = ['blocks/generator/visualstudio.cmake']
+
+    @property
+    def cpu_count(self):
+        return cpu_count(output=self._conanfile.output)
+
+    @property
+    def generator_platform(self):
+        arch = self._conanfile.settings.arch
+        return {"x86": "Win32",
+                "x86_64": "x64",
+                "armv7": "ARM",
+                "armv8": "ARM64"}.get(arch)
+
+    @property
+    def toolset(self):
+        return self._conanfile.settings.compiler.toolset
 
 
-def get_mixin(generator):
+def get_mixin(generator_name):
     # TODO: If we really want to let the user inject behaviour into our hierarchy of classes,
     #   then we can turn this into a factory and allow registration from outside
-    generator_name = generator.replace(' ', '').lower()
     if generator_name == NinjaMixin.generator_name:
         return NinjaMixin
+    elif generator_name.startswith(VisualStudioMixin.generator_name):
+        return VisualStudioMixin
     else:
-        mixin_class = type('MixinClass', (GeneratorMixin,), {'generator_name': generator_name})
-        return mixin_class
+        return GeneratorMixin

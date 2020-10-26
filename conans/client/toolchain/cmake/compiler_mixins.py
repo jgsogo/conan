@@ -1,33 +1,33 @@
-from conans.client.tools import cpu_count
-
-
-class VisualStudioMixin(object):
-    blocks = ['blocks/visualstudio.cmake', ]
+class CompilerMixin(object):
+    _conanfile = None
+    compiler_blocks = ['blocks/compiler/compiler.cmake', ]
 
     @property
-    def cpu_count(self):
-        return cpu_count(output=self._conanfile.output)
+    def cppstd(self):
+        compiler_cppstd = self._conanfile.settings.get_safe("compiler.cppstd")
+        if compiler_cppstd:
+            cppstd = compiler_cppstd[3:] if compiler_cppstd.startswith("gnu") else compiler_cppstd
+            return cppstd
+        return None
 
     @property
-    def generator_platform(self):
-        compiler = self._conanfilesettings.get_safe("compiler")
-        compiler_base = self._conanfilesettings.get_safe("compiler.base")
-        arch = self._conanfilesettings.get_safe("arch")
+    def cppstd_extensions(self):
+        compiler_cppstd = self._conanfile.settings.get_safe("compiler.cppstd")
+        if compiler_cppstd:
+            return "ON" if compiler_cppstd.startswith("gnu") else "OFF"
+        return None
 
-        if self._conanfile.settings.get_safe("os") == "WindowsCE":
-            return self._conanfile.settings.get_safe("os.platform")
+    @property
+    def libcxx(self):
+        return None
 
-
-        if (compiler == "Visual Studio" or compiler_base == "Visual Studio") and \
-            generator and "Visual" in generator:
-            return {"x86": "Win32",
-                    "x86_64": "x64",
-                    "armv7": "ARM",
-                    "armv8": "ARM64"}.get(arch)
+    @property
+    def architecture(self):
         return None
 
 
-class IntelCompilerMixin(object):
+class IntelCompilerMixin(CompilerMixin):
+    compiler_name = 'intel'
 
     @property
     def architecture(self):
@@ -37,10 +37,10 @@ class IntelCompilerMixin(object):
             return "/Qm32" if str(compiler_base) == "Visual Studio" else "-m32"
         elif str(arch) == "x86_64":
             return "/Qm64" if str(compiler_base) == "Visual Studio" else "-m64"
-        return ""
+        return None
 
 
-class UnixCompilerMixin(object):
+class UnixCompilerMixin(CompilerMixin):
     @property
     def architecture(self):
         arch = self._conanfile.settings.get_safe("arch")
@@ -56,14 +56,12 @@ class UnixCompilerMixin(object):
                 return '-maix32'
             elif str(arch) in ['ppc64']:
                 return '-maix64'
-        return ""
-
-    @property
-    def glibcxx(self):
         return None
 
 
 class AppleClangCompilerMixin(UnixCompilerMixin):
+    compiler_name = 'apple-clang'
+
     @property
     def libcxx(self):
         libcxx = self._conanfile.settings.get_safe("compiler.libcxx")
@@ -71,6 +69,8 @@ class AppleClangCompilerMixin(UnixCompilerMixin):
 
 
 class ClangCompilerMixin(UnixCompilerMixin):
+    compiler_name = 'clang'
+
     @property
     def libcxx(self):
         libcxx = self._conanfile.settings.get_safe("compiler.libcxx")
@@ -82,6 +82,8 @@ class ClangCompilerMixin(UnixCompilerMixin):
 
 
 class SunCCCompilerMixin(UnixCompilerMixin):
+    compiler_name = 'sun-cc'
+
     @property
     def libcxx(self):
         libcxx = self._conanfile.settings.get_safe("compiler.libcxx")
@@ -96,9 +98,8 @@ class SunCCCompilerMixin(UnixCompilerMixin):
 
 
 class GccCompilerMixin(UnixCompilerMixin):
-    @property
-    def libcxx(self):
-        return None
+    compiler_name = 'gcc'
+    compiler_blocks = UnixCompilerMixin.compiler_blocks + ['blocks/compiler/glibcxx.cmake']
 
     @property
     def glibcxx(self):
@@ -107,3 +108,20 @@ class GccCompilerMixin(UnixCompilerMixin):
             return "1"
         elif libcxx == "libstdc++":
             return "0"
+
+
+def get_mixin(compiler_name):
+    # TODO: If we really want to let the user inject behaviour into our hierarchy of classes,
+    #   then we can turn this into a factory and allow registration from outside
+    if compiler_name == IntelCompilerMixin.compiler_name:
+        return IntelCompilerMixin
+    elif compiler_name == AppleClangCompilerMixin.compiler_name:
+        return AppleClangCompilerMixin
+    elif compiler_name == ClangCompilerMixin.compiler_name:
+        return ClangCompilerMixin
+    elif compiler_name == SunCCCompilerMixin.compiler_name:
+        return SunCCCompilerMixin
+    elif compiler_name == GccCompilerMixin.compiler_name:
+        return GccCompilerMixin
+    else:
+        return CompilerMixin

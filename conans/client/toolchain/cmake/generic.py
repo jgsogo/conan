@@ -17,50 +17,10 @@ class CMakeGenericToolchain(CMakeToolchainBase):
     _toolchain_tpl = textwrap.dedent("""
         {% extends 'base_toolchain' %}
 
-        {% block before_try_compile %}
-            {{ super() }}
-            {% if generator_platform %}set(CMAKE_GENERATOR_PLATFORM "{{ generator_platform }}" CACHE STRING "" FORCE){% endif %}
-            {% if toolset %}set(CMAKE_GENERATOR_TOOLSET "{{ toolset }}" CACHE STRING "" FORCE){% endif %}
-        {% endblock %}
 
         {% block main %}
             {{ super() }}
 
-            {% if shared_libs -%}
-                message(STATUS "Conan toolchain: Setting BUILD_SHARED_LIBS= {{ shared_libs }}")
-                set(BUILD_SHARED_LIBS {{ shared_libs }})
-            {%- endif %}
-
-            {% if fpic -%}
-                message(STATUS "Conan toolchain: Setting CMAKE_POSITION_INDEPENDENT_CODE=ON (options.fPIC)")
-                set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-            {%- endif %}
-
-            {% if skip_rpath -%}
-                set(CMAKE_SKIP_RPATH 1 CACHE BOOL "rpaths" FORCE)
-                # Policy CMP0068
-                # We want the old behavior, in CMake >= 3.9 CMAKE_SKIP_RPATH won't affect install_name in OSX
-                set(CMAKE_INSTALL_NAME_DIR "")
-            {% endif -%}
-
-            {% if parallel -%}
-                set(CONAN_CXX_FLAGS "${CONAN_CXX_FLAGS} {{ parallel }}")
-                set(CONAN_C_FLAGS "${CONAN_C_FLAGS} {{ parallel }}")
-            {%- endif %}
-
-            {% if architecture -%}
-                set(CONAN_CXX_FLAGS "${CONAN_CXX_FLAGS} {{ architecture }}")
-                set(CONAN_C_FLAGS "${CONAN_C_FLAGS} {{ architecture }}")
-                set(CONAN_SHARED_LINKER_FLAGS "${CONAN_SHARED_LINKER_FLAGS} {{ architecture }}")
-                set(CONAN_EXE_LINKER_FLAGS "${CONAN_EXE_LINKER_FLAGS} {{ architecture }}")
-            {%- endif %}
-
-            {% if set_libcxx -%}
-                set(CONAN_CXX_FLAGS "${CONAN_CXX_FLAGS} {{ set_libcxx }}")
-            {%- endif %}
-            {% if glibcxx -%}
-                add_definitions(-D_GLIBCXX_USE_CXX11_ABI={{ glibcxx }})
-            {%- endif %}
 
             {% if cppstd -%}
                 message(STATUS "Conan C++ Standard {{ cppstd }} with extensions {{ cppstd_extensions }}")

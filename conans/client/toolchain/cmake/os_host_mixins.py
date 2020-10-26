@@ -1,35 +1,69 @@
-class OSHostMixin(object):
-    host_name = None
-
-    def get_template_names(self):
-        # It adds an alternate name (more specific) using the host name
-        parent_template_names = super(OSHostMixin, self).get_template_names()
-        if self.host_name:
-            template_names = []
-            for it in parent_template_names:
-                tpl_name = it.replace('{prefix}',
-                                      '{{prefix}}_{os_host}'.format(os_host=self.host_name))
-                template_names.append(tpl_name)
-                template_names.append(it)
-            return template_names
-        return parent_template_names
+class OSHostDefaultMixin(object):
+    _conanfile = None
+    generator_name = None
 
 
-class AndroidHostMixin(OSHostMixin):
-    host_name = 'android'
+class UnixHostMixin(OSHostDefaultMixin):
+    oshost_name = 'unix'
+    oshost_blocks = ['blocks/oshost/unix.cmake']
 
-    def get_filename(self):
-        filename = super(AndroidHostMixin, self).get_filename()
-        filename = filename.replace('{prefix}', '{{prefix}}_{}'.format(self.host_name))
-        return filename
+    @property
+    def fpic(self):
+        shared = self._conanfile.options.get_safe("shared")
+        if shared:
+            self._conanfile.output.warn("Toolchain: Ignoring fPIC option defined "
+                                        "for a shared library")
+            return None
+        return self._conanfile.options.get_safe("fPIC")
 
 
-def get_mixin(os_host):
+class MacosMixin(UnixHostMixin):
+    oshost_name = 'macos'
+    oshost_blocks = UnixHostMixin.oshost_blocks + ['blocks/oshost/macos.cmake']
+
+
+class AndroidHostMixin(UnixHostMixin):
+    oshost_name = 'android'
+    oshost_blocks = UnixHostMixin.oshost_blocks + ['blocks/oshost/android.cmake']
+
+    @property
+    def cmake_system_version(self):
+        return self._conanfile.settings.os.api_level
+
+    @property
+    def android_arch_abi(self):
+        return {"x86": "x86",
+                "x86_64": "x86_64",
+                "armv7": "armeabi-v7a",
+                "armv8": "arm64-v8a"}.get(str(self._conanfile.settings.arch))
+
+    @property
+    def android_stl_type(self):
+        libcxx_str = str(self._conanfile.settings.compiler.libcxx)
+        return libcxx_str  # TODO: only 'c++_shared' y 'c++_static' supported?
+
+    @property
+    def android_ndk(self):
+        return '/Users/jgsogo/Library/Android/sdk/ndk/21.0.6113669'  # TODO: ???
+
+
+class WindowsCEMixin(OSHostDefaultMixin):
+    oshost_name = 'windowsce'
+
+    @property
+    def generator_platform(self):
+        assert self.generator_name == 'visualstudio', "Got '{}'!".format(self.generator_platform)
+        return self._conanfile.settings.get_safe("os.platform")
+
+
+def get_mixin(oshost_name):
     # TODO: If we really want to let the user inject behaviour into our hierarchy of classes,
     #   then we can turn this into a factory and allow registration from outside
-    host_name = os_host.replace(' ', '').lower()
-    if host_name == AndroidHostMixin.host_name:
+    if oshost_name == AndroidHostMixin.oshost_name:
         return AndroidHostMixin
+    elif oshost_name in ['linux', 'macos']:
+        return UnixHostMixin
+    elif oshost_name == 'windowsce':
+        return WindowsCEMixin
     else:
-        mixin_class = type('MixinClass', (OSHostMixin,), {'host_name': host_name})
-        return mixin_class
+        return OSHostDefaultMixin
