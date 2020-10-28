@@ -69,3 +69,25 @@ class ExampleCacheTemplatesTestCase(ExamplesData):
             content = load(tc.get_filename())
 
         self.assertNotIn('# MY COMPANY BASE TEMPLATE', content)
+
+    def test_single_block_override(self):
+        # We can override some blocks, maybe we want to HARDCODE something
+        templates_folder = os.path.join(get_conan_user_home(), '.conan', 'templates')
+        save(os.path.join(templates_folder, 'blocks', 'oshost', 'android.cmake'), textwrap.dedent("""
+            set(CMAKE_ANDROID_ARCH_ABI {{ tc.android_arch_abi }})
+            set(CMAKE_ANDROID_STL_TYPE {{ tc.android_stl_type }})
+            set(CMAKE_ANDROID_NDK "/this/is/my/hardcoded/path")
+        """))
+
+        conanfile = ConanFileMock()
+        conanfile.settings = self.settings_android
+        conanfile.settings_build = self.settings_macos
+
+        # The user has some vendor toolchains:
+        current_folder = temp_folder()
+        with chdir(current_folder):
+            tc = CMakeToolchain(conanfile)
+            tc.write_toolchain_files()
+            content = load(tc.get_filename())
+
+        self.assertIn('set(CMAKE_ANDROID_NDK "/this/is/my/hardcoded/path")', content)

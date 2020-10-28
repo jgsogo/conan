@@ -60,14 +60,16 @@ class WindowsCEMixin(OSHostDefaultMixin):
         return self._conanfile.settings.get_safe("os.platform")
 
 
+# TODO: Just for demo purposes, choose a factory pattern implementation!
+oshost_mixins_registry = {
+    AndroidHostMixin.oshost_name: AndroidHostMixin,
+    'linux': UnixHostMixin,
+    'macos': UnixHostMixin,
+    'windowsce': WindowsCEMixin,
+}
+
+
 def get_mixin(oshost_name):
     # TODO: If we really want to let the user inject behaviour into our hierarchy of classes,
     #   then we can turn this into a factory and allow registration from outside
-    if oshost_name == AndroidHostMixin.oshost_name:
-        return AndroidHostMixin
-    elif oshost_name in ['linux', 'macos']:
-        return UnixHostMixin
-    elif oshost_name == 'windowsce':
-        return WindowsCEMixin
-    else:
-        return OSHostDefaultMixin
+    return oshost_mixins_registry.get(oshost_name, OSHostDefaultMixin)
