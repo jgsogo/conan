@@ -10,14 +10,15 @@ if(CONAN_TOOLCHAIN_INCLUDED)
 endif()
 set(CONAN_TOOLCHAIN_INCLUDED TRUE)
 
-{% block compiler_features_config %}
-    {# It is ok to modify content here, these are options/settings of the project itself. There is no alternative #}
-    {% if tc.cmake_system_version %}set(CMAKE_SYSTEM_VERSION {{ tc.cmake_system_version }}){% endif %}
-    {% for compiler_feature_block in tc.get_compiler_features_blocks() %}
-        # Include '{{ compiler_feature_block }}'
-        {% include compiler_feature_block %}
-    {% endfor %}
-{% endblock %}
+{%- block compiler_features_config %}
+{# It is ok to modify content here, these are options/settings of the project itself. There is no alternative #}
+{% if tc.cmake_system_version %}set(CMAKE_SYSTEM_VERSION {{ tc.cmake_system_version }}){% endif %}
+{%- for compiler_feature_block in tc.get_compiler_features_blocks() %}
+
+# Include '{{ compiler_feature_block }}'
+{% include compiler_feature_block -%}
+{%- endfor %}
+{%- endblock %}
 
 get_property( _CMAKE_IN_TRY_COMPILE GLOBAL PROPERTY IN_TRY_COMPILE )
 if(_CMAKE_IN_TRY_COMPILE)
@@ -33,20 +34,20 @@ set(CMAKE_MODULE_PATH {{ tc.cmake_module_path }} ${CMAKE_MODULE_PATH})
 set(CMAKE_PREFIX_PATH {{ tc.cmake_prefix_path }} ${CMAKE_PREFIX_PATH})
 
 
-{% block main %}
-    {# It is ok to modify content here, these are options/settings of the project itself. There is no alternative #}
-    set(CMAKE_BUILD_TYPE "{{ tc.build_type }}" CACHE STRING "Choose the type of build." FORCE)  {# TODO: Check somehow the value provided in cmake --build --config $CONFIG! Somethinf for the 'project_include'? #}
-    {% if tc.shared_libs %}set(BUILD_SHARED_LIBS {{ tc.shared_libs }}){% endif %}
+{%- block main %}
+{# It is ok to modify content here, these are options/settings of the project itself. There is no alternative #}
+set(CMAKE_BUILD_TYPE "{{ tc.build_type }}" CACHE STRING "Choose the type of build." FORCE)  {# TODO: Check somehow the value provided in cmake --build --config $CONFIG! Somethinf for the 'project_include'? #}
+{% if tc.shared_libs %}set(BUILD_SHARED_LIBS {{ tc.shared_libs }}){% endif %}
 
-    {% for project_config_block in tc.get_project_config_blocks() %}
-        # Include '{{ project_config_block }}'
-        {% include project_config_block %}
-    {% endfor %}
+{% for project_config_block in tc.get_project_config_blocks() %}
+# Include '{{ project_config_block }}'
+{%- include project_config_block %}
+{%- endfor %}
 
-    set(CONAN_CXX_FLAGS "${CONAN_CXX_FLAGS} {{ tc.architecture }}")
-    set(CONAN_C_FLAGS "${CONAN_C_FLAGS} {{ tc.architecture }}")
-    set(CONAN_SHARED_LINKER_FLAGS "${CONAN_SHARED_LINKER_FLAGS} {{ tc.architecture }}")
-    set(CONAN_EXE_LINKER_FLAGS "${CONAN_EXE_LINKER_FLAGS} {{ tc.architecture }}")
+set(CONAN_CXX_FLAGS "${CONAN_CXX_FLAGS} {{ tc.architecture }}")
+set(CONAN_C_FLAGS "${CONAN_C_FLAGS} {{ tc.architecture }}")
+set(CONAN_SHARED_LINKER_FLAGS "${CONAN_SHARED_LINKER_FLAGS} {{ tc.architecture }}")
+set(CONAN_EXE_LINKER_FLAGS "${CONAN_EXE_LINKER_FLAGS} {{ tc.architecture }}")
 {% endblock %}
 
 
