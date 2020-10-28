@@ -16,6 +16,10 @@ class UnixHostMixin(OSHostDefaultMixin):
             return None
         return self._conanfile.options.get_safe("fPIC")
 
+    @property
+    def cmake_system_version(self):
+        return self._conanfile.settings.get_safe('os.version')
+
 
 class MacosMixin(UnixHostMixin):
     oshost_name = 'macos'

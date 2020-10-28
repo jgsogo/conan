@@ -11,7 +11,6 @@ set(CONAN_TOOLCHAIN_INCLUDED TRUE)
 
 {% block compiler_features_config %}
 {# It is ok to modify content here, these are options/settings of the project itself. There is no alternative #}
-{% if tc.cmake_system_version %}set(CMAKE_SYSTEM_VERSION {{ tc.cmake_system_version }}){% endif %}
 {% for compiler_feature_block in tc.get_compiler_features_blocks() %}
 
 # Include '{{ compiler_feature_block }}'

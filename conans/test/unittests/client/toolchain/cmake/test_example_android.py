@@ -1,42 +1,26 @@
 import textwrap
-import unittest
 
-from conans import CMakeToolchain, Settings
-from conans.client.conf import get_default_settings_yml
+from conans import CMakeToolchain
 from conans.client.tools import chdir, load
+from conans.test.unittests.client.toolchain.cmake.base_examples import ExamplesData
 from conans.test.utils.mocks import ConanFileMock
 from conans.test.utils.test_files import temp_folder
 
 
-class ExampleAndroidTestCase(unittest.TestCase):
-    maxDiff = None
+class ExampleAndroidTestCase(ExamplesData):
+    """
+    Conan composes the template taking into account given configuration
+    """
 
     def test_android(self):
-        settings = Settings.loads(get_default_settings_yml())
-        settings.os = 'Android'
-        settings.os.api_level = '23'
-        settings.arch = 'x86_64'
-        settings.compiler = 'clang'
-        settings.compiler.version = '9'
-        settings.compiler.libcxx = 'c++_shared'
-        settings.build_type = 'Release'
-
-        settings_build = Settings.loads(get_default_settings_yml())
-        settings_build.os = 'Macos'
-        settings_build.arch = 'x86_64'
-        settings_build.compiler = 'apple-clang'
-        settings_build.compiler.version = '11.0'
-        settings_build.compiler.libcxx = 'libc++'
-        settings_build.build_type = 'Release'
-        settings_build.os = 'Macos'
-
         conanfile = ConanFileMock()
-        conanfile.settings = settings
-        conanfile.settings_build = settings_build
+        conanfile.settings = self.settings_android
+        conanfile.settings_build = self.settings_macos
 
         tc = CMakeToolchain(conanfile)
         tc.variables.debug["MYVAR"] = "DEBUG_VALUE"
         tc.variables.release["MYVAR"] = "RELEASE_VALUE"
+
         current_folder = temp_folder()
         with chdir(current_folder):
             tc.write_toolchain_files()
@@ -53,12 +37,11 @@ class ExampleAndroidTestCase(unittest.TestCase):
             endif()
             set(CONAN_TOOLCHAIN_INCLUDED TRUE)
 
-            set(CMAKE_SYSTEM_VERSION 23)
-
             # Include 'blocks/osbuild/crossbuild.cmake'
             set(CMAKE_SYSTEM_NAME Android)
 
             # Include 'blocks/oshost/unix.cmake'
+            set(CMAKE_SYSTEM_VERSION 23)
 
             # Include 'blocks/oshost/android.cmake'
             set(CMAKE_ANDROID_ARCH_ABI x86_64)

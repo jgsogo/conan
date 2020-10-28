@@ -6,7 +6,7 @@ from jinja2 import Environment, select_autoescape, FileSystemLoader, ChoiceLoade
 from conans.client.build.cmake_flags import get_generator
 from conans.client.tools import OrderedDict, cross_building
 from conans.paths import get_conan_user_home
-from conans.util.files import save
+from conans.util.files import save, load
 from .base_toolchain import BaseToolchain
 from .generators_mixins import get_mixin as get_generator_mixin
 from .os_build_mixins import get_mixin as get_os_build_mixin
@@ -16,6 +16,7 @@ import re
 
 class CMakeToolchain(object):
     template_name = None
+    template_file = None
     filename = None
 
     def __init__(self, conanfile, generator=None, **kwargs):
@@ -84,13 +85,15 @@ class CMakeToolchain(object):
             'preprocessor_definitions': self.preprocessor_definitions
         }
         # TODO: Use the 'get_templates' from the Cache class
-        cache_folder = os.path.join(get_conan_user_home(), '.conan', 'templates')
+        cache_folder = os.path.join(get_conan_user_home(), '.conan')
         loaders = [FileSystemLoader(os.path.join(cache_folder, 'templates')),
-                   FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')), ]
+                   FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')),]
         env = Environment(loader=ChoiceLoader(loaders),
                           autoescape=select_autoescape(['html', 'xml']))
-
-        tpl = env.select_template(template_names)
+        if self.template_file:
+            tpl = env.from_string(load(self.template_file))
+        else:
+            tpl = env.select_template(template_names)
         content = tpl.render(**context)
         content = re.sub(r'(\s*\r?\n){3,}', '\r\n\r\n', content)
         save(filename, content)

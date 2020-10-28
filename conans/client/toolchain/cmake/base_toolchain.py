@@ -25,10 +25,6 @@ class BaseToolchain(object):
         return []
 
     @property
-    def cmake_system_version(self):
-        return self._conanfile.settings.os.version
-
-    @property
     def build_type(self):
         return self._conanfile.settings.build_type
 
