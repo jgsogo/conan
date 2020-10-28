@@ -9,8 +9,9 @@ from conans.test.utils.test_files import temp_folder
 
 
 class ExampleAndroidTestCase(unittest.TestCase):
+    maxDiff = None
 
-    def test_macos(self):
+    def test_android(self):
         settings = Settings.loads(get_default_settings_yml())
         settings.os = 'Android'
         settings.os.api_level = '23'
@@ -34,6 +35,8 @@ class ExampleAndroidTestCase(unittest.TestCase):
         conanfile.settings_build = settings_build
 
         tc = CMakeToolchain(conanfile)
+        tc.variables.debug["MYVAR"] = "DEBUG_VALUE"
+        tc.variables.release["MYVAR"] = "RELEASE_VALUE"
         current_folder = temp_folder()
         with chdir(current_folder):
             tc.write_toolchain_files()
@@ -95,7 +98,9 @@ class ExampleAndroidTestCase(unittest.TestCase):
 
             # Variables
 
-            # Variables  per configuration
+            # Variables per configuration
+
+            set(MYVAR $<IF:$<CONFIG:debug>,"DEBUG_VALUE",$<IF:$<CONFIG:release>,"RELEASE_VALUE","">>)
 
             # Preprocessor definitions
 

@@ -62,7 +62,7 @@ set(CMAKE_EXE_LINKER_FLAGS_INIT "${CONAN_EXE_LINKER_FLAGS}" CACHE STRING "" FORC
 {% for it, value in variables.items() %}
 set({{ it }} "{{ value }}")
 {%- endfor %}
-# Variables  per configuration
+# Variables per configuration
 {{ toolchain_macros.iterate_configs(variables.configuration_types, action='set') }}
 
 # Preprocessor definitions

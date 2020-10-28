@@ -8,9 +8,9 @@
         {%- endfor -%}
         {% for i in range(values|count) %}{%- set genexpr.str = genexpr.str + '>' %}{%- endfor -%}
         {% if action=='set' %}
-        set({{ it }} {{ genexpr.str }})
+set({{ it }} {{ genexpr.str }})
         {% elif action=='add_definitions' %}
-        add_definitions(-D{{ it }}={{ genexpr.str }})
+add_definitions(-D{{ it }}={{ genexpr.str }})
         {% endif %}
     {%- endfor %}
 {% endmacro %}
