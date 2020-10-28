@@ -12,7 +12,7 @@ from .generators_mixins import get_mixin as get_generator_mixin
 from .os_build_mixins import get_mixin as get_os_build_mixin
 from .os_host_mixins import get_mixin as get_os_host_mixin
 from .compiler_mixins import get_mixin as get_compiler_mixin
-
+import re
 
 class CMakeToolchain(object):
     template_name = None
@@ -91,7 +91,9 @@ class CMakeToolchain(object):
                           autoescape=select_autoescape(['html', 'xml']))
 
         tpl = env.select_template(template_names)
-        save(filename, tpl.render(**context))
+        content = tpl.render(**context)
+        content = re.sub(r'(\s*\r?\n){3,}', '\r\n\r\n', content)
+        save(filename, content)
 
 
 class Variables(OrderedDict):
