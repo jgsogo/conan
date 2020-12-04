@@ -25,7 +25,6 @@ class SemverDirectModeTestCase(unittest.TestCase):
 
         t.run('config set general.default_package_id_mode=semver_direct_mode')
         t.run('create libA.py libA/1.1.1@')
-        t.run('create libA.py libA/1.1.2@')
 
         # libB with different requirements, has different packageID
         t.run('create libB.py libB/1.1.1@')
