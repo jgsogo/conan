@@ -270,19 +270,18 @@ class GraphBinariesAnalyzer(object):
         # as this is the graph model
         conanfile = node.conanfile
         neighbors = node.neighbors()
-        transitive_reqs = set()  # of PackageReference, avoid duplicates
+        direct_reqs, indirect_reqs = GraphBinariesAnalyzer.package_id_transitive_reqs(node)
         for neighbor in neighbors:
+            if neighbor.ref not in [it.ref for it in direct_reqs]:
+                continue
             ref, nconan = neighbor.ref, neighbor.conanfile
-            transitive_reqs.add(neighbor.pref)
-            transitive_reqs.update(nconan.info.requires.refs())
-
             conanfile.options.propagate_downstream(ref, nconan.info.full_options)
             # Update the requirements to contain the full revision. Later in lockfiles
             conanfile.requires[ref.name].ref = ref
 
         # There might be options that are not upstream, backup them, might be for build-requires
         conanfile.build_requires_options = conanfile.options.values
-        conanfile.options.clear_unused(transitive_reqs)
+        conanfile.options.clear_unused(direct_reqs)
         conanfile.options.freeze()
 
     @staticmethod
